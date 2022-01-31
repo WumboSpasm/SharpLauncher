@@ -27,12 +27,20 @@ namespace WumboLauncher
         // Path to Flashpoint database
         string databasePath = "";
         // Query fragments used to fetch entries
+        string queryLibrary = "arcade";
         string queryOrderBy = "title";
         string queryDirection = "ASC";
         // Current query range
         int queryStart = 0;
-        int queryLength = 100;
-        // Query data from within specified range
+        int queryLength = 1000;
+        /*
+         *  Query data from within specified range
+         *  
+         *  This should ALWAYS have columnNames.GetLength(0) lists in the
+         *  first dimension and queryLength strings in the second dimension
+         *  
+         *  Anything else risks an "index out of range" exception
+         */
         List<List<string>> queryData = new();
         // Check if Archive tab has been clicked
         bool archiveTabClicked = false;
@@ -45,6 +53,8 @@ namespace WumboLauncher
 
         private void Main_load(object sender, EventArgs e)
         {
+            for (int i = 0; i < columnNames.GetLength(0); i++)
+                queryData.Add(Enumerable.Repeat("", queryLength).ToList());
         }
 
         // Scale column widths to list width
@@ -56,6 +66,12 @@ namespace WumboLauncher
                 AdjustColumns();
 
             prevWidth = ArchiveList.ClientSize.Width;
+        }
+
+        private void DatabasePathButton_click(object sender, EventArgs e)
+        {
+            if (DatabasePathDialog.ShowDialog() == DialogResult.OK)
+                DatabasePathInput.Text = DatabasePathDialog.FileName;
         }
 
         // Initialize list when Archive tab is accessed for the first time
@@ -76,36 +92,35 @@ namespace WumboLauncher
 
                     archiveTabClicked = true;
                 }
+                else if (columnChanged)
+                    ScaleColumns();
                 else
-                {
-                    if (columnChanged)
-                        ScaleColumns();
-                    else
-                        AdjustColumns();
-                }
+                    AdjustColumns();
             }
         }
 
         // Add items to list and improve performance by using larger, less frequent SQL queries
         private void ArchiveList_retrieveItem(object sender, RetrieveVirtualItemEventArgs e)
         {
-            DebugLabel.Text = $"{e.ItemIndex} | {e.ItemIndex % queryLength} | {queryStart}";
-
             // If item information is not already found in queryData, generate a new list
             if (e.ItemIndex >= queryStart + queryLength || e.ItemIndex < queryStart || e.ItemIndex == 0)
             {
                 queryStart = e.ItemIndex - (e.ItemIndex % queryLength);
-                queryData.Clear();
+
+                List<List<string>> tempData = new();
 
                 for (int i = 0; i < columnNames.GetLength(0); i++)
-                    queryData.Add(DatabaseQuery(
+                    tempData.Add(DatabaseQuery(
                         $"SELECT {columnNames[i, 1]} FROM game " +
+                        $"WHERE library = '{queryLibrary}'" +
                         $"ORDER BY {queryOrderBy} {queryDirection} " +
                         $"LIMIT {queryStart}, {queryLength}"
                     ));
 
-                DebugLabel.Text += " LOAD";
+                queryData = tempData;
             }
+
+            DebugLabel.Text = $"{e.ItemIndex} | {queryStart}";
 
             ListViewItem entry = new(queryData[0][e.ItemIndex % queryLength]);
 
@@ -115,22 +130,65 @@ namespace WumboLauncher
             e.Item = entry;
         }
 
-        // Launch entry (PLACEHOLDER)
-        private void ArchiveList_itemClick(object sender, EventArgs e)
+        // Display information about selected entry
+        private void ArchiveList_itemSelect(object sender, EventArgs e)
         {
-            int entryIndex = ((ListView)sender).SelectedIndices[0];
+            ListView.SelectedIndexCollection selectedIndices = ArchiveList.SelectedIndices;
+
+            // This is the only way I can grab the selected index without an error
+            int index = 0;
+            foreach (int tempIndex in selectedIndices)
+                index = tempIndex;
+            
+            List<string> metadataInputs = new()
+            {
+                "title",
+                "alternateTitles",
+                "series",
+                "developer",
+                "publisher",
+                "source"
+            };
+            List<string> metadataOutput = new(metadataInputs.Count);
+
+            foreach (string input in metadataInputs)
+            {
+                metadataOutput.Add(DatabaseQuery(
+                    $"SELECT {input} FROM game " +
+                    $"WHERE library = '{queryLibrary}'" +
+                    $"ORDER BY {queryOrderBy} {queryDirection} " +
+                    $"LIMIT {index}, 1"
+                )[0]);
+            }
+
+            ArchiveEntryInfo.Rtf = @"{\rtf1\ansi " +
+                @"\b Title: \b0" + metadataOutput[0] + @"\line" +
+                @"\b Alternate titles: \b0" + metadataOutput[1] + @"\line" +
+                @"\b Series: \b0" + metadataOutput[2] + @"\line" +
+                @"\b Developer: \b0" + metadataOutput[3] + @"\line" +
+                @"\b Publisher: \b0" + metadataOutput[4] + @"\line" +
+                @"\b Source: \b0" + metadataOutput[5] + "}";
+            
+        }
+
+        // Launch selected entry (PLACEHOLDER)
+        private void ArchiveList_itemAccess(object sender, EventArgs e)
+        {
+            int entryIndex = ArchiveList.SelectedIndices[0];
 
             MessageBox.Show(DatabaseQuery(
-                $"SELECT id FROM game " + 
-                $"ORDER BY {queryOrderBy} {queryDirection} " + 
+                $"SELECT id FROM game " +
+                $"WHERE library = '{queryLibrary}'" +
+                $"ORDER BY {queryOrderBy} {queryDirection} " +
                 $"LIMIT {entryIndex}, 1"
             )[0], DatabaseQuery(
                 $"SELECT title FROM game " +
+                $"WHERE library = '{queryLibrary}'" +
                 $"ORDER BY {queryOrderBy} {queryDirection} " +
                 $"LIMIT {entryIndex}, 1"
             )[0]);
         }
-        
+
         // Update columnWidths in case column is changed manually
         private void ArchiveList_columnChanged(object sender, ColumnWidthChangedEventArgs e)
         {
@@ -176,7 +234,7 @@ namespace WumboLauncher
 
             if (File.Exists(DatabasePathInput.Text))
             {
-                using (FileStream fileStream = new(DatabasePathInput.Text, FileMode.Open, FileAccess.Read))
+                using (FileStream fileStream = new(DatabasePathInput.Text, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     fileStream.Read(header, 0, 16);
 
                 if (System.Text.Encoding.ASCII.GetString(header).Contains("SQLite format"))
@@ -187,7 +245,7 @@ namespace WumboLauncher
                     return;
                 }
             }
-            
+
             MessageBox.Show("Invalid database!", "Error");
 
             DatabasePathInput.Text = databasePath;
@@ -197,10 +255,9 @@ namespace WumboLauncher
         private void RefreshDatabase()
         {
             queryStart = 0;
-            queryData.Clear();
-
+            
             ArchiveList.VirtualListSize = 0;
-            ArchiveList.VirtualListSize = Convert.ToInt32(DatabaseQuery("SELECT COUNT(id) FROM game")[0]);
+            ArchiveList.VirtualListSize = Convert.ToInt32(DatabaseQuery($"SELECT COUNT(id) FROM game WHERE library = '{queryLibrary}'")[0]);
         }
 
         // Add columns from columnNames to list and get width for later
@@ -218,6 +275,8 @@ namespace WumboLauncher
         // Resize columns proportional to new list size
         private void ScaleColumns()
         {
+            Main.ActiveForm.Text = ArchiveList.ClientSize.Width.ToString();
+
             for (int i = 0; i < ArchiveList.Columns.Count; i++)
             {
                 columnWidths[i] *= (double)ArchiveList.ClientSize.Width / prevWidth;

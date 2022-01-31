@@ -29,19 +29,22 @@
         private void InitializeComponent()
         {
             this.ArchiveLayout = new System.Windows.Forms.TableLayoutPanel();
-            this.DebugLabel = new System.Windows.Forms.Label();
             this.ArchiveList = new System.Windows.Forms.ListView();
             this.ResetColumnsButton = new System.Windows.Forms.Button();
+            this.DebugLabel = new System.Windows.Forms.Label();
+            this.ArchiveEntryInfo = new System.Windows.Forms.RichTextBox();
             this.TabControl = new System.Windows.Forms.TabControl();
             this.HomeTab = new System.Windows.Forms.TabPage();
-            this.DatabasePathContainer = new System.Windows.Forms.Panel();
+            this.DatabasePathContainer = new System.Windows.Forms.FlowLayoutPanel();
             this.DatabasePathLabel = new System.Windows.Forms.Label();
             this.DatabasePathInput = new System.Windows.Forms.TextBox();
+            this.DatabasePathButton = new System.Windows.Forms.Button();
             this.ArchiveTab = new System.Windows.Forms.TabPage();
             this.ButtonContainer = new System.Windows.Forms.FlowLayoutPanel();
             this.HelpButton = new System.Windows.Forms.Button();
             this.SettingsButton = new System.Windows.Forms.Button();
             this.Container = new System.Windows.Forms.Panel();
+            this.DatabasePathDialog = new System.Windows.Forms.OpenFileDialog();
             this.ArchiveLayout.SuspendLayout();
             this.TabControl.SuspendLayout();
             this.HomeTab.SuspendLayout();
@@ -57,9 +60,10 @@
             this.ArchiveLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
             this.ArchiveLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.ArchiveLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
-            this.ArchiveLayout.Controls.Add(this.DebugLabel, 2, 0);
             this.ArchiveLayout.Controls.Add(this.ArchiveList, 1, 0);
             this.ArchiveLayout.Controls.Add(this.ResetColumnsButton, 1, 1);
+            this.ArchiveLayout.Controls.Add(this.DebugLabel, 0, 0);
+            this.ArchiveLayout.Controls.Add(this.ArchiveEntryInfo, 2, 0);
             this.ArchiveLayout.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveLayout.Location = new System.Drawing.Point(3, 3);
             this.ArchiveLayout.Name = "ArchiveLayout";
@@ -68,14 +72,6 @@
             this.ArchiveLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
             this.ArchiveLayout.Size = new System.Drawing.Size(1244, 685);
             this.ArchiveLayout.TabIndex = 3;
-            // 
-            // DebugLabel
-            // 
-            this.DebugLabel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.DebugLabel.Location = new System.Drawing.Point(947, 0);
-            this.DebugLabel.Name = "DebugLabel";
-            this.DebugLabel.Size = new System.Drawing.Size(294, 15);
-            this.DebugLabel.TabIndex = 4;
             // 
             // ArchiveList
             // 
@@ -96,8 +92,9 @@
             this.ArchiveList.VirtualMode = true;
             this.ArchiveList.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.ArchiveList_columnClick);
             this.ArchiveList.ColumnWidthChanged += new System.Windows.Forms.ColumnWidthChangedEventHandler(this.ArchiveList_columnChanged);
+            this.ArchiveList.ItemActivate += new System.EventHandler(this.ArchiveList_itemAccess);
             this.ArchiveList.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.ArchiveList_retrieveItem);
-            this.ArchiveList.DoubleClick += new System.EventHandler(this.ArchiveList_itemClick);
+            this.ArchiveList.SelectedIndexChanged += new System.EventHandler(this.ArchiveList_itemSelect);
             this.ArchiveList.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ArchiveList_mouseMove);
             // 
             // ResetColumnsButton
@@ -114,6 +111,26 @@
             this.ResetColumnsButton.Text = "Adjust Columns";
             this.ResetColumnsButton.UseVisualStyleBackColor = true;
             this.ResetColumnsButton.Click += new System.EventHandler(this.AdjustColumnsButton_click);
+            // 
+            // DebugLabel
+            // 
+            this.DebugLabel.Dock = System.Windows.Forms.DockStyle.Top;
+            this.DebugLabel.Location = new System.Drawing.Point(3, 0);
+            this.DebugLabel.Name = "DebugLabel";
+            this.DebugLabel.Size = new System.Drawing.Size(294, 15);
+            this.DebugLabel.TabIndex = 4;
+            // 
+            // ArchiveEntryInfo
+            // 
+            this.ArchiveEntryInfo.BackColor = System.Drawing.SystemColors.Window;
+            this.ArchiveEntryInfo.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.ArchiveEntryInfo.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ArchiveEntryInfo.Location = new System.Drawing.Point(947, 3);
+            this.ArchiveEntryInfo.Name = "ArchiveEntryInfo";
+            this.ArchiveEntryInfo.ReadOnly = true;
+            this.ArchiveEntryInfo.Size = new System.Drawing.Size(294, 655);
+            this.ArchiveEntryInfo.TabIndex = 5;
+            this.ArchiveEntryInfo.Text = "";
             // 
             // TabControl
             // 
@@ -145,15 +162,19 @@
             // 
             this.DatabasePathContainer.Controls.Add(this.DatabasePathLabel);
             this.DatabasePathContainer.Controls.Add(this.DatabasePathInput);
-            this.DatabasePathContainer.Location = new System.Drawing.Point(4, 4);
+            this.DatabasePathContainer.Controls.Add(this.DatabasePathButton);
+            this.DatabasePathContainer.Dock = System.Windows.Forms.DockStyle.Top;
+            this.DatabasePathContainer.Location = new System.Drawing.Point(3, 3);
             this.DatabasePathContainer.Name = "DatabasePathContainer";
-            this.DatabasePathContainer.Size = new System.Drawing.Size(576, 30);
+            this.DatabasePathContainer.Padding = new System.Windows.Forms.Padding(6);
+            this.DatabasePathContainer.Size = new System.Drawing.Size(1244, 40);
             this.DatabasePathContainer.TabIndex = 2;
             // 
             // DatabasePathLabel
             // 
+            this.DatabasePathLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.DatabasePathLabel.AutoSize = true;
-            this.DatabasePathLabel.Location = new System.Drawing.Point(3, 6);
+            this.DatabasePathLabel.Location = new System.Drawing.Point(9, 13);
             this.DatabasePathLabel.Name = "DatabasePathLabel";
             this.DatabasePathLabel.Size = new System.Drawing.Size(156, 15);
             this.DatabasePathLabel.TabIndex = 1;
@@ -161,11 +182,21 @@
             // 
             // DatabasePathInput
             // 
-            this.DatabasePathInput.Location = new System.Drawing.Point(189, 3);
+            this.DatabasePathInput.Location = new System.Drawing.Point(171, 9);
             this.DatabasePathInput.Name = "DatabasePathInput";
             this.DatabasePathInput.Size = new System.Drawing.Size(384, 23);
             this.DatabasePathInput.TabIndex = 0;
             this.DatabasePathInput.Text = "Data\\flashpoint.sqlite";
+            // 
+            // DatabasePathButton
+            // 
+            this.DatabasePathButton.Location = new System.Drawing.Point(561, 9);
+            this.DatabasePathButton.Name = "DatabasePathButton";
+            this.DatabasePathButton.Size = new System.Drawing.Size(75, 23);
+            this.DatabasePathButton.TabIndex = 1;
+            this.DatabasePathButton.Text = "Browse";
+            this.DatabasePathButton.UseVisualStyleBackColor = true;
+            this.DatabasePathButton.Click += new System.EventHandler(this.DatabasePathButton_click);
             // 
             // ArchiveTab
             // 
@@ -234,6 +265,11 @@
             this.Container.Size = new System.Drawing.Size(1264, 729);
             this.Container.TabIndex = 0;
             // 
+            // DatabasePathDialog
+            // 
+            this.DatabasePathDialog.FileName = "openFileDialog1";
+            this.DatabasePathDialog.Filter = "SQLite database|*.sqlite";
+            // 
             // Main
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -267,8 +303,11 @@
         private Button HelpButton;
         private Button ResetColumnsButton;
         private Label DebugLabel;
-        private Panel DatabasePathContainer;
         private Label DatabasePathLabel;
         private TextBox DatabasePathInput;
+        private FlowLayoutPanel DatabasePathContainer;
+        private Button DatabasePathButton;
+        private OpenFileDialog DatabasePathDialog;
+        private RichTextBox ArchiveEntryInfo;
     }
 }
