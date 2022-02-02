@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using System.Text;
 
 namespace WumboLauncher
 {
@@ -14,16 +15,31 @@ namespace WumboLauncher
          +-----------*/
 
         // Previous width of the list
-        private int prevWidth;
+        int prevWidth;
+        // Index of currently-selected item
+        int currentIndex = 0;
         // Calculated column widths before conversion to int
         List<double> columnWidths = new();
-        // Column names to restore from when sort direction arrow is cleared
-        string[,] columnNames =
+        string[,] metadataNames =
         {
             { "Title", "title" },
+            { "Alternate Titles", "alternateTitles" },
+            { "Series", "series" },
             { "Developer", "developer" },
-            { "Publisher", "publisher" }
+            { "Publisher", "publisher" },
+            { "Source", "source" },
+            { "Release Date", "releaseDate" },
+            { "Platform", "platform" },
+            { "Version", "version" },
+            { "Tags", "tagsStr" },
+            { "Language", "language" },
+            { "Play Mode", "playMode" },
+            { "Status", "status" },
+            { "Notes", "notes" },
+            { "Original Description", "originalDescription" }
         };
+        // Indices of metadataNames items to be used for displaying columns
+        int[] columnIndices = { 0, 3, 4 };
         // Path to Flashpoint database
         string databasePath = "";
         // Query fragments used to fetch entries
@@ -53,19 +69,25 @@ namespace WumboLauncher
 
         private void Main_load(object sender, EventArgs e)
         {
-            for (int i = 0; i < columnNames.GetLength(0); i++)
+            foreach (int _ in columnIndices)
                 queryData.Add(Enumerable.Repeat("", queryLength).ToList());
         }
 
-        // Scale column widths to list width
         private void Main_resize(object sender, EventArgs e)
         {
+            // Scale column widths to list width
             if (columnChanged)
                 ScaleColumns();
             else
                 AdjustColumns();
 
             prevWidth = ArchiveList.ClientSize.Width;
+
+            // Resize metadata textbox to new height
+            ArchiveInfoData.Height =
+                ArchiveInfoContainer.Height -
+                ArchiveInfoDeveloper.Height -
+                ArchiveInfoTitle.Height - 14;
         }
 
         private void DatabasePathButton_click(object sender, EventArgs e)
@@ -109,9 +131,9 @@ namespace WumboLauncher
 
                 List<List<string>> tempData = new();
 
-                for (int i = 0; i < columnNames.GetLength(0); i++)
+                foreach (int i in columnIndices)
                     tempData.Add(DatabaseQuery(
-                        $"SELECT {columnNames[i, 1]} FROM game " +
+                        $"SELECT {metadataNames[i, 1]} FROM game " +
                         $"WHERE library = '{queryLibrary}'" +
                         $"ORDER BY {queryOrderBy} {queryDirection} " +
                         $"LIMIT {queryStart}, {queryLength}"
@@ -120,11 +142,9 @@ namespace WumboLauncher
                 queryData = tempData;
             }
 
-            DebugLabel.Text = $"{e.ItemIndex} | {queryStart}";
-
             ListViewItem entry = new(queryData[0][e.ItemIndex % queryLength]);
 
-            for (int i = 1; i < columnNames.GetLength(0); i++)
+            for (int i = 1; i < columnIndices.Length; i++)
                 entry.SubItems.Add(queryData[i][e.ItemIndex % queryLength]);
 
             e.Item = entry;
@@ -136,39 +156,46 @@ namespace WumboLauncher
             ListView.SelectedIndexCollection selectedIndices = ArchiveList.SelectedIndices;
 
             // This is the only way I can grab the selected index without an error
-            int index = 0;
-            foreach (int tempIndex in selectedIndices)
-                index = tempIndex;
+            foreach (int index in selectedIndices)
+                currentIndex = index;
             
-            List<string> metadataInputs = new()
-            {
-                "title",
-                "alternateTitles",
-                "series",
-                "developer",
-                "publisher",
-                "source"
-            };
-            List<string> metadataOutput = new(metadataInputs.Count);
+            List<string> metadataOutput = new(metadataNames.GetLength(0));
 
-            foreach (string input in metadataInputs)
-            {
+            for (int i = 0; i < metadataNames.GetLength(0); i++)
                 metadataOutput.Add(DatabaseQuery(
-                    $"SELECT {input} FROM game " +
+                    $"SELECT {metadataNames[i, 1]} FROM game " +
                     $"WHERE library = '{queryLibrary}'" +
                     $"ORDER BY {queryOrderBy} {queryDirection} " +
-                    $"LIMIT {index}, 1"
+                    $"LIMIT {currentIndex}, 1"
                 )[0]);
-            }
 
-            ArchiveEntryInfo.Rtf = @"{\rtf1\ansi " +
-                @"\b Title: \b0" + metadataOutput[0] + @"\line" +
-                @"\b Alternate titles: \b0" + metadataOutput[1] + @"\line" +
-                @"\b Series: \b0" + metadataOutput[2] + @"\line" +
-                @"\b Developer: \b0" + metadataOutput[3] + @"\line" +
-                @"\b Publisher: \b0" + metadataOutput[4] + @"\line" +
-                @"\b Source: \b0" + metadataOutput[5] + "}";
-            
+            ArchiveInfoTitle.Text = metadataOutput[0];
+
+            if (metadataOutput[3] != "")
+                ArchiveInfoDeveloper.Text = $"by {metadataOutput[3]}";
+            else
+                ArchiveInfoDeveloper.Text = "by unknown developer";
+
+            // Leave the right amount of room for metadata
+            ArchiveInfoData.Height =
+                ArchiveInfoContainer.Height -
+                ArchiveInfoDeveloper.Height -
+                ArchiveInfoTitle.Height - 14;
+
+            string entryData = @"{\rtf1 ";
+
+            for (int i = 1; i < metadataOutput.Count; i++)
+                if (metadataOutput[i] != "")
+                {
+                    if (metadataNames[i, 1] == "notes" || metadataNames[i, 1] == "originalDescription")
+                        entryData += $"\\line\\b {metadataNames[i, 0]}:\\line\\b0 {ToUnicode(metadataOutput[i])}\\line";
+                    else
+                        entryData += $"\\b {metadataNames[i, 0]}: \\b0 {ToUnicode(metadataOutput[i])}\\line";
+                }
+
+            entryData += "}";
+
+            ArchiveInfoData.Rtf = entryData;
         }
 
         // Launch selected entry (PLACEHOLDER)
@@ -204,14 +231,14 @@ namespace WumboLauncher
         // Automatically sort clicked column
         private void ArchiveList_columnClick(object sender, ColumnClickEventArgs e)
         {
-            queryOrderBy = columnNames[e.Column, 1];
+            queryOrderBy = metadataNames[columnIndices[e.Column], 1];
             queryDirection = queryDirection == "DESC" ? "ASC" : "DESC";
 
             for (int i = 0; i < ArchiveList.Columns.Count; i++)
-                ArchiveList.Columns[i].Text = columnNames[i, 0];
+                ArchiveList.Columns[i].Text = metadataNames[columnIndices[i], 0];
 
             string arrow = char.ConvertFromUtf32(queryDirection == "ASC" ? 0x2193 : 0x2191);
-            ArchiveList.Columns[e.Column].Text = $"{columnNames[e.Column, 0]}  {arrow}";
+            ArchiveList.Columns[e.Column].Text = $"{metadataNames[columnIndices[e.Column], 0]}  {arrow}";
 
             RefreshDatabase();
         }
@@ -221,6 +248,22 @@ namespace WumboLauncher
 
         // Reroute Adjust Columns button to its appropriate function
         private void AdjustColumnsButton_click(object sender, EventArgs e) { AdjustColumns(); }
+
+        // Change library when left panel radio is changed
+        private void ArchiveRadio_checkedChanged(object sender, EventArgs e)
+        {
+            RadioButton checkedRadio = (RadioButton)sender;
+
+            if (checkedRadio.Checked)
+            {
+                if (checkedRadio.Name == "ArchiveRadioGames")
+                    queryLibrary = "arcade";
+                else if (checkedRadio.Name == "ArchiveRadioAnimations")
+                    queryLibrary = "theatre";
+
+                RefreshDatabase();
+            }
+        }
 
         /*-----------+
          | FUNCTIONS |
@@ -237,7 +280,7 @@ namespace WumboLauncher
                 using (FileStream fileStream = new(DatabasePathInput.Text, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     fileStream.Read(header, 0, 16);
 
-                if (System.Text.Encoding.ASCII.GetString(header).Contains("SQLite format"))
+                if (Encoding.ASCII.GetString(header).Contains("SQLite format"))
                 {
                     databasePath = DatabasePathInput.Text;
                     RefreshDatabase();
@@ -252,6 +295,25 @@ namespace WumboLauncher
             TabControl.SelectTab(0);
         }
 
+        // Make strings suitable for RTF text box
+        // Adapted from https://stackoverflow.com/a/30363185
+        static string ToUnicode(string data)
+        {
+            var escapedData = new StringBuilder();
+
+            foreach (char character in data)
+            {
+                if (character == '\\' || character == '{' || character == '}')
+                    escapedData.Append(@"\" + character);
+                else if (character <= 0x7f)
+                    escapedData.Append(character);
+                else
+                    escapedData.Append(@"\u" + Convert.ToUInt32(character) + "?");
+            }
+
+            return escapedData.ToString().Replace("\n", @"\line ");
+        }
+
         private void RefreshDatabase()
         {
             queryStart = 0;
@@ -263,9 +325,9 @@ namespace WumboLauncher
         // Add columns from columnNames to list and get width for later
         private void InitializeColumns()
         {
-            for (int i = 0; i < columnNames.GetLength(0); i++)
+            for (int i = 0; i < columnIndices.Length; i++)
             {
-                ArchiveList.Columns.Add(columnNames[i, 0]);
+                ArchiveList.Columns.Add(metadataNames[columnIndices[i], 0]);
                 columnWidths.Add(ArchiveList.Columns[i].Width);
             }
 
@@ -275,8 +337,6 @@ namespace WumboLauncher
         // Resize columns proportional to new list size
         private void ScaleColumns()
         {
-            Main.ActiveForm.Text = ArchiveList.ClientSize.Width.ToString();
-
             for (int i = 0; i < ArchiveList.Columns.Count; i++)
             {
                 columnWidths[i] *= (double)ArchiveList.ClientSize.Width / prevWidth;
