@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.ArchiveLayout = new System.Windows.Forms.TableLayoutPanel();
+            this.PlayButton = new System.Windows.Forms.Button();
             this.ArchiveList = new System.Windows.Forms.ListView();
             this.ArchiveInfoContainer = new System.Windows.Forms.FlowLayoutPanel();
             this.ArchiveInfoTitle = new System.Windows.Forms.Label();
@@ -48,10 +49,6 @@
             this.AdjustColumnsButton = new System.Windows.Forms.Button();
             this.TabControl = new System.Windows.Forms.TabControl();
             this.HomeTab = new System.Windows.Forms.TabPage();
-            this.DatabasePathContainer = new System.Windows.Forms.FlowLayoutPanel();
-            this.DatabasePathLabel = new System.Windows.Forms.Label();
-            this.DatabasePathInput = new System.Windows.Forms.TextBox();
-            this.DatabasePathButton = new System.Windows.Forms.Button();
             this.ArchiveTab = new System.Windows.Forms.TabPage();
             this.ButtonContainer = new System.Windows.Forms.FlowLayoutPanel();
             this.HelpButton = new System.Windows.Forms.Button();
@@ -72,8 +69,6 @@
             this.ArchiveRadioHeader.SuspendLayout();
             this.ArchiveListFooter.SuspendLayout();
             this.TabControl.SuspendLayout();
-            this.HomeTab.SuspendLayout();
-            this.DatabasePathContainer.SuspendLayout();
             this.ArchiveTab.SuspendLayout();
             this.ButtonContainer.SuspendLayout();
             this.Container.SuspendLayout();
@@ -86,6 +81,7 @@
             this.ArchiveLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
             this.ArchiveLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.ArchiveLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
+            this.ArchiveLayout.Controls.Add(this.PlayButton, 2, 1);
             this.ArchiveLayout.Controls.Add(this.ArchiveList, 1, 0);
             this.ArchiveLayout.Controls.Add(this.ArchiveInfoContainer, 2, 0);
             this.ArchiveLayout.Controls.Add(this.ArchiveRadioContainer, 0, 0);
@@ -98,6 +94,23 @@
             this.ArchiveLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
             this.ArchiveLayout.Size = new System.Drawing.Size(1244, 685);
             this.ArchiveLayout.TabIndex = 3;
+            // 
+            // PlayButton
+            // 
+            this.PlayButton.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.PlayButton.FlatAppearance.BorderColor = System.Drawing.Color.Gainsboro;
+            this.PlayButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
+            this.PlayButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
+            this.PlayButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.PlayButton.Location = new System.Drawing.Point(953, 660);
+            this.PlayButton.Margin = new System.Windows.Forms.Padding(9, 5, 5, 1);
+            this.PlayButton.Name = "PlayButton";
+            this.PlayButton.Size = new System.Drawing.Size(286, 24);
+            this.PlayButton.TabIndex = 3;
+            this.PlayButton.Text = "Play";
+            this.PlayButton.UseVisualStyleBackColor = true;
+            this.PlayButton.Visible = false;
+            this.PlayButton.Click += new System.EventHandler(this.ArchiveList_itemAccess);
             // 
             // ArchiveList
             // 
@@ -345,7 +358,6 @@
             // 
             // HomeTab
             // 
-            this.HomeTab.Controls.Add(this.DatabasePathContainer);
             this.HomeTab.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.HomeTab.Location = new System.Drawing.Point(4, 28);
             this.HomeTab.Name = "HomeTab";
@@ -354,46 +366,6 @@
             this.HomeTab.TabIndex = 0;
             this.HomeTab.Text = "Home";
             this.HomeTab.UseVisualStyleBackColor = true;
-            // 
-            // DatabasePathContainer
-            // 
-            this.DatabasePathContainer.Controls.Add(this.DatabasePathLabel);
-            this.DatabasePathContainer.Controls.Add(this.DatabasePathInput);
-            this.DatabasePathContainer.Controls.Add(this.DatabasePathButton);
-            this.DatabasePathContainer.Dock = System.Windows.Forms.DockStyle.Top;
-            this.DatabasePathContainer.Location = new System.Drawing.Point(3, 3);
-            this.DatabasePathContainer.Name = "DatabasePathContainer";
-            this.DatabasePathContainer.Padding = new System.Windows.Forms.Padding(6);
-            this.DatabasePathContainer.Size = new System.Drawing.Size(1244, 40);
-            this.DatabasePathContainer.TabIndex = 2;
-            // 
-            // DatabasePathLabel
-            // 
-            this.DatabasePathLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.DatabasePathLabel.AutoSize = true;
-            this.DatabasePathLabel.Location = new System.Drawing.Point(9, 13);
-            this.DatabasePathLabel.Name = "DatabasePathLabel";
-            this.DatabasePathLabel.Size = new System.Drawing.Size(140, 15);
-            this.DatabasePathLabel.TabIndex = 1;
-            this.DatabasePathLabel.Text = "Path to Flashpoint folder:";
-            // 
-            // DatabasePathInput
-            // 
-            this.DatabasePathInput.Location = new System.Drawing.Point(155, 9);
-            this.DatabasePathInput.Name = "DatabasePathInput";
-            this.DatabasePathInput.Size = new System.Drawing.Size(384, 23);
-            this.DatabasePathInput.TabIndex = 0;
-            this.DatabasePathInput.Text = ".";
-            // 
-            // DatabasePathButton
-            // 
-            this.DatabasePathButton.Location = new System.Drawing.Point(545, 9);
-            this.DatabasePathButton.Name = "DatabasePathButton";
-            this.DatabasePathButton.Size = new System.Drawing.Size(75, 23);
-            this.DatabasePathButton.TabIndex = 1;
-            this.DatabasePathButton.Text = "Browse";
-            this.DatabasePathButton.UseVisualStyleBackColor = true;
-            this.DatabasePathButton.Click += new System.EventHandler(this.DatabasePathButton_click);
             // 
             // ArchiveTab
             // 
@@ -448,6 +420,7 @@
             this.SettingsButton.TabIndex = 0;
             this.SettingsButton.Text = "Settings";
             this.SettingsButton.UseVisualStyleBackColor = false;
+            this.SettingsButton.Click += new System.EventHandler(this.SettingsButton_click);
             // 
             // Container
             // 
@@ -502,14 +475,12 @@
             // LaunchEntry
             // 
             this.LaunchEntry.StartInfo.Domain = "";
-            this.LaunchEntry.StartInfo.FileName = "CLIFp.exe";
             this.LaunchEntry.StartInfo.LoadUserProfile = false;
             this.LaunchEntry.StartInfo.Password = null;
             this.LaunchEntry.StartInfo.StandardErrorEncoding = null;
             this.LaunchEntry.StartInfo.StandardInputEncoding = null;
             this.LaunchEntry.StartInfo.StandardOutputEncoding = null;
             this.LaunchEntry.StartInfo.UserName = "";
-            this.LaunchEntry.StartInfo.UseShellExecute = true;
             this.LaunchEntry.SynchronizingObject = this;
             // 
             // Main
@@ -533,9 +504,6 @@
             this.ArchiveRadioHeader.ResumeLayout(false);
             this.ArchiveListFooter.ResumeLayout(false);
             this.TabControl.ResumeLayout(false);
-            this.HomeTab.ResumeLayout(false);
-            this.DatabasePathContainer.ResumeLayout(false);
-            this.DatabasePathContainer.PerformLayout();
             this.ArchiveTab.ResumeLayout(false);
             this.ButtonContainer.ResumeLayout(false);
             this.Container.ResumeLayout(false);
@@ -556,10 +524,6 @@
         private Panel Container;
         private Button HelpButton;
         private Button AdjustColumnsButton;
-        private Label DatabasePathLabel;
-        private TextBox DatabasePathInput;
-        private FlowLayoutPanel DatabasePathContainer;
-        private Button DatabasePathButton;
         private FlowLayoutPanel ArchiveInfoContainer;
         private Label ArchiveInfoTitle;
         private Label ArchiveInfoDeveloper;
@@ -579,5 +543,6 @@
         private System.Diagnostics.Process LaunchEntry;
         private Panel ArchiveListFooter;
         private Label EntryCountLabel;
+        private Button PlayButton;
     }
 }

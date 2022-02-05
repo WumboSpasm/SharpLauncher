@@ -19,6 +19,8 @@ namespace WumboLauncher
         int prevWidth;
         // Index of currently-selected item
         int selectedIndex = 0;
+        // Handle launcher config
+        LauncherConfig Config = new();
         // Calculated column widths before conversion to int
         List<double> columnWidths = new();
         string[,] metadataNames =
@@ -44,10 +46,6 @@ namespace WumboLauncher
         // Characters that are safe to use in searches
         // Hopefully to be replaced with a better solution in the future
         string acceptableChars = "abcdefghijklmnopqrstuvwxyz1234567890 ";
-        // Path to Flashpoint database
-        string flashpointPath = ".";
-        // Path to Flashpoint server
-        string flashpointServer = "http://infinity.unstable.life/Flashpoint";
         // Query fragments used to fetch entries
         string queryLibrary = "arcade";
         string queryOrderBy = "title";
@@ -65,8 +63,8 @@ namespace WumboLauncher
          *  Anything else risks an "index out of range" exception
          */
         List<List<string>> queryData = new();
-        // Check if Archive tab has been clicked
-        bool archiveTabClicked = false;
+        // Keep track of whether or not list needs to be refreshed
+        bool pendingRefresh = true;
         // Check if column width has been changed manually
         bool columnChanged = false;
 
@@ -78,6 +76,14 @@ namespace WumboLauncher
         {
             foreach (int _ in columnIndices)
                 queryData.Add(Enumerable.Repeat("", queryLength).ToList());
+
+            // Create configuration file if one doesn't exist
+            if (File.Exists("config.fp") && File.ReadAllText("config.fp").Length > 0)
+            {
+                Config.Read();
+            }
+            else
+                Config.Write();
 
             // Why Visual Studio doesn't let me do this the regular way, I don't know
             SearchBox.AutoSize = false;
@@ -98,15 +104,6 @@ namespace WumboLauncher
             ArchiveInfoData.Height = GetInfoHeight();
         }
 
-        // Open file dialog when Flashpoint path Browse button is clicked
-        private void DatabasePathButton_click(object sender, EventArgs e)
-        {
-            CommonOpenFileDialog DatabasePathDialog = new() { IsFolderPicker = true };
-
-            if (DatabasePathDialog.ShowDialog() == CommonFileDialogResult.Ok)
-                DatabasePathInput.Text = DatabasePathDialog.FileName;
-        }
-
         // Initialize list when Archive tab is accessed for the first time
         // Update column widths if window is resized while in a different tab
         private void TabControl_click(object sender, MouseEventArgs e)
@@ -115,11 +112,12 @@ namespace WumboLauncher
 
             if (clickedTab.SelectedIndex == 1)
             {
-                if (DatabasePathInput.Text != flashpointPath || !archiveTabClicked)
+                if (pendingRefresh)
+                {
+                    pendingRefresh = false;
+
                     ValidateDatabase();
 
-                if (!archiveTabClicked)
-                {
                     InitializeColumns();
                     AdjustColumns();
 
@@ -127,8 +125,6 @@ namespace WumboLauncher
                         ArchiveRadioGames.Checked = true;
                     else if (queryLibrary == "theatre")
                         ArchiveRadioAnimations.Checked = true;
-
-                    archiveTabClicked = true;
                 }
                 else if (columnChanged)
                     ScaleColumns();
@@ -149,6 +145,22 @@ namespace WumboLauncher
 
         // Execute search if Search button is clicked
         private void SearchButton_click(object sender, EventArgs e) { ExecuteSearchQuery(); }
+
+        // Display setttings menu when Settings button is clicked
+        private void SettingsButton_click(object sender, EventArgs e)
+        {
+            Settings SettingsMenu = new Settings();
+            SettingsMenu.FormClosed += new FormClosedEventHandler(SettingsMenu_formClosed);
+
+            SettingsMenu.ShowDialog();
+        }
+
+        private void SettingsMenu_formClosed(object? sender, FormClosedEventArgs e)
+        {
+            Config.Read();
+            
+            ValidateDatabase();
+        }
 
         // Add items to list and improve performance by using larger, less frequent SQL queries
         private void ArchiveList_retrieveItem(object sender, RetrieveVirtualItemEventArgs e)
@@ -237,29 +249,38 @@ namespace WumboLauncher
 
                 if (folder == "Logos")
                 {
-                    if (File.Exists(flashpointPath + imagePath))
-                        ArchiveImagesLogo.Image = Image.FromFile(flashpointPath + imagePath);
+                    if (File.Exists(Config.Data[0] + imagePath))
+                        ArchiveImagesLogo.Image = Image.FromFile(Config.Data[0] + imagePath);
                     else
-                        ArchiveImagesLogo.ImageLocation = flashpointServer + imagePath;
+                        ArchiveImagesLogo.ImageLocation = Config.Data[2] + imagePath;
                 }
                 else if (folder == "Screenshots")
                 {
-                    if (File.Exists(flashpointPath + imagePath))
-                        ArchiveImagesScreenshot.Image = Image.FromFile(flashpointPath + imagePath);
+                    if (File.Exists(Config.Data[0] + imagePath))
+                        ArchiveImagesScreenshot.Image = Image.FromFile(Config.Data[0] + imagePath);
                     else
-                        ArchiveImagesScreenshot.ImageLocation = flashpointServer + imagePath;
+                        ArchiveImagesScreenshot.ImageLocation = Config.Data[2] + imagePath;
                 }
             }
+
+            // Footer
+
+            PlayButton.Visible = true;
         }
 
-        // Launch selected entry (PLACEHOLDER)
+        // Launch selected entry
         private void ArchiveList_itemAccess(object sender, EventArgs e)
         {
-            int entryIndex = ArchiveList.SelectedIndices[0];
+            if (File.Exists(Config.Data[1]))
+            {
+                int entryIndex = ArchiveList.SelectedIndices[0];
 
-            LaunchEntry.StartInfo.WorkingDirectory = flashpointPath + @"\Launcher";
-            LaunchEntry.StartInfo.Arguments = $"play -i {DatabaseQuery(GetQuery("id", entryIndex))[0]}";
-            LaunchEntry.Start();
+                LaunchEntry.StartInfo.FileName = Config.Data[1];
+                LaunchEntry.StartInfo.Arguments = $"play -i {DatabaseQuery(GetQuery("id", entryIndex))[0]}";
+                LaunchEntry.Start();
+            }
+            else
+                MessageBox.Show("CLIFp not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         // Update columnWidths in case column is changed manually
@@ -307,7 +328,7 @@ namespace WumboLauncher
                 else if (checkedRadio.Name == "ArchiveRadioAnimations")
                     queryLibrary = "theatre";
 
-                if (archiveTabClicked)
+                if (!pendingRefresh)
                     RefreshDatabase();
             }
         }
@@ -387,11 +408,11 @@ namespace WumboLauncher
             RefreshDatabase();
         }
 
-        // Check if specified database exists and is an SQLite database
+        // Check if database exists and is an SQLite database
         // Adapted from https://stackoverflow.com/a/70291358
         private void ValidateDatabase()
         {
-            string databasePath = DatabasePathInput.Text + @"\Data\flashpoint.sqlite";
+            string databasePath = Config.Data[0] + @"\Data\flashpoint.sqlite";
             byte[] header = new byte[16];
 
             if (File.Exists(databasePath))
@@ -401,8 +422,17 @@ namespace WumboLauncher
 
                 if (Encoding.ASCII.GetString(header).Contains("SQLite format"))
                 {
-                    flashpointPath = DatabasePathInput.Text;
                     RefreshDatabase();
+
+                    // Reset right panel
+                    ArchiveInfoTitle.Text = "";
+                    ArchiveInfoDeveloper.Text = "";
+                    ArchiveInfoData.Rtf = "";
+                    ArchiveInfoData.Height = 0;
+                    ArchiveImagesContainer.Visible = false;
+                    ArchiveImagesLogo.Image = null;
+                    ArchiveImagesScreenshot.Image = null;
+                    PlayButton.Visible = false;
 
                     return;
                 }
@@ -410,7 +440,6 @@ namespace WumboLauncher
 
             MessageBox.Show("Invalid database!", "Error");
 
-            DatabasePathInput.Text = flashpointPath;
             TabControl.SelectTab(0);
         }
 
@@ -422,7 +451,7 @@ namespace WumboLauncher
             string entryCount = DatabaseQuery(
                 $"SELECT COUNT(id) FROM game " +
                 $"WHERE library = '{queryLibrary}'" +
-                (querySearch != "" ? $"AND title LIKE '%{querySearch}%' ESCAPE '?'" : "")
+                (querySearch != "" ? $"AND title LIKE '%{querySearch}%'" : "")
             )[0];
 
             EntryCountLabel.Text = $"Displaying {entryCount} entr" + (entryCount == "1" ? "y" : "ies") + ".";
@@ -473,7 +502,7 @@ namespace WumboLauncher
         // Return array containing results of SQL query
         private List<string> DatabaseQuery(string query)
         {
-            SqliteConnection connection = new($"Data Source={flashpointPath}\\Data\\flashpoint.sqlite");
+            SqliteConnection connection = new($"Data Source={Config.Data[0]}\\Data\\flashpoint.sqlite");
             connection.Open();
 
             SqliteCommand command = new(query, connection);
