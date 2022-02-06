@@ -1,5 +1,4 @@
 using Microsoft.Data.Sqlite;
-using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Text;
 
 namespace WumboLauncher
@@ -17,8 +16,6 @@ namespace WumboLauncher
 
         // Previous width of the list
         int prevWidth;
-        // Index of currently-selected item
-        int selectedIndex = 0;
         // Handle launcher config
         LauncherConfig Config = new();
         // Calculated column widths before conversion to int
@@ -43,9 +40,8 @@ namespace WumboLauncher
         };
         // Indices of metadataNames items to be used for displaying columns
         int[] columnIndices = { 0, 3, 4 };
-        // Characters that are safe to use in searches
-        // Hopefully to be replaced with a better solution in the future
-        string acceptableChars = "abcdefghijklmnopqrstuvwxyz1234567890 ";
+        // Characters that cause issues in searches
+        string unsafeChars = "%_\'\"";
         // Query fragments used to fetch entries
         string queryLibrary = "arcade";
         string queryOrderBy = "title";
@@ -106,26 +102,14 @@ namespace WumboLauncher
 
         // Initialize list when Archive tab is accessed for the first time
         // Update column widths if window is resized while in a different tab
-        private void TabControl_click(object sender, MouseEventArgs e)
+        private void TabControl_tabChanged(object sender, EventArgs e)
         {
-            TabControl clickedTab = (TabControl)sender;
+            int clickedTab = ((TabControl)sender).SelectedIndex;
 
-            if (clickedTab.SelectedIndex == 1)
+            if (clickedTab == 1)
             {
                 if (pendingRefresh)
-                {
-                    pendingRefresh = false;
-
-                    ValidateDatabase();
-
-                    InitializeColumns();
-                    AdjustColumns();
-
-                    if (queryLibrary == "arcade")
-                        ArchiveRadioGames.Checked = true;
-                    else if (queryLibrary == "theatre")
-                        ArchiveRadioAnimations.Checked = true;
-                }
+                    InitializeDatabase();
                 else if (columnChanged)
                     ScaleColumns();
                 else
@@ -155,11 +139,15 @@ namespace WumboLauncher
             SettingsMenu.ShowDialog();
         }
 
+        // Reload database when 
         private void SettingsMenu_formClosed(object? sender, FormClosedEventArgs e)
         {
             Config.Read();
-            
-            ValidateDatabase();
+
+            if (TabControl.SelectedIndex == 1)
+                InitializeDatabase();
+            else
+                pendingRefresh = true;
         }
 
         // Add items to list and improve performance by using larger, less frequent SQL queries
@@ -191,17 +179,26 @@ namespace WumboLauncher
         // Display information about selected entry
         private void ArchiveList_itemSelect(object sender, EventArgs e)
         {
-            ListView.SelectedIndexCollection selectedIndices = ArchiveList.SelectedIndices;
+            ListView.SelectedIndexCollection selectedIndices = ((ListView)sender).SelectedIndices;
 
-            // This is the only way I can grab the selected index without an error
-            foreach (int index in selectedIndices)
-                selectedIndex = index;
-
+            /*
+             *  I need to figure out how to clear the info panel only when an item is deselected
+             *  Otherwise, the list flickers every time a new item is selected
+             *  
+             *  SelectedIndexChanged fires twice, returning empty SelectedIndices the first time
+             *  SelectedItemsChanged fires once but doesn't fire when item is deselected
+             */
+            if (selectedIndices.Count == 0)
+            {
+                ClearInfoPanel();
+                return;
+            }
+            
             List<string> metadataOutput = new(metadataNames.GetLength(0));
 
             for (int i = 0; i < metadataNames.GetLength(0); i++)
                 metadataOutput.Add(
-                    DatabaseQuery(GetQuery(metadataNames[i, 1], selectedIndex))[0]
+                    DatabaseQuery(GetQuery(metadataNames[i, 1], selectedIndices[0]))[0]
                 );
 
             // Header
@@ -234,31 +231,36 @@ namespace WumboLauncher
 
             // Images
 
-            ArchiveImagesLogo.Image = null;
-            ArchiveImagesScreenshot.Image = null;
-
             if (!ArchiveImagesContainer.Visible)
                 ArchiveImagesContainer.Visible = true;
 
-            string entryId = DatabaseQuery(GetQuery("id", selectedIndex))[0];
+            string entryId = DatabaseQuery(GetQuery("id", selectedIndices[0]))[0];
             string[] imageFolders = { "Logos", "Screenshots" };
             foreach (string folder in imageFolders)
             {
                 string[] imageTree = { entryId.Substring(0, 2), entryId.Substring(2, 2) };
                 string imagePath = $"\\Data\\Images\\{folder}\\{imageTree[0]}\\{imageTree[1]}\\{entryId}.png";
 
-                if (folder == "Logos")
+                if (File.Exists(Config.Data[0] + imagePath))
                 {
-                    if (File.Exists(Config.Data[0] + imagePath))
+                    if (folder == "Logos")
+                    {
                         ArchiveImagesLogo.Image = Image.FromFile(Config.Data[0] + imagePath);
-                    else
-                        ArchiveImagesLogo.ImageLocation = Config.Data[2] + imagePath;
-                }
-                else if (folder == "Screenshots")
-                {
-                    if (File.Exists(Config.Data[0] + imagePath))
+                        ArchiveImagesLogo.Cursor = Cursors.Hand;
+                        ArchiveImagesLogo.Click += ArchiveImages_click;
+                    }
+                    else if (folder == "Screenshots")
+                    {
                         ArchiveImagesScreenshot.Image = Image.FromFile(Config.Data[0] + imagePath);
-                    else
+                        ArchiveImagesScreenshot.Cursor = Cursors.Hand;
+                        ArchiveImagesScreenshot.Click += ArchiveImages_click;
+                    }
+                }
+                else
+                {
+                    if (folder == "Logos")
+                        ArchiveImagesLogo.ImageLocation = Config.Data[2] + imagePath;
+                    else if (folder == "Screenshots")
                         ArchiveImagesScreenshot.ImageLocation = Config.Data[2] + imagePath;
                 }
             }
@@ -328,9 +330,15 @@ namespace WumboLauncher
                 else if (checkedRadio.Name == "ArchiveRadioAnimations")
                     queryLibrary = "theatre";
 
-                if (!pendingRefresh)
-                    RefreshDatabase();
+                RefreshDatabase();
             }
+        }
+
+        private void ArchiveImages_loadCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
+        {
+            PictureBox loadedImage = (PictureBox)sender;
+            loadedImage.Cursor = Cursors.Hand;
+            loadedImage.Click += ArchiveImages_click;
         }
 
         // Display picture viwwer 
@@ -345,7 +353,6 @@ namespace WumboLauncher
                 SizeMode = PictureBoxSizeMode.Zoom,
                 Image = ((PictureBox)sender).Name == "ArchiveImagesLogo" ? ArchiveImagesLogo.Image : ArchiveImagesScreenshot.Image,
             });
-            pictureViewer.ShowInTaskbar = false;
             pictureViewer.Show();
         }
 
@@ -398,19 +405,19 @@ namespace WumboLauncher
 
             foreach (char inputChar in SearchBox.Text.ToLower())
             {
-                if (acceptableChars.Contains(inputChar))
-                    safeQuery.Append(inputChar);
+                if (unsafeChars.Contains(inputChar))
+                    safeQuery.Append("_");
                 else
-                    safeQuery.Append('_');
+                    safeQuery.Append(inputChar);
             }
 
             querySearch = safeQuery.ToString();
             RefreshDatabase();
         }
 
-        // Check if database exists and is an SQLite database
+        // Check if database is valid and load if so
         // Adapted from https://stackoverflow.com/a/70291358
-        private void ValidateDatabase()
+        private void InitializeDatabase()
         {
             string databasePath = Config.Data[0] + @"\Data\flashpoint.sqlite";
             byte[] header = new byte[16];
@@ -424,28 +431,41 @@ namespace WumboLauncher
                 {
                     RefreshDatabase();
 
-                    // Reset right panel
-                    ArchiveInfoTitle.Text = "";
-                    ArchiveInfoDeveloper.Text = "";
-                    ArchiveInfoData.Rtf = "";
-                    ArchiveInfoData.Height = 0;
-                    ArchiveImagesContainer.Visible = false;
-                    ArchiveImagesLogo.Image = null;
-                    ArchiveImagesScreenshot.Image = null;
-                    PlayButton.Visible = false;
+                    // Add columns from columnNames to list and get width for later
+                    if (ArchiveList.Columns.Count != columnIndices.Length)
+                    {
+                        for (int i = 0; i < columnIndices.Length; i++)
+                        {
+                            ArchiveList.Columns.Add(metadataNames[columnIndices[i], 0]);
+                            columnWidths.Add(ArchiveList.Columns[i].Width);
+                        }
+
+                        prevWidth = ArchiveList.ClientSize.Width;
+                    }
+
+                    AdjustColumns();
+
+                    if (queryLibrary == "arcade")
+                        ArchiveRadioGames.Checked = true;
+                    else if (queryLibrary == "theatre")
+                        ArchiveRadioAnimations.Checked = true;
 
                     return;
                 }
             }
 
-            MessageBox.Show("Invalid database!", "Error");
+            ArchiveList.VirtualListSize = 0;
+            ClearInfoPanel();
 
+            MessageBox.Show("Database is either corrupted or missing!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             TabControl.SelectTab(0);
         }
 
         // Reload list and update entry count display
         private void RefreshDatabase()
         {
+            ClearInfoPanel();
+
             queryStart = 0;
 
             string entryCount = DatabaseQuery(
@@ -458,18 +478,6 @@ namespace WumboLauncher
 
             ArchiveList.VirtualListSize = 0;
             ArchiveList.VirtualListSize = Convert.ToInt32(entryCount);
-        }
-
-        // Add columns from columnNames to list and get width for later
-        private void InitializeColumns()
-        {
-            for (int i = 0; i < columnIndices.Length; i++)
-            {
-                ArchiveList.Columns.Add(metadataNames[columnIndices[i], 0]);
-                columnWidths.Add(ArchiveList.Columns[i].Width);
-            }
-
-            prevWidth = ArchiveList.ClientSize.Width;
         }
 
         // Resize columns proportional to new list size
@@ -497,6 +505,22 @@ namespace WumboLauncher
 
             if (columnChanged)
                 columnChanged = false;
+        }
+
+        private void ClearInfoPanel()
+        {
+            ArchiveInfoTitle.Text = "";
+            ArchiveInfoDeveloper.Text = "";
+            ArchiveInfoData.Rtf = "";
+            ArchiveInfoData.Height = 0;
+            ArchiveImagesContainer.Visible = false;
+            ArchiveImagesLogo.Image = null;
+            ArchiveImagesLogo.Cursor = Cursors.Default;
+            ArchiveImagesLogo.Click -= ArchiveImages_click;
+            ArchiveImagesScreenshot.Image = null;
+            ArchiveImagesScreenshot.Cursor = Cursors.Default;
+            ArchiveImagesScreenshot.Click -= ArchiveImages_click;
+            PlayButton.Visible = false;
         }
 
         // Return array containing results of SQL query

@@ -38,6 +38,17 @@ namespace WumboLauncher
         // Write values to file and close
         private void OKButton_Click(object sender, EventArgs e)
         {
+            if (!File.Exists(PathInput.Text + @"\Data\flashpoint.sqlite") || !File.Exists(CLIFpInput.Text))
+            {
+                DialogResult warningResult = MessageBox.Show(
+                    "One or more values are invalid. Continue?",
+                    "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation
+                );
+
+                if (warningResult == DialogResult.No)
+                    return;
+            }
+
             Config.Data[0] = PathInput.Text;
             Config.Data[1] = CLIFpInput.Text;
             Config.Data[2] = ServerInput.Text;

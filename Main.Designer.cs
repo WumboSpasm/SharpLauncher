@@ -47,6 +47,7 @@
             this.ArchiveListFooter = new System.Windows.Forms.Panel();
             this.EntryCountLabel = new System.Windows.Forms.Label();
             this.AdjustColumnsButton = new System.Windows.Forms.Button();
+            this.DebugLabel = new System.Windows.Forms.Label();
             this.TabControl = new System.Windows.Forms.TabControl();
             this.HomeTab = new System.Windows.Forms.TabPage();
             this.ArchiveTab = new System.Windows.Forms.TabPage();
@@ -86,6 +87,7 @@
             this.ArchiveLayout.Controls.Add(this.ArchiveInfoContainer, 2, 0);
             this.ArchiveLayout.Controls.Add(this.ArchiveRadioContainer, 0, 0);
             this.ArchiveLayout.Controls.Add(this.ArchiveListFooter, 1, 1);
+            this.ArchiveLayout.Controls.Add(this.DebugLabel, 0, 1);
             this.ArchiveLayout.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveLayout.Location = new System.Drawing.Point(3, 3);
             this.ArchiveLayout.Name = "ArchiveLayout";
@@ -209,7 +211,7 @@
             // 
             // ArchiveImagesLogo
             // 
-            this.ArchiveImagesLogo.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ArchiveImagesLogo.Cursor = System.Windows.Forms.Cursors.Default;
             this.ArchiveImagesLogo.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveImagesLogo.Location = new System.Drawing.Point(4, 20);
             this.ArchiveImagesLogo.Name = "ArchiveImagesLogo";
@@ -217,7 +219,7 @@
             this.ArchiveImagesLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.ArchiveImagesLogo.TabIndex = 0;
             this.ArchiveImagesLogo.TabStop = false;
-            this.ArchiveImagesLogo.Click += new System.EventHandler(this.ArchiveImages_click);
+            this.ArchiveImagesLogo.LoadCompleted += new System.ComponentModel.AsyncCompletedEventHandler(this.ArchiveImages_loadCompleted);
             // 
             // ArchiveImagesScreenshotContainer
             // 
@@ -232,7 +234,7 @@
             // 
             // ArchiveImagesScreenshot
             // 
-            this.ArchiveImagesScreenshot.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ArchiveImagesScreenshot.Cursor = System.Windows.Forms.Cursors.Default;
             this.ArchiveImagesScreenshot.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveImagesScreenshot.Location = new System.Drawing.Point(4, 20);
             this.ArchiveImagesScreenshot.Name = "ArchiveImagesScreenshot";
@@ -240,7 +242,7 @@
             this.ArchiveImagesScreenshot.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.ArchiveImagesScreenshot.TabIndex = 1;
             this.ArchiveImagesScreenshot.TabStop = false;
-            this.ArchiveImagesScreenshot.Click += new System.EventHandler(this.ArchiveImages_click);
+            this.ArchiveImagesScreenshot.LoadCompleted += new System.ComponentModel.AsyncCompletedEventHandler(this.ArchiveImages_loadCompleted);
             // 
             // ArchiveRadioContainer
             // 
@@ -341,6 +343,15 @@
             this.AdjustColumnsButton.UseVisualStyleBackColor = true;
             this.AdjustColumnsButton.Click += new System.EventHandler(this.AdjustColumnsButton_click);
             // 
+            // DebugLabel
+            // 
+            this.DebugLabel.AutoSize = true;
+            this.DebugLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.DebugLabel.Location = new System.Drawing.Point(3, 655);
+            this.DebugLabel.Name = "DebugLabel";
+            this.DebugLabel.Size = new System.Drawing.Size(294, 30);
+            this.DebugLabel.TabIndex = 11;
+            // 
             // TabControl
             // 
             this.TabControl.Controls.Add(this.HomeTab);
@@ -354,7 +365,7 @@
             this.TabControl.Size = new System.Drawing.Size(1258, 723);
             this.TabControl.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
             this.TabControl.TabIndex = 4;
-            this.TabControl.MouseClick += new System.Windows.Forms.MouseEventHandler(this.TabControl_click);
+            this.TabControl.SelectedIndexChanged += new System.EventHandler(this.TabControl_tabChanged);
             // 
             // HomeTab
             // 
@@ -493,6 +504,7 @@
             this.Load += new System.EventHandler(this.Main_load);
             this.Resize += new System.EventHandler(this.Main_resize);
             this.ArchiveLayout.ResumeLayout(false);
+            this.ArchiveLayout.PerformLayout();
             this.ArchiveInfoContainer.ResumeLayout(false);
             this.ArchiveInfoContainer.PerformLayout();
             this.ArchiveImagesContainer.ResumeLayout(false);
@@ -544,5 +556,6 @@
         private Panel ArchiveListFooter;
         private Label EntryCountLabel;
         private Button PlayButton;
+        private Label DebugLabel;
     }
 }
