@@ -44,6 +44,7 @@
             this.SettingsControls = new System.Windows.Forms.FlowLayoutPanel();
             this.CancelButton = new System.Windows.Forms.Button();
             this.OKButton = new System.Windows.Forms.Button();
+            this.FiltersTab = new System.Windows.Forms.TabPage();
             this.SettingsTabControl.SuspendLayout();
             this.GeneralTab.SuspendLayout();
             this.PathContainer.SuspendLayout();
@@ -72,10 +73,13 @@
             // SettingsTabControl
             // 
             this.SettingsTabControl.Controls.Add(this.GeneralTab);
+            this.SettingsTabControl.Controls.Add(this.FiltersTab);
+            this.SettingsTabControl.ItemSize = new System.Drawing.Size(64, 20);
             this.SettingsTabControl.Location = new System.Drawing.Point(6, 6);
             this.SettingsTabControl.Name = "SettingsTabControl";
             this.SettingsTabControl.SelectedIndex = 0;
             this.SettingsTabControl.Size = new System.Drawing.Size(524, 189);
+            this.SettingsTabControl.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
             this.SettingsTabControl.TabIndex = 4;
             // 
             // GeneralTab
@@ -211,6 +215,16 @@
             this.OKButton.UseVisualStyleBackColor = true;
             this.OKButton.Click += new System.EventHandler(this.OKButton_Click);
             // 
+            // FiltersTab
+            // 
+            this.FiltersTab.Location = new System.Drawing.Point(4, 24);
+            this.FiltersTab.Name = "FiltersTab";
+            this.FiltersTab.Padding = new System.Windows.Forms.Padding(3);
+            this.FiltersTab.Size = new System.Drawing.Size(516, 161);
+            this.FiltersTab.TabIndex = 1;
+            this.FiltersTab.Text = "Filters";
+            this.FiltersTab.UseVisualStyleBackColor = true;
+            // 
             // Settings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -253,5 +267,6 @@
         private Label CLIFpLabel;
         private TextBox CLIFpInput;
         private Button CLIFpButton;
+        private TabPage FiltersTab;
     }
 }

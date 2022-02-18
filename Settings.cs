@@ -4,14 +4,11 @@ namespace WumboLauncher
 {
     public partial class Settings : Form
     {
-        LauncherConfig Config = new();
-
         // Read values from file
         public Settings()
         {
             InitializeComponent();
 
-            Config.Read();
             PathInput.Text = Config.Data[0];
             CLIFpInput.Text = Config.Data[1];
             ServerInput.Text = Config.Data[2];
@@ -38,7 +35,10 @@ namespace WumboLauncher
         // Write values to file and close
         private void OKButton_Click(object sender, EventArgs e)
         {
-            if (!File.Exists(PathInput.Text + @"\Data\flashpoint.sqlite") || !File.Exists(CLIFpInput.Text))
+            // Check if database and CLIFp exist under Flashpoint path
+            if (!File.Exists(PathInput.Text + @"\Data\flashpoint.sqlite")
+             || !File.Exists(CLIFpInput.Text)
+             || !CLIFpInput.Text.Contains(PathInput.Text))
             {
                 DialogResult warningResult = MessageBox.Show(
                     "One or more values are invalid. Continue?",
@@ -53,6 +53,8 @@ namespace WumboLauncher
             Config.Data[1] = CLIFpInput.Text;
             Config.Data[2] = ServerInput.Text;
             Config.Write();
+
+            Config.NeedsRefresh = true;
 
             Close();
         }

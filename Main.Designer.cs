@@ -44,10 +44,10 @@
             this.ArchiveRadioHeader = new System.Windows.Forms.Panel();
             this.ArchiveRadioAnimations = new System.Windows.Forms.RadioButton();
             this.ArchiveRadioGames = new System.Windows.Forms.RadioButton();
+            this.DebugLabel = new System.Windows.Forms.Label();
             this.ArchiveListFooter = new System.Windows.Forms.Panel();
             this.EntryCountLabel = new System.Windows.Forms.Label();
             this.AdjustColumnsButton = new System.Windows.Forms.Button();
-            this.DebugLabel = new System.Windows.Forms.Label();
             this.TabControl = new System.Windows.Forms.TabControl();
             this.HomeTab = new System.Windows.Forms.TabPage();
             this.ArchiveTab = new System.Windows.Forms.TabPage();
@@ -87,7 +87,6 @@
             this.ArchiveLayout.Controls.Add(this.ArchiveInfoContainer, 2, 0);
             this.ArchiveLayout.Controls.Add(this.ArchiveRadioContainer, 0, 0);
             this.ArchiveLayout.Controls.Add(this.ArchiveListFooter, 1, 1);
-            this.ArchiveLayout.Controls.Add(this.DebugLabel, 0, 1);
             this.ArchiveLayout.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveLayout.Location = new System.Drawing.Point(3, 3);
             this.ArchiveLayout.Name = "ArchiveLayout";
@@ -211,7 +210,7 @@
             // 
             // ArchiveImagesLogo
             // 
-            this.ArchiveImagesLogo.Cursor = System.Windows.Forms.Cursors.Default;
+            this.ArchiveImagesLogo.Cursor = System.Windows.Forms.Cursors.Hand;
             this.ArchiveImagesLogo.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveImagesLogo.Location = new System.Drawing.Point(4, 20);
             this.ArchiveImagesLogo.Name = "ArchiveImagesLogo";
@@ -220,6 +219,7 @@
             this.ArchiveImagesLogo.TabIndex = 0;
             this.ArchiveImagesLogo.TabStop = false;
             this.ArchiveImagesLogo.LoadCompleted += new System.ComponentModel.AsyncCompletedEventHandler(this.ArchiveImages_loadCompleted);
+            this.ArchiveImagesLogo.Click += new System.EventHandler(this.ArchiveImages_click);
             // 
             // ArchiveImagesScreenshotContainer
             // 
@@ -234,7 +234,7 @@
             // 
             // ArchiveImagesScreenshot
             // 
-            this.ArchiveImagesScreenshot.Cursor = System.Windows.Forms.Cursors.Default;
+            this.ArchiveImagesScreenshot.Cursor = System.Windows.Forms.Cursors.Hand;
             this.ArchiveImagesScreenshot.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveImagesScreenshot.Location = new System.Drawing.Point(4, 20);
             this.ArchiveImagesScreenshot.Name = "ArchiveImagesScreenshot";
@@ -243,11 +243,12 @@
             this.ArchiveImagesScreenshot.TabIndex = 1;
             this.ArchiveImagesScreenshot.TabStop = false;
             this.ArchiveImagesScreenshot.LoadCompleted += new System.ComponentModel.AsyncCompletedEventHandler(this.ArchiveImages_loadCompleted);
+            this.ArchiveImagesScreenshot.Click += new System.EventHandler(this.ArchiveImages_click);
             // 
             // ArchiveRadioContainer
             // 
             this.ArchiveRadioContainer.Controls.Add(this.ArchiveRadioHeader);
-            this.ArchiveRadioContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ArchiveRadioContainer.Controls.Add(this.DebugLabel);
             this.ArchiveRadioContainer.Location = new System.Drawing.Point(1, 3);
             this.ArchiveRadioContainer.Margin = new System.Windows.Forms.Padding(1, 3, 7, 0);
             this.ArchiveRadioContainer.Name = "ArchiveRadioContainer";
@@ -262,7 +263,7 @@
             this.ArchiveRadioHeader.Location = new System.Drawing.Point(0, 0);
             this.ArchiveRadioHeader.Margin = new System.Windows.Forms.Padding(0);
             this.ArchiveRadioHeader.Name = "ArchiveRadioHeader";
-            this.ArchiveRadioHeader.Size = new System.Drawing.Size(297, 53);
+            this.ArchiveRadioHeader.Size = new System.Drawing.Size(292, 53);
             this.ArchiveRadioHeader.TabIndex = 10;
             // 
             // ArchiveRadioAnimations
@@ -278,7 +279,7 @@
             this.ArchiveRadioAnimations.Location = new System.Drawing.Point(0, 25);
             this.ArchiveRadioAnimations.Margin = new System.Windows.Forms.Padding(0);
             this.ArchiveRadioAnimations.Name = "ArchiveRadioAnimations";
-            this.ArchiveRadioAnimations.Size = new System.Drawing.Size(297, 25);
+            this.ArchiveRadioAnimations.Size = new System.Drawing.Size(292, 25);
             this.ArchiveRadioAnimations.TabIndex = 8;
             this.ArchiveRadioAnimations.TabStop = true;
             this.ArchiveRadioAnimations.Text = "All Animations";
@@ -299,13 +300,20 @@
             this.ArchiveRadioGames.Location = new System.Drawing.Point(0, 0);
             this.ArchiveRadioGames.Margin = new System.Windows.Forms.Padding(0);
             this.ArchiveRadioGames.Name = "ArchiveRadioGames";
-            this.ArchiveRadioGames.Size = new System.Drawing.Size(297, 25);
+            this.ArchiveRadioGames.Size = new System.Drawing.Size(292, 25);
             this.ArchiveRadioGames.TabIndex = 9;
             this.ArchiveRadioGames.TabStop = true;
             this.ArchiveRadioGames.Text = "All Games";
             this.ArchiveRadioGames.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.ArchiveRadioGames.UseVisualStyleBackColor = false;
             this.ArchiveRadioGames.CheckedChanged += new System.EventHandler(this.ArchiveRadio_checkedChanged);
+            // 
+            // DebugLabel
+            // 
+            this.DebugLabel.Location = new System.Drawing.Point(3, 53);
+            this.DebugLabel.Name = "DebugLabel";
+            this.DebugLabel.Size = new System.Drawing.Size(286, 599);
+            this.DebugLabel.TabIndex = 12;
             // 
             // ArchiveListFooter
             // 
@@ -320,10 +328,11 @@
             // 
             // EntryCountLabel
             // 
-            this.EntryCountLabel.Location = new System.Drawing.Point(444, 5);
+            this.EntryCountLabel.Dock = System.Windows.Forms.DockStyle.Right;
+            this.EntryCountLabel.Location = new System.Drawing.Point(444, 0);
             this.EntryCountLabel.Name = "EntryCountLabel";
             this.EntryCountLabel.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.EntryCountLabel.Size = new System.Drawing.Size(200, 15);
+            this.EntryCountLabel.Size = new System.Drawing.Size(200, 24);
             this.EntryCountLabel.TabIndex = 2;
             this.EntryCountLabel.Text = "Loading...";
             this.EntryCountLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -337,20 +346,11 @@
             this.AdjustColumnsButton.Location = new System.Drawing.Point(0, 0);
             this.AdjustColumnsButton.Margin = new System.Windows.Forms.Padding(0);
             this.AdjustColumnsButton.Name = "AdjustColumnsButton";
-            this.AdjustColumnsButton.Size = new System.Drawing.Size(100, 24);
+            this.AdjustColumnsButton.Size = new System.Drawing.Size(100, 25);
             this.AdjustColumnsButton.TabIndex = 1;
             this.AdjustColumnsButton.Text = "Adjust Columns";
             this.AdjustColumnsButton.UseVisualStyleBackColor = true;
             this.AdjustColumnsButton.Click += new System.EventHandler(this.AdjustColumnsButton_click);
-            // 
-            // DebugLabel
-            // 
-            this.DebugLabel.AutoSize = true;
-            this.DebugLabel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.DebugLabel.Location = new System.Drawing.Point(3, 655);
-            this.DebugLabel.Name = "DebugLabel";
-            this.DebugLabel.Size = new System.Drawing.Size(294, 30);
-            this.DebugLabel.TabIndex = 11;
             // 
             // TabControl
             // 
@@ -504,7 +504,6 @@
             this.Load += new System.EventHandler(this.Main_load);
             this.Resize += new System.EventHandler(this.Main_resize);
             this.ArchiveLayout.ResumeLayout(false);
-            this.ArchiveLayout.PerformLayout();
             this.ArchiveInfoContainer.ResumeLayout(false);
             this.ArchiveInfoContainer.PerformLayout();
             this.ArchiveImagesContainer.ResumeLayout(false);

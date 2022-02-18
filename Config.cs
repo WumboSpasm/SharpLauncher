@@ -2,10 +2,10 @@
 
 namespace WumboLauncher
 {
-    public class LauncherConfig
+    public static class Config
     {
         // Configuration data
-        private List<string> _Data = new()
+        public static List<string> Data { get; set; } = new()
         {
             // Flashpoint path
             ".",
@@ -15,21 +15,10 @@ namespace WumboLauncher
             "http://infinity.unstable.life/Flashpoint"
         };
 
-        public List<string> Data
-        {
-            get
-            {
-                return _Data;
-            }
-            set
-            {
-                if (_Data != value)
-                    _Data = value;
-            }
-        }
+        public static bool NeedsRefresh { get; set; } = false;
 
         // Replace list contents with values from config file
-        public void Read()
+        public static void Read()
         {
             int i = 0;
 
@@ -43,7 +32,7 @@ namespace WumboLauncher
         }
 
         // Write values from list to config file
-        public void Write()
+        public static void Write()
         {
             using (FileStream config = new("config.fp", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
             {

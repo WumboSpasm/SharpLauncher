@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Newtonsoft.Json;
 using System.Text;
 
 namespace WumboLauncher
@@ -16,11 +17,8 @@ namespace WumboLauncher
 
         // Previous width of the list
         int prevWidth;
-        // Handle launcher config
-        LauncherConfig Config = new();
-        // Calculated column widths before conversion to int
-        List<double> columnWidths = new();
-        string[,] metadataNames =
+        // Metadata fields to be retrieved alongside their proper names
+        string[,] metadataFields =
         {
             { "Title", "title" },
             { "Alternate Titles", "alternateTitles" },
@@ -38,31 +36,34 @@ namespace WumboLauncher
             { "Notes", "notes" },
             { "Original Description", "originalDescription" }
         };
-        // Indices of metadataNames items to be used for displaying columns
-        int[] columnIndices = { 0, 3, 4 };
+        // Titles to be displayed above each column
+        string[] columnHeaders = { "Title", "Developer", "Publisher" };
+        // Calculated column widths before conversion to int
+        List<double> columnWidths = new();
+        // Names of tags to be filtered
+        List<string> filteredTags = new();
         // Characters that cause issues in searches
         string unsafeChars = "%_\'\"";
         // Query fragments used to fetch entries
         string queryLibrary = "arcade";
-        string queryOrderBy = "title";
-        string queryDirection = "ASC";
+        int queryOrderBy = 0;
+        int queryDirection = 1;
         string querySearch = "";
-        // Current query range
-        int queryStart = 0;
-        int queryLength = 1000;
-        /*
-         *  Query data from within specified range
-         *  
-         *  This should ALWAYS have columnNames.GetLength(0) lists in the
-         *  first dimension and queryLength strings in the second dimension
-         *  
-         *  Anything else risks an "index out of range" exception
-         */
-        List<List<string>> queryData = new();
-        // Keep track of whether or not list needs to be refreshed
-        bool pendingRefresh = true;
+        // Template for list items
+        class QueryItem
+        {
+            public string Title { get; set; } = "";
+            public string Developer { get; set; } = "";
+            public string Publisher { get; set; } = "";
+            public int Index { get; set; } = -1;
+        }
+        // Cache of all items to be displayed in list
+        List<QueryItem> queryCache = new();
         // Check if column width has been changed manually
         bool columnChanged = false;
+        // Check if images have been loaded
+        bool logoLoaded = false;
+        bool screenshotLoaded = false;
 
         /*--------+
          | EVENTS |
@@ -70,20 +71,36 @@ namespace WumboLauncher
 
         private void Main_load(object sender, EventArgs e)
         {
-            foreach (int _ in columnIndices)
-                queryData.Add(Enumerable.Repeat("", queryLength).ToList());
-
             // Create configuration file if one doesn't exist
             if (File.Exists("config.fp") && File.ReadAllText("config.fp").Length > 0)
-            {
                 Config.Read();
-            }
             else
                 Config.Write();
+
+            // Load filtered tags
+            if (File.Exists("filters.json"))
+            {
+                using (StreamReader jsonStream = new("filters.json"))
+                {
+                    dynamic? filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
+
+                    foreach (var item in filterArray)
+                        if (item.filtered == true)
+                            foreach (var tag in item.tags)
+                                filteredTags.Add(tag.ToString());
+                }
+            }
+            else
+                MessageBox.Show(
+                    "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
+                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
+                );
 
             // Why Visual Studio doesn't let me do this the regular way, I don't know
             SearchBox.AutoSize = false;
             SearchBox.Height = 20;
+
+            InitializeDatabase();
         }
 
         private void Main_resize(object sender, EventArgs e)
@@ -104,11 +121,9 @@ namespace WumboLauncher
         // Update column widths if window is resized while in a different tab
         private void TabControl_tabChanged(object sender, EventArgs e)
         {
-            int clickedTab = ((TabControl)sender).SelectedIndex;
-
-            if (clickedTab == 1)
+            if (((TabControl)sender).SelectedIndex == 1)
             {
-                if (pendingRefresh)
+                if (Config.NeedsRefresh)
                     InitializeDatabase();
                 else if (columnChanged)
                     ScaleColumns();
@@ -144,39 +159,21 @@ namespace WumboLauncher
         {
             Config.Read();
 
-            if (TabControl.SelectedIndex == 1)
+            if (TabControl.SelectedIndex == 1 && Config.NeedsRefresh)
                 InitializeDatabase();
-            else
-                pendingRefresh = true;
         }
 
-        // Add items to list and improve performance by using larger, less frequent SQL queries
+        // Display items on list when fetched
         private void ArchiveList_retrieveItem(object sender, RetrieveVirtualItemEventArgs e)
         {
-            // If item information is not already found in queryData, generate a new list
-            if (e.ItemIndex >= queryStart + queryLength || e.ItemIndex < queryStart || e.ItemIndex == 0)
-            {
-                queryStart = e.ItemIndex - (e.ItemIndex % queryLength);
-
-                List<List<string>> tempData = new();
-
-                foreach (int i in columnIndices)
-                    tempData.Add(
-                        DatabaseQuery(GetQuery(metadataNames[i, 1], queryStart, queryLength))
-                    );
-
-                queryData = tempData;
-            }
-
-            ListViewItem entry = new(queryData[0][e.ItemIndex % queryLength]);
-
-            for (int i = 1; i < columnIndices.Length; i++)
-                entry.SubItems.Add(queryData[i][e.ItemIndex % queryLength]);
+            ListViewItem entry = new(queryCache[e.ItemIndex].Title);
+            entry.SubItems.Add(queryCache[e.ItemIndex].Developer);
+            entry.SubItems.Add(queryCache[e.ItemIndex].Publisher);
 
             e.Item = entry;
         }
 
-        // Display information about selected entry
+        // Display information about selected entry in info panel
         private void ArchiveList_itemSelect(object sender, EventArgs e)
         {
             ListView.SelectedIndexCollection selectedIndices = ((ListView)sender).SelectedIndices;
@@ -193,12 +190,14 @@ namespace WumboLauncher
                 ClearInfoPanel();
                 return;
             }
-            
-            List<string> metadataOutput = new(metadataNames.GetLength(0));
 
-            for (int i = 0; i < metadataNames.GetLength(0); i++)
+            int entryIndex = queryCache[selectedIndices[0]].Index;
+
+            List<string> metadataOutput = new(metadataFields.GetLength(0));
+
+            for (int i = 0; i < metadataFields.GetLength(0); i++)
                 metadataOutput.Add(
-                    DatabaseQuery(GetQuery(metadataNames[i, 1], selectedIndices[0]))[0]
+                    DatabaseQuery(metadataFields[i, 1], entryIndex)[0]
                 );
 
             // Header
@@ -219,10 +218,10 @@ namespace WumboLauncher
             for (int i = 1; i < metadataOutput.Count; i++)
                 if (metadataOutput[i] != "")
                 {
-                    if (metadataNames[i, 1] == "notes" || metadataNames[i, 1] == "originalDescription")
-                        entryData += $"\\line\\b {metadataNames[i, 0]}:\\line\\b0 {ToUnicode(metadataOutput[i])}\\line";
+                    if (metadataFields[i, 1] == "notes" || metadataFields[i, 1] == "originalDescription")
+                        entryData += $"\\line\\b {metadataFields[i, 0]}:\\line\\b0 {ToUnicode(metadataOutput[i])}\\line";
                     else
-                        entryData += $"\\b {metadataNames[i, 0]}: \\b0 {ToUnicode(metadataOutput[i])}\\line";
+                        entryData += $"\\b {metadataFields[i, 0]}: \\b0 {ToUnicode(metadataOutput[i])}\\line";
                 }
 
             entryData += "}";
@@ -233,10 +232,9 @@ namespace WumboLauncher
 
             if (!ArchiveImagesContainer.Visible)
                 ArchiveImagesContainer.Visible = true;
-
-            string entryId = DatabaseQuery(GetQuery("id", selectedIndices[0]))[0];
-            string[] imageFolders = { "Logos", "Screenshots" };
-            foreach (string folder in imageFolders)
+            
+            string entryId = DatabaseQuery("id", entryIndex)[0];
+            foreach (string folder in new string[] { "Logos", "Screenshots" })
             {
                 string[] imageTree = { entryId.Substring(0, 2), entryId.Substring(2, 2) };
                 string imagePath = $"\\Data\\Images\\{folder}\\{imageTree[0]}\\{imageTree[1]}\\{entryId}.png";
@@ -246,14 +244,12 @@ namespace WumboLauncher
                     if (folder == "Logos")
                     {
                         ArchiveImagesLogo.Image = Image.FromFile(Config.Data[0] + imagePath);
-                        ArchiveImagesLogo.Cursor = Cursors.Hand;
-                        ArchiveImagesLogo.Click += ArchiveImages_click;
+                        logoLoaded = true;
                     }
                     else if (folder == "Screenshots")
                     {
                         ArchiveImagesScreenshot.Image = Image.FromFile(Config.Data[0] + imagePath);
-                        ArchiveImagesScreenshot.Cursor = Cursors.Hand;
-                        ArchiveImagesScreenshot.Click += ArchiveImages_click;
+                        screenshotLoaded = true;
                     }
                 }
                 else
@@ -264,7 +260,7 @@ namespace WumboLauncher
                         ArchiveImagesScreenshot.ImageLocation = Config.Data[2] + imagePath;
                 }
             }
-
+            
             // Footer
 
             PlayButton.Visible = true;
@@ -273,12 +269,12 @@ namespace WumboLauncher
         // Launch selected entry
         private void ArchiveList_itemAccess(object sender, EventArgs e)
         {
+            int entryIndex = queryCache[ArchiveList.SelectedIndices[0]].Index;
+
             if (File.Exists(Config.Data[1]))
             {
-                int entryIndex = ArchiveList.SelectedIndices[0];
-
                 LaunchEntry.StartInfo.FileName = Config.Data[1];
-                LaunchEntry.StartInfo.Arguments = $"play -i {DatabaseQuery(GetQuery("id", entryIndex))[0]}";
+                LaunchEntry.StartInfo.Arguments = $"play -i {DatabaseQuery("id", entryIndex)[0]}";
                 LaunchEntry.Start();
             }
             else
@@ -288,9 +284,7 @@ namespace WumboLauncher
         // Update columnWidths in case column is changed manually
         private void ArchiveList_columnChanged(object sender, ColumnWidthChangedEventArgs e)
         {
-            ListView changedList = (ListView)sender;
-
-            if (changedList.ClientSize.Width == prevWidth)
+            if (ArchiveList.ClientSize.Width == prevWidth)
             {
                 columnWidths[e.ColumnIndex] = ArchiveList.Columns[e.ColumnIndex].Width;
                 columnChanged = true;
@@ -300,16 +294,23 @@ namespace WumboLauncher
         // Automatically sort clicked column
         private void ArchiveList_columnClick(object sender, ColumnClickEventArgs e)
         {
-            queryOrderBy = metadataNames[columnIndices[e.Column], 1];
-            queryDirection = queryDirection == "DESC" ? "ASC" : "DESC";
+            // Set column to sort by and reverse direction
+            queryOrderBy = e.Column;
+            queryDirection *= -1;
 
-            for (int i = 0; i < ArchiveList.Columns.Count; i++)
-                ArchiveList.Columns[i].Text = metadataNames[columnIndices[i], 0];
+            // Remove any indicators that might be visible
+            for (int i = 0; i < columnHeaders.Length; i++)
+                if (ArchiveList.Columns[i].Text != columnHeaders[i])
+                    ArchiveList.Columns[i].Text = columnHeaders[i];
 
-            string arrow = char.ConvertFromUtf32(queryDirection == "ASC" ? 0x2193 : 0x2191);
-            ArchiveList.Columns[e.Column].Text = $"{metadataNames[columnIndices[e.Column], 0]}  {arrow}";
+            // Add a new arrow indicator to column header
+            string arrow = char.ConvertFromUtf32(0x2192 + queryDirection);
+            ArchiveList.Columns[queryOrderBy].Text = $"{columnHeaders[queryOrderBy]}  {arrow}";
 
-            RefreshDatabase();
+            SortColumns();
+
+            ArchiveList.VirtualListSize = 0;
+            ArchiveList.VirtualListSize = Convert.ToInt32(queryCache.Count);
         }
 
         // Preserve arrow cursor when hovering over selected item
@@ -336,89 +337,44 @@ namespace WumboLauncher
 
         private void ArchiveImages_loadCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
         {
-            PictureBox loadedImage = (PictureBox)sender;
-            loadedImage.Cursor = Cursors.Hand;
-            loadedImage.Click += ArchiveImages_click;
+            if (((PictureBox)sender).Name == "ArchiveImagesLogo")
+                logoLoaded = true;
+            else if (((PictureBox)sender).Name == "ArchiveImagesScreenshot")
+                screenshotLoaded = true;
         }
 
         // Display picture viwwer 
         private void ArchiveImages_click(object sender, EventArgs e)
         {
-            Form pictureViewer = new();
-            pictureViewer.Size = new Size(640, 480);
-            pictureViewer.Controls.Add(new PictureBox()
+            string pictureName = ((PictureBox)sender).Name;
+
+            if ((pictureName == "ArchiveImagesLogo" && logoLoaded) ||
+                (pictureName == "ArchiveImagesScreenshot" && screenshotLoaded))
             {
-                Name = "PictureContainer",
-                Dock = DockStyle.Fill,
-                SizeMode = PictureBoxSizeMode.Zoom,
-                Image = ((PictureBox)sender).Name == "ArchiveImagesLogo" ? ArchiveImagesLogo.Image : ArchiveImagesScreenshot.Image,
-            });
-            pictureViewer.Show();
+                Form pictureViewer = new();
+                pictureViewer.Size = new Size(640, 480);
+                pictureViewer.Controls.Add(new PictureBox()
+                {
+                    Name = "PictureContainer",
+                    Dock = DockStyle.Fill,
+                    SizeMode = PictureBoxSizeMode.Zoom,
+                    Image = pictureName == "ArchiveImagesLogo" ? ArchiveImagesLogo.Image : ArchiveImagesScreenshot.Image,
+                });
+                pictureViewer.Show();
+            }
         }
 
         /*-----------+
          | FUNCTIONS |
          +-----------*/
 
-        // SQLite query template to make things easier
-        private string GetQuery(string column, int offset, int length = 1) =>
-            $"SELECT {column} FROM game " +
-            $"WHERE library = '{queryLibrary}'" +
-            (querySearch != "" ? $"AND title LIKE '%{querySearch}%'" : "") +
-            $"ORDER BY {queryOrderBy} {queryDirection} " +
-            $"LIMIT {offset}, {length}";
-
-        // Make strings suitable for RTF text box
-        // Adapted from https://stackoverflow.com/a/30363185
-        static string ToUnicode(string data)
-        {
-            var escapedData = new StringBuilder();
-
-            foreach (char c in data)
-            {
-                if (c == '\\' || c == '{' || c == '}')
-                    escapedData.Append(@"\" + c);
-                else if (c <= 0x7f)
-                    escapedData.Append(c);
-                else
-                    escapedData.Append(@"\u" + Convert.ToUInt32(c) + "?");
-            }
-
-            return escapedData.ToString().Replace("\n", @"\line ");
-        }
-
-        // Leave the right amount of room for metadata text box
-        private int GetInfoHeight()
-        {
-            int desiredHeight = ArchiveInfoContainer.Height - 14;
-
-            foreach (Control control in ArchiveInfoContainer.Controls)
-                if (control.Name != "ArchiveInfoData")
-                    desiredHeight -= control.Height;
-
-            return desiredHeight;
-        }
-
-        private void ExecuteSearchQuery()
-        {
-            StringBuilder safeQuery = new();
-
-            foreach (char inputChar in SearchBox.Text.ToLower())
-            {
-                if (unsafeChars.Contains(inputChar))
-                    safeQuery.Append("_");
-                else
-                    safeQuery.Append(inputChar);
-            }
-
-            querySearch = safeQuery.ToString();
-            RefreshDatabase();
-        }
-
         // Check if database is valid and load if so
         // Adapted from https://stackoverflow.com/a/70291358
         private void InitializeDatabase()
         {
+            if (Config.NeedsRefresh)
+                Config.NeedsRefresh = false;
+
             string databasePath = Config.Data[0] + @"\Data\flashpoint.sqlite";
             byte[] header = new byte[16];
 
@@ -429,21 +385,19 @@ namespace WumboLauncher
 
                 if (Encoding.ASCII.GetString(header).Contains("SQLite format"))
                 {
-                    RefreshDatabase();
-
-                    // Add columns from columnNames to list and get width for later
-                    if (ArchiveList.Columns.Count != columnIndices.Length)
+                    // Add columns to list and get width for later
+                    if (ArchiveList.Columns.Count != columnHeaders.Length)
                     {
-                        for (int i = 0; i < columnIndices.Length; i++)
+                        for (int i = 0; i < columnHeaders.Length; i++)
                         {
-                            ArchiveList.Columns.Add(metadataNames[columnIndices[i], 0]);
+                            ArchiveList.Columns.Add(columnHeaders[i]);
                             columnWidths.Add(ArchiveList.Columns[i].Width);
                         }
 
                         prevWidth = ArchiveList.ClientSize.Width;
                     }
 
-                    AdjustColumns();
+                    RefreshDatabase();
 
                     if (queryLibrary == "arcade")
                         ArchiveRadioGames.Checked = true;
@@ -461,23 +415,88 @@ namespace WumboLauncher
             TabControl.SelectTab(0);
         }
 
-        // Reload list and update entry count display
+        // Generate new cache and refresh list
         private void RefreshDatabase()
         {
             ClearInfoPanel();
+            queryCache.Clear();
 
-            queryStart = 0;
+            // Get values to be inserted into QueryItem objects
+            List<string> queryTitle = DatabaseQuery("title");
+            List<string> queryDeveloper = DatabaseQuery("developer");
+            List<string> queryPublisher = DatabaseQuery("publisher");
+            List<int> queryIndex = Enumerable.Range(0, queryTitle.Count).ToList();
 
-            string entryCount = DatabaseQuery(
-                $"SELECT COUNT(id) FROM game " +
-                $"WHERE library = '{queryLibrary}'" +
-                (querySearch != "" ? $"AND title LIKE '%{querySearch}%'" : "")
-            )[0];
+            List<string> queryTags = DatabaseQuery("tagsStr");
 
-            EntryCountLabel.Text = $"Displaying {entryCount} entr" + (entryCount == "1" ? "y" : "ies") + ".";
+            // If item is not filtered, create QueryItem object and add to queryCache
+            for (int i = 0; i < queryTitle.Count; i++)
+                if (!filteredTags.Intersect(queryTags[i].Split("; ")).Any())
+                    queryCache.Add(new QueryItem
+                    {
+                        Title = queryTitle[i],
+                        Developer = queryDeveloper[i],
+                        Publisher = queryPublisher[i],
+                        Index = queryIndex[i]
+                    });
 
+            // Sort new queryCache
+            SortColumns();
+
+            // Display entry count in bottom right corner
+            EntryCountLabel.Text = $"Displaying {queryCache.Count} entr" + (queryCache.Count == 1 ? "y" : "ies") + ".";
+
+            // Force list to reload items
             ArchiveList.VirtualListSize = 0;
-            ArchiveList.VirtualListSize = Convert.ToInt32(entryCount);
+            ArchiveList.VirtualListSize = Convert.ToInt32(queryCache.Count);
+
+            // Prevent column widths from breaking out of list
+            if (columnChanged)
+                ScaleColumns();
+            else
+                AdjustColumns();
+        }
+
+        // Return items from the Flashpoint database
+        private List<string> DatabaseQuery(string column, int offset = -1)
+        {
+            SqliteConnection connection = new($"Data Source={Config.Data[0]}\\Data\\flashpoint.sqlite");
+            connection.Open();
+
+            SqliteCommand command = new(
+                $"SELECT {column} FROM game " +
+                $"WHERE library = '{queryLibrary}'" +
+                (querySearch != "" ? $"AND title LIKE '%{querySearch}%'" : "") +
+                $"ORDER BY title {(offset != -1 ? $"LIMIT {offset}, 1" : "")}"
+            , connection);
+
+            List<string> data = new();
+
+            using (SqliteDataReader dataReader = command.ExecuteReader())
+                while (dataReader.Read())
+                    data.Add(dataReader.IsDBNull(0) ? "" : dataReader.GetString(0));
+
+            connection.Close();
+
+            return data;
+        }
+
+        private void ExecuteSearchQuery()
+        {
+            StringBuilder safeQuery = new();
+
+            foreach (char inputChar in SearchBox.Text.ToLower())
+            {
+                if (unsafeChars.Contains(inputChar))
+                    safeQuery.Append("_");
+                else
+                    safeQuery.Append(inputChar);
+            }
+
+            querySearch = safeQuery.ToString();
+            RefreshDatabase();
+
+            TabControl.SelectTab(1);
         }
 
         // Resize columns proportional to new list size
@@ -507,6 +526,49 @@ namespace WumboLauncher
                 columnChanged = false;
         }
 
+        // Sort items by a specific column
+        private void SortColumns()
+        {
+            switch (columnHeaders[queryOrderBy])
+            {
+                case "Title":
+                    queryCache = (
+                        queryDirection == 1
+                        ? queryCache.OrderBy(i => i.Title)
+                        : queryCache.OrderByDescending(i => i.Title)
+                    ).ToList();
+                    break;
+
+                case "Developer":
+                    queryCache = (
+                        queryDirection == 1
+                        ? queryCache.OrderBy(i => i.Developer)
+                        : queryCache.OrderByDescending(i => i.Developer)
+                    ).ToList();
+                    break;
+
+                case "Publisher":
+                    queryCache = (
+                        queryDirection == 1
+                        ? queryCache.OrderBy(i => i.Publisher)
+                        : queryCache.OrderByDescending(i => i.Publisher)
+                    ).ToList();
+                    break;
+            }
+        }
+
+        // Leave the right amount of room for metadata text box
+        private int GetInfoHeight()
+        {
+            int desiredHeight = ArchiveInfoContainer.Height - 14;
+
+            foreach (Control control in ArchiveInfoContainer.Controls)
+                if (control.Name != "ArchiveInfoData")
+                    desiredHeight -= control.Height;
+
+            return desiredHeight;
+        }
+
         private void ClearInfoPanel()
         {
             ArchiveInfoTitle.Text = "";
@@ -515,31 +577,29 @@ namespace WumboLauncher
             ArchiveInfoData.Height = 0;
             ArchiveImagesContainer.Visible = false;
             ArchiveImagesLogo.Image = null;
-            ArchiveImagesLogo.Cursor = Cursors.Default;
-            ArchiveImagesLogo.Click -= ArchiveImages_click;
             ArchiveImagesScreenshot.Image = null;
-            ArchiveImagesScreenshot.Cursor = Cursors.Default;
-            ArchiveImagesScreenshot.Click -= ArchiveImages_click;
+            logoLoaded = false;
+            screenshotLoaded = false;
             PlayButton.Visible = false;
         }
 
-        // Return array containing results of SQL query
-        private List<string> DatabaseQuery(string query)
+        // Make strings suitable for RTF text box
+        // Adapted from https://stackoverflow.com/a/30363185
+        static string ToUnicode(string data)
         {
-            SqliteConnection connection = new($"Data Source={Config.Data[0]}\\Data\\flashpoint.sqlite");
-            connection.Open();
+            StringBuilder escapedData = new();
 
-            SqliteCommand command = new(query, connection);
+            foreach (char c in data)
+            {
+                if (c == '\\' || c == '{' || c == '}')
+                    escapedData.Append(@"\" + c);
+                else if (c <= 0x7f)
+                    escapedData.Append(c);
+                else
+                    escapedData.Append(@"\u" + Convert.ToUInt32(c) + "?");
+            }
 
-            List<string> data = new();
-
-            using (SqliteDataReader dataReader = command.ExecuteReader())
-                while (dataReader.Read())
-                    data.Add(dataReader.IsDBNull(0) ? "" : dataReader.GetString(0));
-
-            connection.Close();
-
-            return data;
+            return escapedData.ToString().Replace("\n", @"\line ");
         }
     }
 }
