@@ -34,7 +34,8 @@ namespace WumboLauncher
             { "Play Mode", "playMode" },
             { "Status", "status" },
             { "Notes", "notes" },
-            { "Original Description", "originalDescription" }
+            { "Original Description", "originalDescription" },
+            { "", "activeDataOnDisk" }
         };
         // Titles to be displayed above each column
         string[] columnHeaders = { "Title", "Developer", "Publisher" };
@@ -42,8 +43,8 @@ namespace WumboLauncher
         List<double> columnWidths = new();
         // Names of tags to be filtered
         List<string> filteredTags = new();
-        // Characters that cause issues in searches
-        string unsafeChars = "%_\'\"";
+        // Characters that cause issues in searches ( % _ ' " )
+        string unsafeChars = "%_\'\""; 
         // Query fragments used to fetch entries
         string queryLibrary = "arcade";
         int queryOrderBy = 0;
@@ -127,13 +128,7 @@ namespace WumboLauncher
         private void SearchButton_click(object sender, EventArgs e) { ExecuteSearchQuery(); }
 
         // Display setttings menu when Settings button is clicked
-        private void SettingsButton_click(object sender, EventArgs e)
-        {
-            Settings SettingsMenu = new Settings();
-            SettingsMenu.FormClosed += new FormClosedEventHandler(SettingsMenu_formClosed);
-
-            SettingsMenu.ShowDialog();
-        }
+        private void SettingsButton_click(object sender, EventArgs e) { OpenSettings(); }
 
         // Reload database when 
         private void SettingsMenu_formClosed(object? sender, FormClosedEventArgs e)
@@ -196,7 +191,7 @@ namespace WumboLauncher
 
             string entryData = @"{\rtf1 ";
 
-            for (int i = 1; i < metadataOutput.Count; i++)
+            for (int i = 1; i < metadataOutput.Count - 1; i++)
                 if (metadataOutput[i] != "")
                 {
                     if (metadataFields[i, 1] == "notes" || metadataFields[i, 1] == "originalDescription")
@@ -241,8 +236,13 @@ namespace WumboLauncher
                         ArchiveImagesScreenshot.ImageLocation = Config.FlashpointServer + imagePath;
                 }
             }
-            
+
             // Footer
+
+            if (metadataOutput[15] == "1")
+                PlayButton.Text = "Play";
+            else
+                PlayButton.Text = "Play (Legacy)";
 
             PlayButton.Visible = true;
         }
@@ -395,6 +395,7 @@ namespace WumboLauncher
 
             MessageBox.Show("Database is either corrupted or missing!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             TabControl.SelectTab(0);
+            OpenSettings();
 
             Config.NeedsRefresh = true;
         }
@@ -441,6 +442,29 @@ namespace WumboLauncher
                 AdjustColumns();
         }
 
+        private void LoadFilteredTags()
+        {
+            filteredTags.Clear();
+
+            if (File.Exists("filters.json"))
+            {
+                using (StreamReader jsonStream = new("filters.json"))
+                {
+                    dynamic? filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
+
+                    foreach (var item in filterArray)
+                        if (item.filtered == true)
+                            foreach (var tag in item.tags)
+                                filteredTags.Add(tag.ToString());
+                }
+            }
+            else
+                MessageBox.Show(
+                    "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
+                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
+                );
+        }
+
         // Return items from the Flashpoint database
         private List<string> DatabaseQuery(string column, int offset = -1)
         {
@@ -465,29 +489,6 @@ namespace WumboLauncher
             return data;
         }
 
-        private void LoadFilteredTags()
-        {
-            filteredTags.Clear();
-
-            if (File.Exists("filters.json"))
-            {
-                using (StreamReader jsonStream = new("filters.json"))
-                {
-                    dynamic? filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
-
-                    foreach (var item in filterArray)
-                        if (item.filtered == true)
-                            foreach (var tag in item.tags)
-                                filteredTags.Add(tag.ToString());
-                }
-            }
-            else
-                MessageBox.Show(
-                    "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
-                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
-                );
-        }
-
         private void ExecuteSearchQuery()
         {
             StringBuilder safeQuery = new();
@@ -504,6 +505,14 @@ namespace WumboLauncher
             RefreshDatabase();
 
             TabControl.SelectTab(1);
+        }
+
+        private void OpenSettings()
+        {
+            Settings SettingsMenu = new Settings();
+            SettingsMenu.FormClosed += new FormClosedEventHandler(SettingsMenu_formClosed);
+
+            SettingsMenu.ShowDialog();
         }
 
         // Resize columns proportional to new list size

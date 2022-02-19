@@ -92,7 +92,7 @@
             this.ArchiveLayout.Name = "ArchiveLayout";
             this.ArchiveLayout.RowCount = 2;
             this.ArchiveLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.ArchiveLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.ArchiveLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 32F));
             this.ArchiveLayout.Size = new System.Drawing.Size(1244, 685);
             this.ArchiveLayout.TabIndex = 3;
             // 
@@ -103,10 +103,10 @@
             this.PlayButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
             this.PlayButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
             this.PlayButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.PlayButton.Location = new System.Drawing.Point(953, 660);
-            this.PlayButton.Margin = new System.Windows.Forms.Padding(9, 5, 5, 1);
+            this.PlayButton.Location = new System.Drawing.Point(953, 659);
+            this.PlayButton.Margin = new System.Windows.Forms.Padding(9, 6, 5, 1);
             this.PlayButton.Name = "PlayButton";
-            this.PlayButton.Size = new System.Drawing.Size(286, 24);
+            this.PlayButton.Size = new System.Drawing.Size(286, 25);
             this.PlayButton.TabIndex = 3;
             this.PlayButton.Text = "Play";
             this.PlayButton.UseVisualStyleBackColor = true;
@@ -124,7 +124,7 @@
             this.ArchiveList.Margin = new System.Windows.Forms.Padding(0);
             this.ArchiveList.MultiSelect = false;
             this.ArchiveList.Name = "ArchiveList";
-            this.ArchiveList.Size = new System.Drawing.Size(644, 655);
+            this.ArchiveList.Size = new System.Drawing.Size(644, 653);
             this.ArchiveList.TabIndex = 0;
             this.ArchiveList.UseCompatibleStateImageBehavior = false;
             this.ArchiveList.View = System.Windows.Forms.View.Details;
@@ -147,7 +147,7 @@
             this.ArchiveInfoContainer.Location = new System.Drawing.Point(947, 3);
             this.ArchiveInfoContainer.Margin = new System.Windows.Forms.Padding(3, 3, 3, 0);
             this.ArchiveInfoContainer.Name = "ArchiveInfoContainer";
-            this.ArchiveInfoContainer.Size = new System.Drawing.Size(294, 652);
+            this.ArchiveInfoContainer.Size = new System.Drawing.Size(294, 650);
             this.ArchiveInfoContainer.TabIndex = 6;
             // 
             // ArchiveInfoTitle
@@ -160,6 +160,7 @@
             this.ArchiveInfoTitle.Name = "ArchiveInfoTitle";
             this.ArchiveInfoTitle.Size = new System.Drawing.Size(296, 25);
             this.ArchiveInfoTitle.TabIndex = 5;
+            this.ArchiveInfoTitle.UseMnemonic = false;
             // 
             // ArchiveInfoDeveloper
             // 
@@ -170,6 +171,7 @@
             this.ArchiveInfoDeveloper.Name = "ArchiveInfoDeveloper";
             this.ArchiveInfoDeveloper.Size = new System.Drawing.Size(291, 15);
             this.ArchiveInfoDeveloper.TabIndex = 6;
+            this.ArchiveInfoDeveloper.UseMnemonic = false;
             // 
             // ArchiveInfoData
             // 
@@ -251,7 +253,7 @@
             this.ArchiveRadioContainer.Location = new System.Drawing.Point(1, 3);
             this.ArchiveRadioContainer.Margin = new System.Windows.Forms.Padding(1, 3, 7, 0);
             this.ArchiveRadioContainer.Name = "ArchiveRadioContainer";
-            this.ArchiveRadioContainer.Size = new System.Drawing.Size(292, 652);
+            this.ArchiveRadioContainer.Size = new System.Drawing.Size(292, 650);
             this.ArchiveRadioContainer.TabIndex = 9;
             // 
             // ArchiveRadioHeader
@@ -319,10 +321,10 @@
             this.ArchiveListFooter.Controls.Add(this.EntryCountLabel);
             this.ArchiveListFooter.Controls.Add(this.AdjustColumnsButton);
             this.ArchiveListFooter.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ArchiveListFooter.Location = new System.Drawing.Point(300, 660);
-            this.ArchiveListFooter.Margin = new System.Windows.Forms.Padding(0, 5, 0, 1);
+            this.ArchiveListFooter.Location = new System.Drawing.Point(300, 658);
+            this.ArchiveListFooter.Margin = new System.Windows.Forms.Padding(0, 5, 0, 0);
             this.ArchiveListFooter.Name = "ArchiveListFooter";
-            this.ArchiveListFooter.Size = new System.Drawing.Size(644, 24);
+            this.ArchiveListFooter.Size = new System.Drawing.Size(644, 27);
             this.ArchiveListFooter.TabIndex = 10;
             // 
             // EntryCountLabel
@@ -331,7 +333,7 @@
             this.EntryCountLabel.Location = new System.Drawing.Point(444, 0);
             this.EntryCountLabel.Name = "EntryCountLabel";
             this.EntryCountLabel.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.EntryCountLabel.Size = new System.Drawing.Size(200, 24);
+            this.EntryCountLabel.Size = new System.Drawing.Size(200, 27);
             this.EntryCountLabel.TabIndex = 2;
             this.EntryCountLabel.Text = "Loading...";
             this.EntryCountLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -342,7 +344,7 @@
             this.AdjustColumnsButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
             this.AdjustColumnsButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
             this.AdjustColumnsButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.AdjustColumnsButton.Location = new System.Drawing.Point(0, 0);
+            this.AdjustColumnsButton.Location = new System.Drawing.Point(0, 1);
             this.AdjustColumnsButton.Margin = new System.Windows.Forms.Padding(0);
             this.AdjustColumnsButton.Name = "AdjustColumnsButton";
             this.AdjustColumnsButton.Size = new System.Drawing.Size(100, 25);
