@@ -1,6 +1,6 @@
+using System.Text;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
-using System.Text;
 
 namespace WumboLauncher
 {
@@ -72,29 +72,10 @@ namespace WumboLauncher
         private void Main_load(object sender, EventArgs e)
         {
             // Create configuration file if one doesn't exist
-            if (File.Exists("config.fp") && File.ReadAllText("config.fp").Length > 0)
+            if (File.Exists("config.json") && File.ReadAllText("config.json").Length > 0)
                 Config.Read();
             else
                 Config.Write();
-
-            // Load filtered tags
-            if (File.Exists("filters.json"))
-            {
-                using (StreamReader jsonStream = new("filters.json"))
-                {
-                    dynamic? filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
-
-                    foreach (var item in filterArray)
-                        if (item.filtered == true)
-                            foreach (var tag in item.tags)
-                                filteredTags.Add(tag.ToString());
-                }
-            }
-            else
-                MessageBox.Show(
-                    "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
-                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
-                );
 
             // Why Visual Studio doesn't let me do this the regular way, I don't know
             SearchBox.AutoSize = false;
@@ -239,25 +220,25 @@ namespace WumboLauncher
                 string[] imageTree = { entryId.Substring(0, 2), entryId.Substring(2, 2) };
                 string imagePath = $"\\Data\\Images\\{folder}\\{imageTree[0]}\\{imageTree[1]}\\{entryId}.png";
 
-                if (File.Exists(Config.Data[0] + imagePath))
+                if (File.Exists(Config.FlashpointPath + imagePath))
                 {
                     if (folder == "Logos")
                     {
-                        ArchiveImagesLogo.Image = Image.FromFile(Config.Data[0] + imagePath);
+                        ArchiveImagesLogo.Image = Image.FromFile(Config.FlashpointPath + imagePath);
                         logoLoaded = true;
                     }
                     else if (folder == "Screenshots")
                     {
-                        ArchiveImagesScreenshot.Image = Image.FromFile(Config.Data[0] + imagePath);
+                        ArchiveImagesScreenshot.Image = Image.FromFile(Config.FlashpointPath + imagePath);
                         screenshotLoaded = true;
                     }
                 }
                 else
                 {
                     if (folder == "Logos")
-                        ArchiveImagesLogo.ImageLocation = Config.Data[2] + imagePath;
+                        ArchiveImagesLogo.ImageLocation = Config.FlashpointServer + imagePath;
                     else if (folder == "Screenshots")
-                        ArchiveImagesScreenshot.ImageLocation = Config.Data[2] + imagePath;
+                        ArchiveImagesScreenshot.ImageLocation = Config.FlashpointServer + imagePath;
                 }
             }
             
@@ -271,9 +252,9 @@ namespace WumboLauncher
         {
             int entryIndex = queryCache[ArchiveList.SelectedIndices[0]].Index;
 
-            if (File.Exists(Config.Data[1]))
+            if (File.Exists(Config.CLIFpPath))
             {
-                LaunchEntry.StartInfo.FileName = Config.Data[1];
+                LaunchEntry.StartInfo.FileName = Config.CLIFpPath;
                 LaunchEntry.StartInfo.Arguments = $"play -i {DatabaseQuery("id", entryIndex)[0]}";
                 LaunchEntry.Start();
             }
@@ -375,7 +356,7 @@ namespace WumboLauncher
             if (Config.NeedsRefresh)
                 Config.NeedsRefresh = false;
 
-            string databasePath = Config.Data[0] + @"\Data\flashpoint.sqlite";
+            string databasePath = Config.FlashpointPath + @"\Data\flashpoint.sqlite";
             byte[] header = new byte[16];
 
             if (File.Exists(databasePath))
@@ -397,6 +378,7 @@ namespace WumboLauncher
                         prevWidth = ArchiveList.ClientSize.Width;
                     }
 
+                    LoadFilteredTags();
                     RefreshDatabase();
 
                     if (queryLibrary == "arcade")
@@ -413,6 +395,8 @@ namespace WumboLauncher
 
             MessageBox.Show("Database is either corrupted or missing!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             TabControl.SelectTab(0);
+
+            Config.NeedsRefresh = true;
         }
 
         // Generate new cache and refresh list
@@ -444,7 +428,7 @@ namespace WumboLauncher
             SortColumns();
 
             // Display entry count in bottom right corner
-            EntryCountLabel.Text = $"Displaying {queryCache.Count} entr" + (queryCache.Count == 1 ? "y" : "ies") + ".";
+            EntryCountLabel.Text = $"Displaying {queryCache.Count} entr{(queryCache.Count == 1 ? "y" : "ies")}.";
 
             // Force list to reload items
             ArchiveList.VirtualListSize = 0;
@@ -460,7 +444,7 @@ namespace WumboLauncher
         // Return items from the Flashpoint database
         private List<string> DatabaseQuery(string column, int offset = -1)
         {
-            SqliteConnection connection = new($"Data Source={Config.Data[0]}\\Data\\flashpoint.sqlite");
+            SqliteConnection connection = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
             connection.Open();
 
             SqliteCommand command = new(
@@ -479,6 +463,29 @@ namespace WumboLauncher
             connection.Close();
 
             return data;
+        }
+
+        private void LoadFilteredTags()
+        {
+            filteredTags.Clear();
+
+            if (File.Exists("filters.json"))
+            {
+                using (StreamReader jsonStream = new("filters.json"))
+                {
+                    dynamic? filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
+
+                    foreach (var item in filterArray)
+                        if (item.filtered == true)
+                            foreach (var tag in item.tags)
+                                filteredTags.Add(tag.ToString());
+                }
+            }
+            else
+                MessageBox.Show(
+                    "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
+                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
+                );
         }
 
         private void ExecuteSearchQuery()

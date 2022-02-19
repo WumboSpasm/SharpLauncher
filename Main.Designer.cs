@@ -115,7 +115,6 @@
             // 
             // ArchiveList
             // 
-            this.ArchiveList.Activation = System.Windows.Forms.ItemActivation.TwoClick;
             this.ArchiveList.AllowColumnReorder = true;
             this.ArchiveList.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveList.FullRowSelect = true;

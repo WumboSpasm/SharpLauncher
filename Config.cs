@@ -1,49 +1,50 @@
 ﻿using System.Text;
+using Newtonsoft.Json.Linq;
 
 namespace WumboLauncher
 {
     public static class Config
     {
         // Configuration data
-        public static List<string> Data { get; set; } = new()
-        {
-            // Flashpoint path
-            ".",
-            // CLIFp path
-            @".\CLIFp\CLIFp.exe",
-            // Flashpoint server
-            "http://infinity.unstable.life/Flashpoint"
-        };
+        public static string FlashpointPath { get; set; } = ".";
+        public static string CLIFpPath { get; set; } = @".\CLIFp\CLIFp.exe";
+        public static string FlashpointServer { get; set; } = "http://infinity.unstable.life/Flashpoint";
 
         public static bool NeedsRefresh { get; set; } = false;
 
-        // Replace list contents with values from config file
+        // Replace data with values from config file
         public static void Read()
         {
-            int i = 0;
-
-            foreach (string value in File.ReadLines("config.fp"))
+            using (StreamReader jsonStream = new("config.json"))
             {
-                Data[i++] = value;
+                JObject readConfig = JObject.Parse(jsonStream.ReadToEnd());
 
-                if (i == 3)
-                    break;
+                if (((JToken)readConfig["FlashpointPath"]).Type != JTokenType.Null)
+                    Config.FlashpointPath = (string?)readConfig["FlashpointPath"];
+
+                if (((JToken)readConfig["CLIFpPath"]).Type != JTokenType.Null)
+                    Config.CLIFpPath = (string?)readConfig["CLIFpPath"];
+
+                if (((JToken)readConfig["FlashpointServer"]).Type != JTokenType.Null)
+                    Config.FlashpointServer = (string?)readConfig["FlashpointServer"];
             }
         }
 
-        // Write values from list to config file
+        // Write data values to config file
         public static void Write()
         {
-            using (FileStream config = new("config.fp", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+            using (FileStream config = new("config.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
             {
                 lock (config)
                     config.SetLength(0);
 
-                foreach (string value in Data)
-                {
-                    byte[] byteValue = Encoding.ASCII.GetBytes(value + Environment.NewLine);
-                    config.Write(byteValue, 0, byteValue.Length);
-                }
+                JObject writeConfig = new();
+
+                writeConfig["FlashpointPath"] = Config.FlashpointPath;
+                writeConfig["CLIFpPath"] = Config.CLIFpPath;
+                writeConfig["FlashpointServer"] = Config.FlashpointServer;
+
+                config.Write(Encoding.ASCII.GetBytes(writeConfig.ToString()));
             }
         }
     }

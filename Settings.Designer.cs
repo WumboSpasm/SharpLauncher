@@ -41,15 +41,20 @@
             this.CLIFpLabel = new System.Windows.Forms.Label();
             this.CLIFpInput = new System.Windows.Forms.TextBox();
             this.CLIFpButton = new System.Windows.Forms.Button();
+            this.FiltersTab = new System.Windows.Forms.TabPage();
+            this.FilterLabel = new System.Windows.Forms.Label();
+            this.FilterList = new System.Windows.Forms.ListView();
+            this.columnHeader1 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader2 = new System.Windows.Forms.ColumnHeader();
             this.SettingsControls = new System.Windows.Forms.FlowLayoutPanel();
             this.CancelButton = new System.Windows.Forms.Button();
             this.OKButton = new System.Windows.Forms.Button();
-            this.FiltersTab = new System.Windows.Forms.TabPage();
             this.SettingsTabControl.SuspendLayout();
             this.GeneralTab.SuspendLayout();
             this.PathContainer.SuspendLayout();
             this.ServerContainer.SuspendLayout();
             this.CLIFpContainer.SuspendLayout();
+            this.FiltersTab.SuspendLayout();
             this.SettingsControls.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -81,6 +86,7 @@
             this.SettingsTabControl.Size = new System.Drawing.Size(524, 189);
             this.SettingsTabControl.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
             this.SettingsTabControl.TabIndex = 4;
+            this.SettingsTabControl.SelectedIndexChanged += new System.EventHandler(this.SettingsTabControl_TabChanged);
             // 
             // GeneralTab
             // 
@@ -185,6 +191,54 @@
             this.CLIFpButton.UseVisualStyleBackColor = true;
             this.CLIFpButton.Click += new System.EventHandler(this.CLIFpButton_Click);
             // 
+            // FiltersTab
+            // 
+            this.FiltersTab.Controls.Add(this.FilterLabel);
+            this.FiltersTab.Controls.Add(this.FilterList);
+            this.FiltersTab.Location = new System.Drawing.Point(4, 24);
+            this.FiltersTab.Name = "FiltersTab";
+            this.FiltersTab.Padding = new System.Windows.Forms.Padding(3);
+            this.FiltersTab.Size = new System.Drawing.Size(516, 161);
+            this.FiltersTab.TabIndex = 1;
+            this.FiltersTab.Text = "Filters";
+            this.FiltersTab.UseVisualStyleBackColor = true;
+            // 
+            // FilterLabel
+            // 
+            this.FilterLabel.Location = new System.Drawing.Point(6, 3);
+            this.FilterLabel.Name = "FilterLabel";
+            this.FilterLabel.Size = new System.Drawing.Size(504, 22);
+            this.FilterLabel.TabIndex = 1;
+            this.FilterLabel.Text = "Entries with can be hidden from view using the filters below. Check a filter to a" +
+    "ctivate it.";
+            this.FilterLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // FilterList
+            // 
+            this.FilterList.CheckBoxes = true;
+            this.FilterList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.columnHeader1,
+            this.columnHeader2});
+            this.FilterList.FullRowSelect = true;
+            this.FilterList.GridLines = true;
+            this.FilterList.Location = new System.Drawing.Point(6, 28);
+            this.FilterList.MultiSelect = false;
+            this.FilterList.Name = "FilterList";
+            this.FilterList.Size = new System.Drawing.Size(504, 127);
+            this.FilterList.TabIndex = 0;
+            this.FilterList.UseCompatibleStateImageBehavior = false;
+            this.FilterList.View = System.Windows.Forms.View.Details;
+            // 
+            // columnHeader1
+            // 
+            this.columnHeader1.Text = "Name";
+            this.columnHeader1.Width = 150;
+            // 
+            // columnHeader2
+            // 
+            this.columnHeader2.Text = "Description";
+            this.columnHeader2.Width = 330;
+            // 
             // SettingsControls
             // 
             this.SettingsControls.Controls.Add(this.CancelButton);
@@ -215,16 +269,6 @@
             this.OKButton.UseVisualStyleBackColor = true;
             this.OKButton.Click += new System.EventHandler(this.OKButton_Click);
             // 
-            // FiltersTab
-            // 
-            this.FiltersTab.Location = new System.Drawing.Point(4, 24);
-            this.FiltersTab.Name = "FiltersTab";
-            this.FiltersTab.Padding = new System.Windows.Forms.Padding(3);
-            this.FiltersTab.Size = new System.Drawing.Size(516, 161);
-            this.FiltersTab.TabIndex = 1;
-            this.FiltersTab.Text = "Filters";
-            this.FiltersTab.UseVisualStyleBackColor = true;
-            // 
             // Settings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -245,6 +289,7 @@
             this.ServerContainer.PerformLayout();
             this.CLIFpContainer.ResumeLayout(false);
             this.CLIFpContainer.PerformLayout();
+            this.FiltersTab.ResumeLayout(false);
             this.SettingsControls.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -268,5 +313,9 @@
         private TextBox CLIFpInput;
         private Button CLIFpButton;
         private TabPage FiltersTab;
+        private ListView FilterList;
+        private Label FilterLabel;
+        private ColumnHeader columnHeader1;
+        private ColumnHeader columnHeader2;
     }
 }

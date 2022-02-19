@@ -1,17 +1,22 @@
-﻿using Microsoft.WindowsAPICodePack.Dialogs;
+﻿using System.Text;
+using Microsoft.WindowsAPICodePack.Dialogs;
+using Newtonsoft.Json;
 
 namespace WumboLauncher
 {
     public partial class Settings : Form
     {
+        // String copy of filters.json
+        private string filterJSON = "";
+
         // Read values from file
         public Settings()
         {
             InitializeComponent();
 
-            PathInput.Text = Config.Data[0];
-            CLIFpInput.Text = Config.Data[1];
-            ServerInput.Text = Config.Data[2];
+            PathInput.Text = Config.FlashpointPath;
+            CLIFpInput.Text = Config.CLIFpPath;
+            ServerInput.Text = Config.FlashpointServer;
         }
 
         // Browse for Flashpoint path
@@ -32,6 +37,37 @@ namespace WumboLauncher
                 CLIFpInput.Text = CLIFpDialog.FileName;
         }
 
+        // Load tag filters into list
+        private void SettingsTabControl_TabChanged(object sender, EventArgs e)
+        {
+            if (((TabControl)sender).SelectedIndex == 1)
+            {
+                if (File.Exists("filters.json"))
+                {
+                    using (StreamReader jsonStream = new("filters.json"))
+                    {
+                        filterJSON = jsonStream.ReadToEnd();
+
+                        dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
+
+                        foreach (var item in filterArray)
+                        {
+                            ListViewItem filterItem = new((string)item.name);
+                            filterItem.SubItems.Add((string)item.description);
+                            filterItem.Checked = item.filtered;
+
+                            FilterList.Items.Add(filterItem);
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("filters.json was not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    SettingsTabControl.SelectTab(0);
+                }
+            }
+        }
+
         // Write values to file and close
         private void OKButton_Click(object sender, EventArgs e)
         {
@@ -49,10 +85,27 @@ namespace WumboLauncher
                     return;
             }
 
-            Config.Data[0] = PathInput.Text;
-            Config.Data[1] = CLIFpInput.Text;
-            Config.Data[2] = ServerInput.Text;
+            Config.FlashpointPath = PathInput.Text;
+            Config.CLIFpPath = CLIFpInput.Text;
+            Config.FlashpointServer = ServerInput.Text;
             Config.Write();
+
+            using (FileStream filters = new("filters.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+            {
+                lock (filters)
+                    filters.SetLength(0);
+
+                dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
+
+                int i = 0;
+                foreach (var item in filterArray)
+                {
+                    filterArray[i].filtered = FilterList.Items[i].Checked;
+                    i++;
+                }
+
+                filters.Write(Encoding.ASCII.GetBytes(filterArray.ToString()));
+            }
 
             Config.NeedsRefresh = true;
 
