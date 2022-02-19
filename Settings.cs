@@ -90,22 +90,23 @@ namespace WumboLauncher
             Config.FlashpointServer = ServerInput.Text;
             Config.Write();
 
-            using (FileStream filters = new("filters.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
-            {
-                lock (filters)
-                    filters.SetLength(0);
-
-                dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
-
-                int i = 0;
-                foreach (var item in filterArray)
+            if (filterJSON.Length > 0)
+                using (FileStream filters = new("filters.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
                 {
-                    filterArray[i].filtered = FilterList.Items[i].Checked;
-                    i++;
-                }
+                    lock (filters)
+                        filters.SetLength(0);
 
-                filters.Write(Encoding.ASCII.GetBytes(filterArray.ToString()));
-            }
+                    dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
+
+                    int i = 0;
+                    foreach (var item in filterArray)
+                    {
+                        filterArray[i].filtered = FilterList.Items[i].Checked;
+                        i++;
+                    }
+
+                    filters.Write(Encoding.ASCII.GetBytes(filterArray.ToString()));
+                }
 
             Config.NeedsRefresh = true;
 
