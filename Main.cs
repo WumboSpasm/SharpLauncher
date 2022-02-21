@@ -33,9 +33,9 @@ namespace WumboLauncher
             { "Language", "language" },
             { "Play Mode", "playMode" },
             { "Status", "status" },
+            { "Legacy Game", "activeDataOnDisk" },
             { "Notes", "notes" },
-            { "Original Description", "originalDescription" },
-            { "", "activeDataOnDisk" }
+            { "Original Description", "originalDescription" }
         };
         // Titles to be displayed above each column
         string[] columnHeaders = { "Title", "Developer", "Publisher" };
@@ -89,10 +89,7 @@ namespace WumboLauncher
                 File.Create("downloads.fp");
 
             if (File.Exists("favorites.fp"))
-            {
                 favoritedEntries = File.ReadAllLines("favorites.fp").ToList();
-                favoritedEntries.RemoveAll(i => i == "");
-            }
             else
                 File.Create("favorites.fp");
 
@@ -100,7 +97,12 @@ namespace WumboLauncher
             SearchBox.AutoSize = false;
             SearchBox.Height = 20;
 
+            // Give the additional apps button an arrow
+            AlternateButton.Text = char.ConvertFromUtf32(0x2BC5);
+
+            // Get everything ready
             InitializeDatabase();
+            InitializeCLIFp();
         }
 
         private void Main_resize(object sender, EventArgs e)
@@ -208,10 +210,12 @@ namespace WumboLauncher
 
             string entryData = @"{\rtf1 ";
 
-            for (int i = 1; i < metadataOutput.Count - 1; i++)
+            for (int i = 1; i < metadataOutput.Count; i++)
                 if (metadataOutput[i] != "")
                 {
-                    if (metadataFields[i, 1] == "notes" || metadataFields[i, 1] == "originalDescription")
+                    if (metadataFields[i, 0] == "Legacy Game")
+                        entryData += $"\\b {metadataFields[i, 0]}: \\b0 {(metadataOutput[i] == "0" ? "Yes" : "No")}\\line";
+                    else if (metadataFields[i, 0] == "Notes" || metadataFields[i, 0] == "Original Description")
                         entryData += $"\\line\\b {metadataFields[i, 0]}:\\line\\b0 {ToUnicode(metadataOutput[i])}\\line";
                     else
                         entryData += $"\\b {metadataFields[i, 0]}: \\b0 {ToUnicode(metadataOutput[i])}\\line";
@@ -255,10 +259,19 @@ namespace WumboLauncher
 
             // Footer
 
-            if (metadataOutput[15] == "1")
-                PlayButton.Text = "Play";
+            List<string> additionalApps = DatabaseQuery($"SELECT name FROM additional_app WHERE parentGameId = '{entryID}'");
+
+            // Display or hide additional apps button if they exist
+            if (additionalApps.Count > 0)
+            {
+                PlayButton.Width = 238;
+                AlternateButton.Visible = true;
+            }
             else
-                PlayButton.Text = "Play (Legacy)";
+            {
+                AlternateButton.Visible = false;
+                PlayButton.Width = 253;
+            }
 
             if (favoritedEntries.Contains(queryCache[ArchiveList.SelectedIndices[0]].ID))
             {
@@ -277,25 +290,71 @@ namespace WumboLauncher
         // Launch selected entry
         private void ArchiveList_itemAccess(object sender, EventArgs e)
         {
-            if (File.Exists(Config.CLIFpPath))
-            {
-                string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
+            if (!InitializeCLIFp())
+                return;
 
-                LaunchEntry.StartInfo.FileName = Config.CLIFpPath;
-                LaunchEntry.StartInfo.Arguments = $"play -i {entryID}";
-                LaunchEntry.Start();
+            string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
+
+            LaunchEntry.StartInfo.Arguments = $"play -i {entryID}";
+            LaunchEntry.Start();
+
+            // Add to list of played entries (if it hasn't been played already)
+            if (!playedEntries.Contains(entryID))
+            {
+                playedEntries.Add(entryID);
+
+                using (StreamWriter newText = File.AppendText("downloads.fp"))
+                    newText.WriteLine(entryID);
+            }
+        }
+
+        // Display additional apps when arrow button is clicked
+        private void AlternateButton_click(object sender, EventArgs e)
+        {
+            AlternateMenu.Items.Clear();
+            string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
+
+            int i = 0;
+            foreach (string name in DatabaseQuery($"SELECT name FROM additional_app WHERE parentGameId = '{entryID}'"))
+            {
+                AlternateMenu.Items.Add($"Launch:  {name}");
+                AlternateMenu.Items[i].Tag = DatabaseQuery($"SELECT id FROM additional_app WHERE parentGameId = '{entryID}'")[0];
+
+                i++;
+            }
+
+            Point menuPosition = AlternateButton.Parent.PointToScreen(AlternateButton.Location);
+            menuPosition.X += AlternateButton.Width;
+
+            AlternateMenu.Show(menuPosition, ToolStripDropDownDirection.AboveLeft);
+        }
+
+        // Launch additional app
+        private void AlternateMenu_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+            if (!InitializeCLIFp())
+                return;
+
+            string entryID = (string)e.ClickedItem.Tag;
+            string entryAppPath = DatabaseQuery($"SELECT applicationPath FROM additional_app WHERE id = '{entryID}'")[0];
+
+            LaunchEntry.StartInfo.Arguments = $"play -i {entryID}";
+
+            if (entryAppPath != ":extras:" && entryAppPath != ":message:")
+            {
+                string entryParentID = DatabaseQuery($"SELECT parentGameId FROM additional_app WHERE id = '{entryID}'")[0];
 
                 // Add to list of played entries (if it hasn't been played already)
-                if (!playedEntries.Contains(entryID))
+                if (!playedEntries.Contains(entryParentID))
                 {
-                    playedEntries.Add(entryID);
+                    playedEntries.Add(entryParentID);
 
                     using (StreamWriter newText = File.AppendText("downloads.fp"))
-                        newText.WriteLine(entryID);
+                        newText.WriteLine(entryParentID);
                 }
             }
-            else
-                MessageBox.Show("CLIFp not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            LaunchEntry.Start();
         }
 
         // Add or remove entry from favorites list and change image
@@ -308,36 +367,24 @@ namespace WumboLauncher
             if (favoriteButton.Checked)
             {
                 if (!favoritedEntries.Contains(entryID))
-                {
                     favoritedEntries.Add(entryID);
-
-                    using (StreamWriter newText = File.AppendText("favorites.fp"))
-                    {
-                        if (favoritedEntries.Count > 0)
-                            newText.Write(Environment.NewLine + entryID);
-                        else
-                            newText.Write(entryID);
-                    }
-                }
 
                 favoriteButton.ImageIndex = 1;
             }
             else
             {
                 if (favoritedEntries.Contains(entryID))
-                {
                     favoritedEntries.Remove(entryID);
 
-                    using (FileStream favorites = new("favorites.fp", FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
-                    {
-                        lock (favorites)
-                            favorites.SetLength(0);
-
-                        favorites.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, favoritedEntries)));
-                    }
-                }
-
                 favoriteButton.ImageIndex = 0;
+            }
+
+            using (FileStream favorites = new("favorites.fp", FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+            {
+                lock (favorites)
+                    favorites.SetLength(0);
+
+                favorites.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, favoritedEntries)));
             }
         }
 
@@ -497,6 +544,9 @@ namespace WumboLauncher
             {
                 foreach (string id in ArchiveRadioPlays.Checked ? playedEntries : favoritedEntries)
                 {
+                    if (DatabaseQuery($"SELECT id FROM game WHERE id = '{id}'").Count == 0)
+                        continue;
+
                     queryTitle.Add(DatabaseQuery($"SELECT title FROM game WHERE id = '{id}'")[0]);
                     queryDeveloper.Add(DatabaseQuery($"SELECT developer FROM game WHERE id = '{id}'")[0]);
                     queryPublisher.Add(DatabaseQuery($"SELECT publisher FROM game WHERE id = '{id}'")[0]);
@@ -539,6 +589,21 @@ namespace WumboLauncher
                 ScaleColumns();
             else
                 AdjustColumns();
+        }
+
+        private bool InitializeCLIFp()
+        {
+            if (File.Exists(Config.CLIFpPath))
+            {
+                LaunchEntry.StartInfo.FileName = Config.CLIFpPath;
+                return true;
+            }
+            else
+            {
+                MessageBox.Show("CLIFp not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                OpenSettings();
+                return false;
+            }
         }
 
         private void LoadFilteredTags()

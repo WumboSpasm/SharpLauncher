@@ -52,6 +52,7 @@
             this.EntryCountLabel = new System.Windows.Forms.Label();
             this.AdjustColumnsButton = new System.Windows.Forms.Button();
             this.PlayContainer = new System.Windows.Forms.Panel();
+            this.AlternateButton = new System.Windows.Forms.Button();
             this.PlayButton = new System.Windows.Forms.Button();
             this.FavoriteButton = new System.Windows.Forms.CheckBox();
             this.FavoriteButtonImages = new System.Windows.Forms.ImageList(this.components);
@@ -66,6 +67,7 @@
             this.SearchButtonContainer = new System.Windows.Forms.Panel();
             this.SearchButton = new System.Windows.Forms.Button();
             this.LaunchEntry = new System.Diagnostics.Process();
+            this.AlternateMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.ArchiveLayout.SuspendLayout();
             this.ArchiveInfoContainer.SuspendLayout();
             this.ArchiveImagesContainer.SuspendLayout();
@@ -391,6 +393,7 @@
             // 
             // PlayContainer
             // 
+            this.PlayContainer.Controls.Add(this.AlternateButton);
             this.PlayContainer.Controls.Add(this.PlayButton);
             this.PlayContainer.Controls.Add(this.FavoriteButton);
             this.PlayContainer.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -400,6 +403,20 @@
             this.PlayContainer.Size = new System.Drawing.Size(300, 32);
             this.PlayContainer.TabIndex = 11;
             // 
+            // AlternateButton
+            // 
+            this.AlternateButton.FlatAppearance.BorderColor = System.Drawing.Color.Gainsboro;
+            this.AlternateButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
+            this.AlternateButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
+            this.AlternateButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.AlternateButton.Location = new System.Drawing.Point(246, 6);
+            this.AlternateButton.Margin = new System.Windows.Forms.Padding(0);
+            this.AlternateButton.Name = "AlternateButton";
+            this.AlternateButton.Size = new System.Drawing.Size(15, 25);
+            this.AlternateButton.TabIndex = 10;
+            this.AlternateButton.UseVisualStyleBackColor = true;
+            this.AlternateButton.Click += new System.EventHandler(this.AlternateButton_click);
+            // 
             // PlayButton
             // 
             this.PlayButton.FlatAppearance.BorderColor = System.Drawing.Color.Gainsboro;
@@ -407,9 +424,9 @@
             this.PlayButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
             this.PlayButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.PlayButton.Location = new System.Drawing.Point(9, 6);
-            this.PlayButton.Margin = new System.Windows.Forms.Padding(9, 6, 5, 1);
+            this.PlayButton.Margin = new System.Windows.Forms.Padding(0);
             this.PlayButton.Name = "PlayButton";
-            this.PlayButton.Size = new System.Drawing.Size(253, 25);
+            this.PlayButton.Size = new System.Drawing.Size(238, 25);
             this.PlayButton.TabIndex = 3;
             this.PlayButton.Text = "Play";
             this.PlayButton.UseVisualStyleBackColor = true;
@@ -584,6 +601,14 @@
             this.LaunchEntry.StartInfo.UserName = "";
             this.LaunchEntry.SynchronizingObject = this;
             // 
+            // AlternateMenu
+            // 
+            this.AlternateMenu.DropShadowEnabled = false;
+            this.AlternateMenu.Name = "AlternateMenu";
+            this.AlternateMenu.ShowImageMargin = false;
+            this.AlternateMenu.Size = new System.Drawing.Size(156, 26);
+            this.AlternateMenu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.AlternateMenu_ItemClicked);
+            // 
             // Main
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -652,5 +677,7 @@
         private CheckBox FavoriteButton;
         private Panel PlayContainer;
         private ImageList FavoriteButtonImages;
+        private Button AlternateButton;
+        private ContextMenuStrip AlternateMenu;
     }
 }
