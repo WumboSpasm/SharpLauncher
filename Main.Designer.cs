@@ -28,8 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.ArchiveLayout = new System.Windows.Forms.TableLayoutPanel();
-            this.PlayButton = new System.Windows.Forms.Button();
             this.ArchiveList = new System.Windows.Forms.ListView();
             this.ArchiveInfoContainer = new System.Windows.Forms.FlowLayoutPanel();
             this.ArchiveInfoTitle = new System.Windows.Forms.Label();
@@ -42,12 +43,18 @@
             this.ArchiveImagesScreenshot = new System.Windows.Forms.PictureBox();
             this.ArchiveRadioContainer = new System.Windows.Forms.FlowLayoutPanel();
             this.ArchiveRadioHeader = new System.Windows.Forms.Panel();
+            this.ArchiveRadioPlays = new System.Windows.Forms.RadioButton();
+            this.ArchiveRadioFavorites = new System.Windows.Forms.RadioButton();
             this.ArchiveRadioAnimations = new System.Windows.Forms.RadioButton();
             this.ArchiveRadioGames = new System.Windows.Forms.RadioButton();
             this.DebugLabel = new System.Windows.Forms.Label();
             this.ArchiveListFooter = new System.Windows.Forms.Panel();
             this.EntryCountLabel = new System.Windows.Forms.Label();
             this.AdjustColumnsButton = new System.Windows.Forms.Button();
+            this.PlayContainer = new System.Windows.Forms.Panel();
+            this.PlayButton = new System.Windows.Forms.Button();
+            this.FavoriteButton = new System.Windows.Forms.CheckBox();
+            this.FavoriteButtonImages = new System.Windows.Forms.ImageList(this.components);
             this.TabControl = new System.Windows.Forms.TabControl();
             this.HomeTab = new System.Windows.Forms.TabPage();
             this.ArchiveTab = new System.Windows.Forms.TabPage();
@@ -69,6 +76,7 @@
             this.ArchiveRadioContainer.SuspendLayout();
             this.ArchiveRadioHeader.SuspendLayout();
             this.ArchiveListFooter.SuspendLayout();
+            this.PlayContainer.SuspendLayout();
             this.TabControl.SuspendLayout();
             this.ArchiveTab.SuspendLayout();
             this.ButtonContainer.SuspendLayout();
@@ -82,36 +90,20 @@
             this.ArchiveLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
             this.ArchiveLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.ArchiveLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
-            this.ArchiveLayout.Controls.Add(this.PlayButton, 2, 1);
             this.ArchiveLayout.Controls.Add(this.ArchiveList, 1, 0);
             this.ArchiveLayout.Controls.Add(this.ArchiveInfoContainer, 2, 0);
             this.ArchiveLayout.Controls.Add(this.ArchiveRadioContainer, 0, 0);
             this.ArchiveLayout.Controls.Add(this.ArchiveListFooter, 1, 1);
+            this.ArchiveLayout.Controls.Add(this.PlayContainer, 2, 1);
             this.ArchiveLayout.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveLayout.Location = new System.Drawing.Point(3, 3);
             this.ArchiveLayout.Name = "ArchiveLayout";
             this.ArchiveLayout.RowCount = 2;
             this.ArchiveLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.ArchiveLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 32F));
+            this.ArchiveLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.ArchiveLayout.Size = new System.Drawing.Size(1244, 685);
             this.ArchiveLayout.TabIndex = 3;
-            // 
-            // PlayButton
-            // 
-            this.PlayButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PlayButton.FlatAppearance.BorderColor = System.Drawing.Color.Gainsboro;
-            this.PlayButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
-            this.PlayButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
-            this.PlayButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.PlayButton.Location = new System.Drawing.Point(953, 659);
-            this.PlayButton.Margin = new System.Windows.Forms.Padding(9, 6, 5, 1);
-            this.PlayButton.Name = "PlayButton";
-            this.PlayButton.Size = new System.Drawing.Size(286, 25);
-            this.PlayButton.TabIndex = 3;
-            this.PlayButton.Text = "Play";
-            this.PlayButton.UseVisualStyleBackColor = true;
-            this.PlayButton.Visible = false;
-            this.PlayButton.Click += new System.EventHandler(this.ArchiveList_itemAccess);
             // 
             // ArchiveList
             // 
@@ -258,14 +250,58 @@
             // 
             // ArchiveRadioHeader
             // 
+            this.ArchiveRadioHeader.Controls.Add(this.ArchiveRadioPlays);
+            this.ArchiveRadioHeader.Controls.Add(this.ArchiveRadioFavorites);
             this.ArchiveRadioHeader.Controls.Add(this.ArchiveRadioAnimations);
             this.ArchiveRadioHeader.Controls.Add(this.ArchiveRadioGames);
             this.ArchiveRadioHeader.Dock = System.Windows.Forms.DockStyle.Top;
             this.ArchiveRadioHeader.Location = new System.Drawing.Point(0, 0);
             this.ArchiveRadioHeader.Margin = new System.Windows.Forms.Padding(0);
             this.ArchiveRadioHeader.Name = "ArchiveRadioHeader";
-            this.ArchiveRadioHeader.Size = new System.Drawing.Size(292, 53);
+            this.ArchiveRadioHeader.Size = new System.Drawing.Size(292, 105);
             this.ArchiveRadioHeader.TabIndex = 10;
+            // 
+            // ArchiveRadioPlays
+            // 
+            this.ArchiveRadioPlays.Appearance = System.Windows.Forms.Appearance.Button;
+            this.ArchiveRadioPlays.BackColor = System.Drawing.Color.Transparent;
+            this.ArchiveRadioPlays.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.ArchiveRadioPlays.FlatAppearance.BorderSize = 0;
+            this.ArchiveRadioPlays.FlatAppearance.CheckedBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(240)))), ((int)(((byte)(255)))));
+            this.ArchiveRadioPlays.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
+            this.ArchiveRadioPlays.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
+            this.ArchiveRadioPlays.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.ArchiveRadioPlays.Location = new System.Drawing.Point(0, 55);
+            this.ArchiveRadioPlays.Margin = new System.Windows.Forms.Padding(0);
+            this.ArchiveRadioPlays.Name = "ArchiveRadioPlays";
+            this.ArchiveRadioPlays.Size = new System.Drawing.Size(292, 25);
+            this.ArchiveRadioPlays.TabIndex = 10;
+            this.ArchiveRadioPlays.TabStop = true;
+            this.ArchiveRadioPlays.Text = "Your Plays";
+            this.ArchiveRadioPlays.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.ArchiveRadioPlays.UseVisualStyleBackColor = false;
+            this.ArchiveRadioPlays.CheckedChanged += new System.EventHandler(this.ArchiveRadio_checkedChanged);
+            // 
+            // ArchiveRadioFavorites
+            // 
+            this.ArchiveRadioFavorites.Appearance = System.Windows.Forms.Appearance.Button;
+            this.ArchiveRadioFavorites.BackColor = System.Drawing.Color.Transparent;
+            this.ArchiveRadioFavorites.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.ArchiveRadioFavorites.FlatAppearance.BorderSize = 0;
+            this.ArchiveRadioFavorites.FlatAppearance.CheckedBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(240)))), ((int)(((byte)(255)))));
+            this.ArchiveRadioFavorites.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
+            this.ArchiveRadioFavorites.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
+            this.ArchiveRadioFavorites.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.ArchiveRadioFavorites.Location = new System.Drawing.Point(0, 80);
+            this.ArchiveRadioFavorites.Margin = new System.Windows.Forms.Padding(0);
+            this.ArchiveRadioFavorites.Name = "ArchiveRadioFavorites";
+            this.ArchiveRadioFavorites.Size = new System.Drawing.Size(292, 25);
+            this.ArchiveRadioFavorites.TabIndex = 11;
+            this.ArchiveRadioFavorites.TabStop = true;
+            this.ArchiveRadioFavorites.Text = "Your Favorites";
+            this.ArchiveRadioFavorites.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.ArchiveRadioFavorites.UseVisualStyleBackColor = false;
+            this.ArchiveRadioFavorites.CheckedChanged += new System.EventHandler(this.ArchiveRadio_checkedChanged);
             // 
             // ArchiveRadioAnimations
             // 
@@ -311,9 +347,9 @@
             // 
             // DebugLabel
             // 
-            this.DebugLabel.Location = new System.Drawing.Point(3, 53);
+            this.DebugLabel.Location = new System.Drawing.Point(3, 105);
             this.DebugLabel.Name = "DebugLabel";
-            this.DebugLabel.Size = new System.Drawing.Size(286, 599);
+            this.DebugLabel.Size = new System.Drawing.Size(286, 545);
             this.DebugLabel.TabIndex = 12;
             // 
             // ArchiveListFooter
@@ -352,6 +388,59 @@
             this.AdjustColumnsButton.Text = "Adjust Columns";
             this.AdjustColumnsButton.UseVisualStyleBackColor = true;
             this.AdjustColumnsButton.Click += new System.EventHandler(this.AdjustColumnsButton_click);
+            // 
+            // PlayContainer
+            // 
+            this.PlayContainer.Controls.Add(this.PlayButton);
+            this.PlayContainer.Controls.Add(this.FavoriteButton);
+            this.PlayContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.PlayContainer.Location = new System.Drawing.Point(944, 653);
+            this.PlayContainer.Margin = new System.Windows.Forms.Padding(0);
+            this.PlayContainer.Name = "PlayContainer";
+            this.PlayContainer.Size = new System.Drawing.Size(300, 32);
+            this.PlayContainer.TabIndex = 11;
+            // 
+            // PlayButton
+            // 
+            this.PlayButton.FlatAppearance.BorderColor = System.Drawing.Color.Gainsboro;
+            this.PlayButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
+            this.PlayButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
+            this.PlayButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.PlayButton.Location = new System.Drawing.Point(9, 6);
+            this.PlayButton.Margin = new System.Windows.Forms.Padding(9, 6, 5, 1);
+            this.PlayButton.Name = "PlayButton";
+            this.PlayButton.Size = new System.Drawing.Size(253, 25);
+            this.PlayButton.TabIndex = 3;
+            this.PlayButton.Text = "Play";
+            this.PlayButton.UseVisualStyleBackColor = true;
+            this.PlayButton.Click += new System.EventHandler(this.ArchiveList_itemAccess);
+            // 
+            // FavoriteButton
+            // 
+            this.FavoriteButton.Appearance = System.Windows.Forms.Appearance.Button;
+            this.FavoriteButton.CheckAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.FavoriteButton.FlatAppearance.BorderSize = 0;
+            this.FavoriteButton.FlatAppearance.CheckedBackColor = System.Drawing.Color.Transparent;
+            this.FavoriteButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent;
+            this.FavoriteButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Transparent;
+            this.FavoriteButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.FavoriteButton.ImageIndex = 0;
+            this.FavoriteButton.ImageList = this.FavoriteButtonImages;
+            this.FavoriteButton.Location = new System.Drawing.Point(269, 5);
+            this.FavoriteButton.Margin = new System.Windows.Forms.Padding(0);
+            this.FavoriteButton.Name = "FavoriteButton";
+            this.FavoriteButton.Size = new System.Drawing.Size(25, 25);
+            this.FavoriteButton.TabIndex = 9;
+            this.FavoriteButton.UseVisualStyleBackColor = true;
+            this.FavoriteButton.CheckedChanged += new System.EventHandler(this.FavoriteButton_CheckedChanged);
+            // 
+            // FavoriteButtonImages
+            // 
+            this.FavoriteButtonImages.ColorDepth = System.Windows.Forms.ColorDepth.Depth24Bit;
+            this.FavoriteButtonImages.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("FavoriteButtonImages.ImageStream")));
+            this.FavoriteButtonImages.TransparentColor = System.Drawing.Color.Transparent;
+            this.FavoriteButtonImages.Images.SetKeyName(0, "unfavorite");
+            this.FavoriteButtonImages.Images.SetKeyName(1, "favorite");
             // 
             // TabControl
             // 
@@ -515,6 +604,7 @@
             this.ArchiveRadioContainer.ResumeLayout(false);
             this.ArchiveRadioHeader.ResumeLayout(false);
             this.ArchiveListFooter.ResumeLayout(false);
+            this.PlayContainer.ResumeLayout(false);
             this.TabControl.ResumeLayout(false);
             this.ArchiveTab.ResumeLayout(false);
             this.ButtonContainer.ResumeLayout(false);
@@ -557,5 +647,10 @@
         private Label EntryCountLabel;
         private Button PlayButton;
         private Label DebugLabel;
+        private RadioButton ArchiveRadioPlays;
+        private RadioButton ArchiveRadioFavorites;
+        private CheckBox FavoriteButton;
+        private Panel PlayContainer;
+        private ImageList FavoriteButtonImages;
     }
 }

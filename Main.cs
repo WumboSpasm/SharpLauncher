@@ -56,10 +56,14 @@ namespace WumboLauncher
             public string Title { get; set; } = "";
             public string Developer { get; set; } = "";
             public string Publisher { get; set; } = "";
-            public int Index { get; set; } = -1;
+            public string ID { get; set; } = "";
         }
         // Cache of all items to be displayed in list
         List<QueryItem> queryCache = new();
+        // Array of all entries that have been played
+        List<string> playedEntries = new();
+        // Array of all entries that have been favorited
+        List<string> favoritedEntries = new();
         // Check if column width has been changed manually
         bool columnChanged = false;
         // Check if images have been loaded
@@ -72,11 +76,25 @@ namespace WumboLauncher
 
         private void Main_load(object sender, EventArgs e)
         {
-            // Create configuration file if one doesn't exist
+            // Create data files if they don't exist, otherwise load
+
             if (File.Exists("config.json") && File.ReadAllText("config.json").Length > 0)
                 Config.Read();
             else
                 Config.Write();
+
+            if (File.Exists("downloads.fp"))
+                playedEntries = File.ReadAllLines("downloads.fp").ToList();
+            else
+                File.Create("downloads.fp");
+
+            if (File.Exists("favorites.fp"))
+            {
+                favoritedEntries = File.ReadAllLines("favorites.fp").ToList();
+                favoritedEntries.RemoveAll(i => i == "");
+            }
+            else
+                File.Create("favorites.fp");
 
             // Why Visual Studio doesn't let me do this the regular way, I don't know
             SearchBox.AutoSize = false;
@@ -167,13 +185,12 @@ namespace WumboLauncher
                 return;
             }
 
-            int entryIndex = queryCache[selectedIndices[0]].Index;
-
             List<string> metadataOutput = new(metadataFields.GetLength(0));
+            string entryID = queryCache[selectedIndices[0]].ID;
 
             for (int i = 0; i < metadataFields.GetLength(0); i++)
                 metadataOutput.Add(
-                    DatabaseQuery(metadataFields[i, 1], entryIndex)[0]
+                    DatabaseQuery($"SELECT {metadataFields[i, 1]} from GAME where id = '{entryID}'")[0]
                 );
 
             // Header
@@ -209,11 +226,10 @@ namespace WumboLauncher
             if (!ArchiveImagesContainer.Visible)
                 ArchiveImagesContainer.Visible = true;
             
-            string entryId = DatabaseQuery("id", entryIndex)[0];
             foreach (string folder in new string[] { "Logos", "Screenshots" })
             {
-                string[] imageTree = { entryId.Substring(0, 2), entryId.Substring(2, 2) };
-                string imagePath = $"\\Data\\Images\\{folder}\\{imageTree[0]}\\{imageTree[1]}\\{entryId}.png";
+                string[] imageTree = { entryID.Substring(0, 2), entryID.Substring(2, 2) };
+                string imagePath = $"\\Data\\Images\\{folder}\\{imageTree[0]}\\{imageTree[1]}\\{entryID}.png";
 
                 if (File.Exists(Config.FlashpointPath + imagePath))
                 {
@@ -244,22 +260,85 @@ namespace WumboLauncher
             else
                 PlayButton.Text = "Play (Legacy)";
 
-            PlayButton.Visible = true;
+            if (favoritedEntries.Contains(queryCache[ArchiveList.SelectedIndices[0]].ID))
+            {
+                FavoriteButton.Checked = true;
+                FavoriteButton.ImageIndex = 1;
+            }
+            else
+            {
+                FavoriteButton.Checked = false;
+                FavoriteButton.ImageIndex = 0;
+            }
+
+            PlayContainer.Visible = true;
         }
 
         // Launch selected entry
         private void ArchiveList_itemAccess(object sender, EventArgs e)
         {
-            int entryIndex = queryCache[ArchiveList.SelectedIndices[0]].Index;
-
             if (File.Exists(Config.CLIFpPath))
             {
+                string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
+
                 LaunchEntry.StartInfo.FileName = Config.CLIFpPath;
-                LaunchEntry.StartInfo.Arguments = $"play -i {DatabaseQuery("id", entryIndex)[0]}";
+                LaunchEntry.StartInfo.Arguments = $"play -i {entryID}";
                 LaunchEntry.Start();
+
+                // Add to list of played entries (if it hasn't been played already)
+                if (!playedEntries.Contains(entryID))
+                {
+                    playedEntries.Add(entryID);
+
+                    using (StreamWriter newText = File.AppendText("downloads.fp"))
+                        newText.WriteLine(entryID);
+                }
             }
             else
                 MessageBox.Show("CLIFp not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        // Add or remove entry from favorites list and change image
+        private void FavoriteButton_CheckedChanged(object sender, EventArgs e)
+        {
+            CheckBox favoriteButton = (CheckBox)sender;
+
+            string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
+
+            if (favoriteButton.Checked)
+            {
+                if (!favoritedEntries.Contains(entryID))
+                {
+                    favoritedEntries.Add(entryID);
+
+                    using (StreamWriter newText = File.AppendText("favorites.fp"))
+                    {
+                        if (favoritedEntries.Count > 0)
+                            newText.Write(Environment.NewLine + entryID);
+                        else
+                            newText.Write(entryID);
+                    }
+                }
+
+                favoriteButton.ImageIndex = 1;
+            }
+            else
+            {
+                if (favoritedEntries.Contains(entryID))
+                {
+                    favoritedEntries.Remove(entryID);
+
+                    using (FileStream favorites = new("favorites.fp", FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+                    {
+                        lock (favorites)
+                            favorites.SetLength(0);
+
+                        favorites.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, favoritedEntries)));
+                    }
+                }
+
+                favoriteButton.ImageIndex = 0;
+            }
         }
 
         // Update columnWidths in case column is changed manually
@@ -289,6 +368,7 @@ namespace WumboLauncher
             ArchiveList.Columns[queryOrderBy].Text = $"{columnHeaders[queryOrderBy]}  {arrow}";
 
             SortColumns();
+            ClearInfoPanel();
 
             ArchiveList.VirtualListSize = 0;
             ArchiveList.VirtualListSize = Convert.ToInt32(queryCache.Count);
@@ -309,7 +389,7 @@ namespace WumboLauncher
             {
                 if (checkedRadio.Name == "ArchiveRadioGames")
                     queryLibrary = "arcade";
-                else if (checkedRadio.Name == "ArchiveRadioAnimations")
+                if (checkedRadio.Name == "ArchiveRadioAnimations")
                     queryLibrary = "theatre";
 
                 RefreshDatabase();
@@ -406,13 +486,32 @@ namespace WumboLauncher
             ClearInfoPanel();
             queryCache.Clear();
 
-            // Get values to be inserted into QueryItem objects
-            List<string> queryTitle = DatabaseQuery("title");
-            List<string> queryDeveloper = DatabaseQuery("developer");
-            List<string> queryPublisher = DatabaseQuery("publisher");
-            List<int> queryIndex = Enumerable.Range(0, queryTitle.Count).ToList();
+            List<string> queryTitle = new();
+            List<string> queryDeveloper = new();
+            List<string> queryPublisher = new();
+            List<string> queryTags = new();
+            List<string> queryID = new();
 
-            List<string> queryTags = DatabaseQuery("tagsStr");
+            // Get values to be inserted into QueryItem objects
+            if (ArchiveRadioPlays.Checked || ArchiveRadioFavorites.Checked)
+            {
+                foreach (string id in ArchiveRadioPlays.Checked ? playedEntries : favoritedEntries)
+                {
+                    queryTitle.Add(DatabaseQuery($"SELECT title FROM game WHERE id = '{id}'")[0]);
+                    queryDeveloper.Add(DatabaseQuery($"SELECT developer FROM game WHERE id = '{id}'")[0]);
+                    queryPublisher.Add(DatabaseQuery($"SELECT publisher FROM game WHERE id = '{id}'")[0]);
+                    queryTags.Add(DatabaseQuery($"SELECT tagsStr FROM game WHERE id = '{id}'")[0]);
+                    queryID.Add(id);
+                }
+            }
+            else
+            {
+                queryTitle = DatabaseQuery(GetQuery("title"));
+                queryDeveloper = DatabaseQuery(GetQuery("developer"));
+                queryPublisher = DatabaseQuery(GetQuery("publisher"));
+                queryTags = DatabaseQuery(GetQuery("tagsStr"));
+                queryID = DatabaseQuery(GetQuery("id"));
+            }
 
             // If item is not filtered, create QueryItem object and add to queryCache
             for (int i = 0; i < queryTitle.Count; i++)
@@ -422,7 +521,7 @@ namespace WumboLauncher
                         Title = queryTitle[i],
                         Developer = queryDeveloper[i],
                         Publisher = queryPublisher[i],
-                        Index = queryIndex[i]
+                        ID = queryID[i]
                     });
 
             // Sort new queryCache
@@ -466,17 +565,12 @@ namespace WumboLauncher
         }
 
         // Return items from the Flashpoint database
-        private List<string> DatabaseQuery(string column, int offset = -1)
+        private List<string> DatabaseQuery(string query)
         {
             SqliteConnection connection = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
             connection.Open();
 
-            SqliteCommand command = new(
-                $"SELECT {column} FROM game " +
-                $"WHERE library = '{queryLibrary}'" +
-                (querySearch != "" ? $"AND title LIKE '%{querySearch}%'" : "") +
-                $"ORDER BY title {(offset != -1 ? $"LIMIT {offset}, 1" : "")}"
-            , connection);
+            SqliteCommand command = new(query, connection);
 
             List<string> data = new();
 
@@ -488,6 +582,12 @@ namespace WumboLauncher
 
             return data;
         }
+
+        // Query template to make things easier
+        private string GetQuery(string column, int offset = -1) =>
+            $"SELECT {column} FROM game WHERE library = '{queryLibrary}'" +
+            (querySearch != "" ? $"AND title LIKE '%{querySearch}%'" : "") +
+            $"ORDER BY title {(offset != -1 ? $"LIMIT {offset}, 1" : "")}";
 
         private void ExecuteSearchQuery()
         {
@@ -596,7 +696,7 @@ namespace WumboLauncher
             ArchiveImagesScreenshot.Image = null;
             logoLoaded = false;
             screenshotLoaded = false;
-            PlayButton.Visible = false;
+            PlayContainer.Visible = false;
         }
 
         // Make strings suitable for RTF text box

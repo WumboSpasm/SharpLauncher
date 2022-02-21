@@ -221,6 +221,7 @@
             this.columnHeader2});
             this.FilterList.FullRowSelect = true;
             this.FilterList.GridLines = true;
+            this.FilterList.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.FilterList.Location = new System.Drawing.Point(6, 28);
             this.FilterList.MultiSelect = false;
             this.FilterList.Name = "FilterList";
