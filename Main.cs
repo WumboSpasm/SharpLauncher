@@ -99,10 +99,6 @@ namespace WumboLauncher
 
             // Give the additional apps button an arrow
             AlternateButton.Text = char.ConvertFromUtf32(0x2BC5);
-
-            // Get everything ready
-            InitializeDatabase();
-            InitializeCLIFp();
         }
 
         private void Main_resize(object sender, EventArgs e)
@@ -318,7 +314,7 @@ namespace WumboLauncher
             foreach (string name in DatabaseQuery($"SELECT name FROM additional_app WHERE parentGameId = '{entryID}'"))
             {
                 AlternateMenu.Items.Add($"Launch:  {name}");
-                AlternateMenu.Items[i].Tag = DatabaseQuery($"SELECT id FROM additional_app WHERE parentGameId = '{entryID}'")[0];
+                AlternateMenu.Items[i].Tag = DatabaseQuery($"SELECT id FROM additional_app WHERE name = '{name}'")[0];
 
                 i++;
             }
@@ -493,6 +489,9 @@ namespace WumboLauncher
 
                 if (Encoding.ASCII.GetString(header).Contains("SQLite format"))
                 {
+                    LoadFilteredTags();
+                    RefreshDatabase();
+
                     // Add columns to list and get width for later
                     if (ArchiveList.Columns.Count != columnHeaders.Length)
                     {
@@ -504,9 +503,6 @@ namespace WumboLauncher
 
                         prevWidth = ArchiveList.ClientSize.Width;
                     }
-
-                    LoadFilteredTags();
-                    RefreshDatabase();
 
                     if (queryLibrary == "arcade")
                         ArchiveRadioGames.Checked = true;

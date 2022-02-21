@@ -10,7 +10,7 @@ namespace WumboLauncher
         public static string CLIFpPath { get; set; } = @".\CLIFp\CLIFp.exe";
         public static string FlashpointServer { get; set; } = "http://infinity.unstable.life/Flashpoint";
 
-        public static bool NeedsRefresh { get; set; } = false;
+        public static bool NeedsRefresh { get; set; } = true;
 
         // Replace data with values from config file
         public static void Read()
