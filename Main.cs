@@ -311,10 +311,10 @@ namespace WumboLauncher
             string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
 
             int i = 0;
-            foreach (string name in DatabaseQuery($"SELECT name FROM additional_app WHERE parentGameId = '{entryID}'"))
+            foreach (string id in DatabaseQuery($"SELECT id FROM additional_app WHERE parentGameId = '{entryID}'"))
             {
-                AlternateMenu.Items.Add($"Launch:  {name}");
-                AlternateMenu.Items[i].Tag = DatabaseQuery($"SELECT id FROM additional_app WHERE name = '{name}'")[0];
+                AlternateMenu.Items.Add($"Launch: " + DatabaseQuery($"SELECT name FROM additional_app WHERE id = '{id}'")[0]);
+                AlternateMenu.Items[i].Tag = id;
 
                 i++;
             }
