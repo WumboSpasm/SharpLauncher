@@ -2,7 +2,7 @@ using System.Text;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 
-namespace WumboLauncher
+namespace SharpLauncher
 {
     public partial class Main : Form
     {
@@ -18,24 +18,24 @@ namespace WumboLauncher
         // Previous width of the list
         int prevWidth;
         // Metadata fields to be retrieved alongside their proper names
-        string[,] metadataFields =
+        List<string[]> metadataFields = new()
         {
-            { "Title", "title" },
-            { "Alternate Titles", "alternateTitles" },
-            { "Series", "series" },
-            { "Developer", "developer" },
-            { "Publisher", "publisher" },
-            { "Source", "source" },
-            { "Release Date", "releaseDate" },
-            { "Platform", "platform" },
-            { "Version", "version" },
-            { "Tags", "tagsStr" },
-            { "Language", "language" },
-            { "Play Mode", "playMode" },
-            { "Status", "status" },
-            { "Legacy Game", "activeDataOnDisk" },
-            { "Notes", "notes" },
-            { "Original Description", "originalDescription" }
+            new[] { "Title", "title" },
+            new[] { "Alternate Titles", "alternateTitles" },
+            new[] { "Series", "series" },
+            new[] { "Developer", "developer" },
+            new[] { "Publisher", "publisher" },
+            new[] { "Source", "source" },
+            new[] { "Release Date", "releaseDate" },
+            new[] { "Platform", "platform" },
+            new[] { "Version", "version" },
+            new[] { "Tags", "tagsStr" },
+            new[] { "Language", "language" },
+            new[] { "Play Mode", "playMode" },
+            new[] { "Status", "status" },
+            new[] { "Legacy Game", "activeDataOnDisk" },
+            new[] { "Notes", "notes" },
+            new[] { "Original Description", "originalDescription" }
         };
         // Titles to be displayed above each column
         string[] columnHeaders = { "Title", "Developer", "Publisher" };
@@ -50,6 +50,7 @@ namespace WumboLauncher
         int queryOrderBy = 0;
         int queryDirection = 1;
         string querySearch = "";
+        string queryOperation = "";
         // Template for list items
         class QueryItem
         {
@@ -183,12 +184,12 @@ namespace WumboLauncher
                 return;
             }
 
-            List<string> metadataOutput = new(metadataFields.GetLength(0));
+            List<string> metadataOutput = new(metadataFields.Count);
             string entryID = queryCache[selectedIndices[0]].ID;
 
-            for (int i = 0; i < metadataFields.GetLength(0); i++)
+            for (int i = 0; i < metadataFields.Count; i++)
                 metadataOutput.Add(
-                    DatabaseQuery($"SELECT {metadataFields[i, 1]} from GAME where id = '{entryID}'")[0]
+                    DatabaseQuery($"SELECT {metadataFields[i][1]} from GAME where id = '{entryID}'")[0]
                 );
 
             // Header
@@ -209,12 +210,12 @@ namespace WumboLauncher
             for (int i = 1; i < metadataOutput.Count; i++)
                 if (metadataOutput[i] != "")
                 {
-                    if (metadataFields[i, 0] == "Legacy Game")
-                        entryData += $"\\b {metadataFields[i, 0]}: \\b0 {(metadataOutput[i] == "0" ? "Yes" : "No")}\\line";
-                    else if (metadataFields[i, 0] == "Notes" || metadataFields[i, 0] == "Original Description")
-                        entryData += $"\\line\\b {metadataFields[i, 0]}:\\line\\b0 {ToUnicode(metadataOutput[i])}\\line";
+                    if (metadataFields[i][0] == "Legacy Game")
+                        entryData += $"\\b {metadataFields[i][0]}: \\b0 {(metadataOutput[i] == "0" ? "Yes" : "No")}\\line";
+                    else if (metadataFields[i][0] == "Notes" || metadataFields[i][0] == "Original Description")
+                        entryData += $"\\line\\b {metadataFields[i][0]}:\\line\\b0 {ToUnicode(metadataOutput[i])}\\line";
                     else
-                        entryData += $"\\b {metadataFields[i, 0]}: \\b0 {ToUnicode(metadataOutput[i])}\\line";
+                        entryData += $"\\b {metadataFields[i][0]}: \\b0 {ToUnicode(metadataOutput[i])}\\line";
                 }
 
             entryData += "}";
@@ -647,24 +648,73 @@ namespace WumboLauncher
         // Query template to make things easier
         private string GetQuery(string column, int offset = -1) =>
             $"SELECT {column} FROM game WHERE library = '{queryLibrary}'" +
-            (querySearch != "" ? $"AND title LIKE '%{querySearch}%'" : "") +
+            (querySearch != "" ? $" AND title LIKE '%{querySearch}%'" : "") + queryOperation +
             $"ORDER BY title {(offset != -1 ? $"LIMIT {offset}, 1" : "")}";
 
         private void ExecuteSearchQuery()
         {
+            queryOperation = "";
+
             StringBuilder safeQuery = new();
 
-            foreach (char inputChar in SearchBox.Text.ToLower())
+            // Replace unsafe characters
+            foreach (char inputChar in SearchBox.Text)
             {
                 if (unsafeChars.Contains(inputChar))
-                    safeQuery.Append("_");
+                    safeQuery.Append('_');
                 else
                     safeQuery.Append(inputChar);
             }
 
-            querySearch = safeQuery.ToString();
-            RefreshDatabase();
+            string tempSearch = safeQuery.ToString();
 
+            // Initialize search operators
+
+            int leftBracketCount = tempSearch.Count(i => i == '[');
+            int rightBracketCount = tempSearch.Count(i => i == ']');
+
+            // Make sure there are brackets in the search query
+            if (leftBracketCount > 0 && leftBracketCount == rightBracketCount)
+            {
+                // Iterate through each group of brackets
+                for (int i = 0; i < leftBracketCount; i++)
+                {
+                    // Get indexes of brackets
+                    int leftBracket = tempSearch.IndexOf('[');
+                    int rightBracket = tempSearch.IndexOf(']');
+
+                    // Check if brackets are formatted correctly
+                    if (rightBracket > leftBracket)
+                    {
+                        // Get array containing each parameter
+                        string[] operationParams = tempSearch.Substring(leftBracket + 1, rightBracket - leftBracket - 1).Split(':');
+
+                        // Create operation if parameters are valid
+                        if (operationParams.Length == 2)
+                            foreach (string[] field in metadataFields)
+                                if (operationParams[0] == field[1])
+                                {
+                                    queryOperation += $" AND {operationParams[0]} = '{operationParams[1]}'";
+                                    break;
+                                }
+
+                        // Remove brackets
+                        tempSearch = tempSearch.Remove(leftBracket, rightBracket - leftBracket + 1);
+                    }
+                }
+            }
+
+            // Remove padding
+            while (tempSearch.Length > 0 && tempSearch[0] == ' ')
+                tempSearch = tempSearch.Remove(0, 1);
+            while (tempSearch.Length > 0 && tempSearch[tempSearch.Length - 1] == ' ')
+                tempSearch = tempSearch.Remove(tempSearch.Length - 1);
+
+            // Apply remaining string to generic search query
+            querySearch = tempSearch;
+
+            // Refresh and open list
+            RefreshDatabase();
             TabControl.SelectTab(1);
         }
 

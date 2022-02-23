@@ -1,4 +1,4 @@
-namespace WumboLauncher
+namespace SharpLauncher
 {
     internal static class Program
     {

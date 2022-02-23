@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Newtonsoft.Json.Linq;
 
-namespace WumboLauncher
+namespace SharpLauncher
 {
     public static class Config
     {

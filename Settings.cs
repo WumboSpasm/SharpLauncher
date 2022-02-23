@@ -2,7 +2,7 @@
 using Microsoft.WindowsAPICodePack.Dialogs;
 using Newtonsoft.Json;
 
-namespace WumboLauncher
+namespace SharpLauncher
 {
     public partial class Settings : Form
     {

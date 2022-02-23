@@ -1,4 +1,4 @@
-﻿namespace WumboLauncher
+﻿namespace SharpLauncher
 {
     partial class Settings
     {

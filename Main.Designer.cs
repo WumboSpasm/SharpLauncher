@@ -1,4 +1,4 @@
-﻿namespace WumboLauncher
+﻿namespace SharpLauncher
 {
     partial class Main
     {
@@ -606,7 +606,7 @@
             this.AlternateMenu.DropShadowEnabled = false;
             this.AlternateMenu.Name = "AlternateMenu";
             this.AlternateMenu.ShowImageMargin = false;
-            this.AlternateMenu.Size = new System.Drawing.Size(156, 26);
+            this.AlternateMenu.Size = new System.Drawing.Size(36, 4);
             this.AlternateMenu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.AlternateMenu_ItemClicked);
             // 
             // Main
@@ -615,7 +615,7 @@
             this.ClientSize = new System.Drawing.Size(1264, 729);
             this.Controls.Add(this.Container);
             this.Name = "Main";
-            this.Text = "Launcher";
+            this.Text = "SharpLauncher";
             this.Load += new System.EventHandler(this.Main_load);
             this.Resize += new System.EventHandler(this.Main_resize);
             this.ArchiveLayout.ResumeLayout(false);
