@@ -9,6 +9,6 @@ Despite offering full access to the Flashpoint archive, SharpLauncher is a work-
 
 ## Special thanks
 * <a href="https://github.com/LindirQuenya">LindirQuenya</a>
-* <a href="https://github.com/n0samu">Nosamu</a>
+* <a href="https://github.com/n0samu">nosamu</a>
 * <a href="https://github.com/oblivioncth">oblivioncth</a>
 * <a href="https://bluemaxima.org/flashpoint/">BlueMaxima's Flashpoint</a> and <a href="https://ruffle.rs/">Ruffle</a> communities

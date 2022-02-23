@@ -1,4 +1,5 @@
 using System.Text;
+using System.Diagnostics;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 
@@ -33,7 +34,7 @@ namespace SharpLauncher
             new[] { "Language", "language" },
             new[] { "Play Mode", "playMode" },
             new[] { "Status", "status" },
-            new[] { "Legacy Game", "activeDataOnDisk" },
+            new[] { "Format", "activeDataOnDisk" },
             new[] { "Notes", "notes" },
             new[] { "Original Description", "originalDescription" }
         };
@@ -100,6 +101,8 @@ namespace SharpLauncher
 
             // Give the additional apps button an arrow
             AlternateButton.Text = char.ConvertFromUtf32(0x2BC5);
+
+            HomeContainer.Location = GetHomepagePosition();
         }
 
         private void Main_resize(object sender, EventArgs e)
@@ -114,6 +117,9 @@ namespace SharpLauncher
 
             // Resize metadata textbox to new height
             ArchiveInfoData.Height = GetInfoHeight();
+
+            // Re-position Home tab contents
+            HomeContainer.Location = GetHomepagePosition();
         }
 
         // Initialize list when Archive tab is accessed for the first time
@@ -129,6 +135,8 @@ namespace SharpLauncher
                 else
                     AdjustColumns();
             }
+            else
+                HomeContainer.Location = GetHomepagePosition();
         }
 
         // Execute search if enter is pressed
@@ -210,8 +218,8 @@ namespace SharpLauncher
             for (int i = 1; i < metadataOutput.Count; i++)
                 if (metadataOutput[i] != "")
                 {
-                    if (metadataFields[i][0] == "Legacy Game")
-                        entryData += $"\\b {metadataFields[i][0]}: \\b0 {(metadataOutput[i] == "0" ? "Yes" : "No")}\\line";
+                    if (metadataFields[i][0] == "Format")
+                        entryData += $"\\b {metadataFields[i][0]}: \\b0 {(metadataOutput[i] == "0" ? "Legacy" : "GameZIP")}\\line";
                     else if (metadataFields[i][0] == "Notes" || metadataFields[i][0] == "Original Description")
                         entryData += $"\\line\\b {metadataFields[i][0]}:\\line\\b0 {ToUnicode(metadataOutput[i])}\\line";
                     else
@@ -327,7 +335,7 @@ namespace SharpLauncher
         }
 
         // Launch additional app
-        private void AlternateMenu_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        private void AlternateMenu_itemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
             if (!InitializeCLIFp())
                 return;
@@ -355,7 +363,7 @@ namespace SharpLauncher
         }
 
         // Add or remove entry from favorites list and change image
-        private void FavoriteButton_CheckedChanged(object sender, EventArgs e)
+        private void FavoriteButton_checkedChanged(object sender, EventArgs e)
         {
             CheckBox favoriteButton = (CheckBox)sender;
 
@@ -456,15 +464,21 @@ namespace SharpLauncher
             if ((pictureName == "ArchiveImagesLogo" && logoLoaded) ||
                 (pictureName == "ArchiveImagesScreenshot" && screenshotLoaded))
             {
-                Form pictureViewer = new();
-                pictureViewer.Size = new Size(640, 480);
+                Form pictureViewer = new()
+                {
+                    Text = "Picture Viewer",
+                    Size = new Size(640, 480),
+                    ShowIcon = false
+                };
+
                 pictureViewer.Controls.Add(new PictureBox()
                 {
                     Name = "PictureContainer",
                     Dock = DockStyle.Fill,
                     SizeMode = PictureBoxSizeMode.Zoom,
-                    Image = pictureName == "ArchiveImagesLogo" ? ArchiveImagesLogo.Image : ArchiveImagesScreenshot.Image,
+                    Image = pictureName == "ArchiveImagesLogo" ? ArchiveImagesLogo.Image : ArchiveImagesScreenshot.Image
                 });
+
                 pictureViewer.Show();
             }
         }
@@ -694,7 +708,7 @@ namespace SharpLauncher
                             foreach (string[] field in metadataFields)
                                 if (operationParams[0] == field[1])
                                 {
-                                    queryOperation += $" AND {operationParams[0]} = '{operationParams[1]}'";
+                                    queryOperation += $" AND {operationParams[0]} LIKE '%{operationParams[1]}%'";
                                     break;
                                 }
 
@@ -784,6 +798,13 @@ namespace SharpLauncher
             }
         }
 
+        // Position homepage contents to middle of window
+        private Point GetHomepagePosition() =>
+            new Point(
+                (HomeTab.Width - HomeContainer.Width) / 2,
+                (HomeTab.Height - HomeContainer.Height) / 2
+            );
+
         // Leave the right amount of room for metadata text box
         private int GetInfoHeight()
         {
@@ -827,6 +848,36 @@ namespace SharpLauncher
             }
 
             return escapedData.ToString().Replace("\n", @"\line ");
+        }
+
+        /*---------------+
+         | LINK HANDLERS |
+         +---------------*/
+
+        private void GitHubButton_click(object sender, EventArgs e)
+        {
+            Process.Start("explorer", "https://github.com/WumboSpasm/SharpLauncher");
+        }
+
+        private void HomeLink_linkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            // ((LinkLabel)sender).LinkVisited = true;
+
+            switch (((LinkLabel)sender).Name)
+            {
+                case "HomeLinkWebsite":
+                    Process.Start("explorer", "https://bluemaxima.org/flashpoint/");
+                    break;
+                case "HomeLinkWiki":
+                    Process.Start("explorer", "https://bluemaxima.org/flashpoint/datahub/Main_Page");
+                    break;
+                case "HomeLinkGitHub":
+                    Process.Start("explorer", "https://github.com/FlashpointProject");
+                    break;
+                case "HomeLinkDiscord":
+                    Process.Start("explorer", "http://discord.gg/S9uJ794");
+                    break;
+            }
         }
     }
 }

@@ -58,14 +58,21 @@
             this.FavoriteButtonImages = new System.Windows.Forms.ImageList(this.components);
             this.TabControl = new System.Windows.Forms.TabControl();
             this.HomeTab = new System.Windows.Forms.TabPage();
+            this.HomeContainer = new System.Windows.Forms.Panel();
+            this.HomeLinkContainer = new System.Windows.Forms.FlowLayoutPanel();
+            this.HomeLinkWebsite = new System.Windows.Forms.LinkLabel();
+            this.HomeLinkWiki = new System.Windows.Forms.LinkLabel();
+            this.HomeLinkGitHub = new System.Windows.Forms.LinkLabel();
+            this.HomeLinkDiscord = new System.Windows.Forms.LinkLabel();
+            this.HomeLogo = new System.Windows.Forms.PictureBox();
             this.ArchiveTab = new System.Windows.Forms.TabPage();
-            this.ButtonContainer = new System.Windows.Forms.FlowLayoutPanel();
-            this.HelpButton = new System.Windows.Forms.Button();
+            this.GitHubButton = new System.Windows.Forms.Button();
             this.SettingsButton = new System.Windows.Forms.Button();
             this.Container = new System.Windows.Forms.Panel();
             this.SearchBox = new System.Windows.Forms.TextBox();
             this.SearchButtonContainer = new System.Windows.Forms.Panel();
             this.SearchButton = new System.Windows.Forms.Button();
+            this.ButtonContainer = new System.Windows.Forms.Panel();
             this.LaunchEntry = new System.Diagnostics.Process();
             this.AlternateMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.ArchiveLayout.SuspendLayout();
@@ -80,10 +87,14 @@
             this.ArchiveListFooter.SuspendLayout();
             this.PlayContainer.SuspendLayout();
             this.TabControl.SuspendLayout();
+            this.HomeTab.SuspendLayout();
+            this.HomeContainer.SuspendLayout();
+            this.HomeLinkContainer.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.HomeLogo)).BeginInit();
             this.ArchiveTab.SuspendLayout();
-            this.ButtonContainer.SuspendLayout();
             this.Container.SuspendLayout();
             this.SearchButtonContainer.SuspendLayout();
+            this.ButtonContainer.SuspendLayout();
             this.SuspendLayout();
             // 
             // ArchiveLayout
@@ -449,7 +460,7 @@
             this.FavoriteButton.Size = new System.Drawing.Size(25, 25);
             this.FavoriteButton.TabIndex = 9;
             this.FavoriteButton.UseVisualStyleBackColor = true;
-            this.FavoriteButton.CheckedChanged += new System.EventHandler(this.FavoriteButton_CheckedChanged);
+            this.FavoriteButton.CheckedChanged += new System.EventHandler(this.FavoriteButton_checkedChanged);
             // 
             // FavoriteButtonImages
             // 
@@ -476,14 +487,125 @@
             // 
             // HomeTab
             // 
+            this.HomeTab.Controls.Add(this.HomeContainer);
             this.HomeTab.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.HomeTab.Location = new System.Drawing.Point(4, 28);
+            this.HomeTab.Margin = new System.Windows.Forms.Padding(0);
             this.HomeTab.Name = "HomeTab";
-            this.HomeTab.Padding = new System.Windows.Forms.Padding(3);
             this.HomeTab.Size = new System.Drawing.Size(1250, 691);
             this.HomeTab.TabIndex = 0;
             this.HomeTab.Text = "Home";
             this.HomeTab.UseVisualStyleBackColor = true;
+            // 
+            // HomeContainer
+            // 
+            this.HomeContainer.Controls.Add(this.HomeLinkContainer);
+            this.HomeContainer.Controls.Add(this.HomeLogo);
+            this.HomeContainer.Location = new System.Drawing.Point(369, 0);
+            this.HomeContainer.Margin = new System.Windows.Forms.Padding(0);
+            this.HomeContainer.Name = "HomeContainer";
+            this.HomeContainer.Size = new System.Drawing.Size(512, 224);
+            this.HomeContainer.TabIndex = 1;
+            // 
+            // HomeLinkContainer
+            // 
+            this.HomeLinkContainer.Controls.Add(this.HomeLinkWebsite);
+            this.HomeLinkContainer.Controls.Add(this.HomeLinkWiki);
+            this.HomeLinkContainer.Controls.Add(this.HomeLinkGitHub);
+            this.HomeLinkContainer.Controls.Add(this.HomeLinkDiscord);
+            this.HomeLinkContainer.Location = new System.Drawing.Point(151, 144);
+            this.HomeLinkContainer.Margin = new System.Windows.Forms.Padding(0);
+            this.HomeLinkContainer.Name = "HomeLinkContainer";
+            this.HomeLinkContainer.Size = new System.Drawing.Size(210, 20);
+            this.HomeLinkContainer.TabIndex = 5;
+            this.HomeLinkContainer.WrapContents = false;
+            // 
+            // HomeLinkWebsite
+            // 
+            this.HomeLinkWebsite.ActiveLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(221)))), ((int)(((byte)(4)))), ((int)(((byte)(40)))));
+            this.HomeLinkWebsite.AutoSize = true;
+            this.HomeLinkWebsite.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.HomeLinkWebsite.LinkArea = new System.Windows.Forms.LinkArea(0, 7);
+            this.HomeLinkWebsite.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
+            this.HomeLinkWebsite.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(4)))), ((int)(((byte)(94)))), ((int)(((byte)(221)))));
+            this.HomeLinkWebsite.Location = new System.Drawing.Point(0, 0);
+            this.HomeLinkWebsite.Margin = new System.Windows.Forms.Padding(0);
+            this.HomeLinkWebsite.Name = "HomeLinkWebsite";
+            this.HomeLinkWebsite.Size = new System.Drawing.Size(63, 20);
+            this.HomeLinkWebsite.TabIndex = 1;
+            this.HomeLinkWebsite.TabStop = true;
+            this.HomeLinkWebsite.Text = "Website -";
+            this.HomeLinkWebsite.UseCompatibleTextRendering = true;
+            this.HomeLinkWebsite.VisitedLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(237)))), ((int)(((byte)(104)))), ((int)(((byte)(126)))));
+            this.HomeLinkWebsite.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.HomeLink_linkClicked);
+            // 
+            // HomeLinkWiki
+            // 
+            this.HomeLinkWiki.ActiveLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(221)))), ((int)(((byte)(4)))), ((int)(((byte)(40)))));
+            this.HomeLinkWiki.AutoSize = true;
+            this.HomeLinkWiki.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.HomeLinkWiki.LinkArea = new System.Windows.Forms.LinkArea(0, 4);
+            this.HomeLinkWiki.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
+            this.HomeLinkWiki.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(4)))), ((int)(((byte)(94)))), ((int)(((byte)(221)))));
+            this.HomeLinkWiki.Location = new System.Drawing.Point(63, 0);
+            this.HomeLinkWiki.Margin = new System.Windows.Forms.Padding(0);
+            this.HomeLinkWiki.Name = "HomeLinkWiki";
+            this.HomeLinkWiki.Size = new System.Drawing.Size(41, 20);
+            this.HomeLinkWiki.TabIndex = 2;
+            this.HomeLinkWiki.TabStop = true;
+            this.HomeLinkWiki.Text = "Wiki -";
+            this.HomeLinkWiki.UseCompatibleTextRendering = true;
+            this.HomeLinkWiki.VisitedLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(237)))), ((int)(((byte)(104)))), ((int)(((byte)(126)))));
+            this.HomeLinkWiki.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.HomeLink_linkClicked);
+            // 
+            // HomeLinkGitHub
+            // 
+            this.HomeLinkGitHub.ActiveLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(221)))), ((int)(((byte)(4)))), ((int)(((byte)(40)))));
+            this.HomeLinkGitHub.AutoSize = true;
+            this.HomeLinkGitHub.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.HomeLinkGitHub.LinkArea = new System.Windows.Forms.LinkArea(0, 6);
+            this.HomeLinkGitHub.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
+            this.HomeLinkGitHub.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(4)))), ((int)(((byte)(94)))), ((int)(((byte)(221)))));
+            this.HomeLinkGitHub.Location = new System.Drawing.Point(104, 0);
+            this.HomeLinkGitHub.Margin = new System.Windows.Forms.Padding(0);
+            this.HomeLinkGitHub.Name = "HomeLinkGitHub";
+            this.HomeLinkGitHub.Size = new System.Drawing.Size(57, 20);
+            this.HomeLinkGitHub.TabIndex = 3;
+            this.HomeLinkGitHub.TabStop = true;
+            this.HomeLinkGitHub.Text = "GitHub -";
+            this.HomeLinkGitHub.UseCompatibleTextRendering = true;
+            this.HomeLinkGitHub.VisitedLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(237)))), ((int)(((byte)(104)))), ((int)(((byte)(126)))));
+            this.HomeLinkGitHub.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.HomeLink_linkClicked);
+            // 
+            // HomeLinkDiscord
+            // 
+            this.HomeLinkDiscord.ActiveLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(221)))), ((int)(((byte)(4)))), ((int)(((byte)(40)))));
+            this.HomeLinkDiscord.AutoSize = true;
+            this.HomeLinkDiscord.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.HomeLinkDiscord.LinkArea = new System.Windows.Forms.LinkArea(0, 7);
+            this.HomeLinkDiscord.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
+            this.HomeLinkDiscord.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(4)))), ((int)(((byte)(94)))), ((int)(((byte)(221)))));
+            this.HomeLinkDiscord.Location = new System.Drawing.Point(161, 0);
+            this.HomeLinkDiscord.Margin = new System.Windows.Forms.Padding(0);
+            this.HomeLinkDiscord.Name = "HomeLinkDiscord";
+            this.HomeLinkDiscord.Size = new System.Drawing.Size(55, 20);
+            this.HomeLinkDiscord.TabIndex = 4;
+            this.HomeLinkDiscord.TabStop = true;
+            this.HomeLinkDiscord.Text = "Discord ";
+            this.HomeLinkDiscord.UseCompatibleTextRendering = true;
+            this.HomeLinkDiscord.VisitedLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(237)))), ((int)(((byte)(104)))), ((int)(((byte)(126)))));
+            this.HomeLinkDiscord.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.HomeLink_linkClicked);
+            // 
+            // HomeLogo
+            // 
+            this.HomeLogo.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.HomeLogo.Image = ((System.Drawing.Image)(resources.GetObject("HomeLogo.Image")));
+            this.HomeLogo.Location = new System.Drawing.Point(0, 0);
+            this.HomeLogo.Margin = new System.Windows.Forms.Padding(0);
+            this.HomeLogo.Name = "HomeLogo";
+            this.HomeLogo.Size = new System.Drawing.Size(512, 144);
+            this.HomeLogo.TabIndex = 0;
+            this.HomeLogo.TabStop = false;
             // 
             // ArchiveTab
             // 
@@ -496,33 +618,21 @@
             this.ArchiveTab.Text = "Archive";
             this.ArchiveTab.UseVisualStyleBackColor = true;
             // 
-            // ButtonContainer
+            // GitHubButton
             // 
-            this.ButtonContainer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.ButtonContainer.BackColor = System.Drawing.Color.Transparent;
-            this.ButtonContainer.Controls.Add(this.HelpButton);
-            this.ButtonContainer.Controls.Add(this.SettingsButton);
-            this.ButtonContainer.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            this.ButtonContainer.Location = new System.Drawing.Point(1059, 3);
-            this.ButtonContainer.Margin = new System.Windows.Forms.Padding(0);
-            this.ButtonContainer.Name = "ButtonContainer";
-            this.ButtonContainer.Size = new System.Drawing.Size(200, 24);
-            this.ButtonContainer.TabIndex = 0;
-            // 
-            // HelpButton
-            // 
-            this.HelpButton.BackColor = System.Drawing.Color.Transparent;
-            this.HelpButton.FlatAppearance.BorderSize = 0;
-            this.HelpButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
-            this.HelpButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
-            this.HelpButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.HelpButton.Location = new System.Drawing.Point(140, 0);
-            this.HelpButton.Margin = new System.Windows.Forms.Padding(0);
-            this.HelpButton.Name = "HelpButton";
-            this.HelpButton.Size = new System.Drawing.Size(60, 24);
-            this.HelpButton.TabIndex = 1;
-            this.HelpButton.Text = "Help";
-            this.HelpButton.UseVisualStyleBackColor = false;
+            this.GitHubButton.BackColor = System.Drawing.Color.Transparent;
+            this.GitHubButton.FlatAppearance.BorderSize = 0;
+            this.GitHubButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
+            this.GitHubButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
+            this.GitHubButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.GitHubButton.Location = new System.Drawing.Point(60, -2);
+            this.GitHubButton.Margin = new System.Windows.Forms.Padding(0);
+            this.GitHubButton.Name = "GitHubButton";
+            this.GitHubButton.Size = new System.Drawing.Size(60, 24);
+            this.GitHubButton.TabIndex = 1;
+            this.GitHubButton.Text = "GitHub";
+            this.GitHubButton.UseVisualStyleBackColor = false;
+            this.GitHubButton.Click += new System.EventHandler(this.GitHubButton_click);
             // 
             // SettingsButton
             // 
@@ -531,7 +641,7 @@
             this.SettingsButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
             this.SettingsButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
             this.SettingsButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.SettingsButton.Location = new System.Drawing.Point(80, 0);
+            this.SettingsButton.Location = new System.Drawing.Point(0, -2);
             this.SettingsButton.Margin = new System.Windows.Forms.Padding(0);
             this.SettingsButton.Name = "SettingsButton";
             this.SettingsButton.Size = new System.Drawing.Size(60, 24);
@@ -581,7 +691,7 @@
             this.SearchButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
             this.SearchButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.SearchButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.SearchButton.Location = new System.Drawing.Point(0, -1);
+            this.SearchButton.Location = new System.Drawing.Point(0, -2);
             this.SearchButton.Margin = new System.Windows.Forms.Padding(0);
             this.SearchButton.Name = "SearchButton";
             this.SearchButton.Size = new System.Drawing.Size(50, 24);
@@ -589,6 +699,16 @@
             this.SearchButton.Text = "Search";
             this.SearchButton.UseVisualStyleBackColor = false;
             this.SearchButton.Click += new System.EventHandler(this.SearchButton_click);
+            // 
+            // ButtonContainer
+            // 
+            this.ButtonContainer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.ButtonContainer.Controls.Add(this.GitHubButton);
+            this.ButtonContainer.Controls.Add(this.SettingsButton);
+            this.ButtonContainer.Location = new System.Drawing.Point(1139, 6);
+            this.ButtonContainer.Name = "ButtonContainer";
+            this.ButtonContainer.Size = new System.Drawing.Size(120, 20);
+            this.ButtonContainer.TabIndex = 2;
             // 
             // LaunchEntry
             // 
@@ -607,13 +727,14 @@
             this.AlternateMenu.Name = "AlternateMenu";
             this.AlternateMenu.ShowImageMargin = false;
             this.AlternateMenu.Size = new System.Drawing.Size(36, 4);
-            this.AlternateMenu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.AlternateMenu_ItemClicked);
+            this.AlternateMenu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.AlternateMenu_itemClicked);
             // 
             // Main
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.ClientSize = new System.Drawing.Size(1264, 729);
             this.Controls.Add(this.Container);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Main";
             this.Text = "SharpLauncher";
             this.Load += new System.EventHandler(this.Main_load);
@@ -631,11 +752,16 @@
             this.ArchiveListFooter.ResumeLayout(false);
             this.PlayContainer.ResumeLayout(false);
             this.TabControl.ResumeLayout(false);
+            this.HomeTab.ResumeLayout(false);
+            this.HomeContainer.ResumeLayout(false);
+            this.HomeLinkContainer.ResumeLayout(false);
+            this.HomeLinkContainer.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.HomeLogo)).EndInit();
             this.ArchiveTab.ResumeLayout(false);
-            this.ButtonContainer.ResumeLayout(false);
             this.Container.ResumeLayout(false);
             this.Container.PerformLayout();
             this.SearchButtonContainer.ResumeLayout(false);
+            this.ButtonContainer.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -646,10 +772,9 @@
         private TabControl TabControl;
         private TabPage HomeTab;
         private TabPage ArchiveTab;
-        private FlowLayoutPanel ButtonContainer;
         private Button SettingsButton;
         private Panel Container;
-        private Button HelpButton;
+        private Button GitHubButton;
         private Button AdjustColumnsButton;
         private FlowLayoutPanel ArchiveInfoContainer;
         private Label ArchiveInfoTitle;
@@ -679,5 +804,13 @@
         private ImageList FavoriteButtonImages;
         private Button AlternateButton;
         private ContextMenuStrip AlternateMenu;
+        private PictureBox HomeLogo;
+        private Panel HomeContainer;
+        private Panel ButtonContainer;
+        private LinkLabel HomeLinkWebsite;
+        private FlowLayoutPanel HomeLinkContainer;
+        private LinkLabel HomeLinkWiki;
+        private LinkLabel HomeLinkGitHub;
+        private LinkLabel HomeLinkDiscord;
     }
 }

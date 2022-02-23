@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Diagnostics;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using Newtonsoft.Json;
 
@@ -14,9 +15,35 @@ namespace SharpLauncher
         {
             InitializeComponent();
 
+            // Load paths
             PathInput.Text = Config.FlashpointPath;
             CLIFpInput.Text = Config.CLIFpPath;
             ServerInput.Text = Config.FlashpointServer;
+
+            // Load tag filters
+            if (File.Exists("filters.json"))
+            {
+                using (StreamReader jsonStream = new("filters.json"))
+                {
+                    filterJSON = jsonStream.ReadToEnd();
+
+                    dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
+
+                    foreach (var item in filterArray)
+                    {
+                        ListViewItem filterItem = new((string)item.name);
+                        filterItem.SubItems.Add((string)item.description);
+                        filterItem.Checked = item.filtered;
+
+                        FilterList.Items.Add(filterItem);
+                    }
+                }
+            }
+
+            // Load downloaded entry file sizes
+            if (Directory.Exists(Config.FlashpointPath + @"\Legacy\htdocs")
+             && Directory.Exists(Config.FlashpointPath + @"\Data\Games"))
+                SetDownloadedFileSizes();
         }
 
         // Browse for Flashpoint path
@@ -29,7 +56,7 @@ namespace SharpLauncher
         }
 
         // Browse for CLIFp path
-        private void CLIFpButton_Click(object sender, EventArgs e)
+        private void CLIFpButton_click(object sender, EventArgs e)
         {
             OpenFileDialog CLIFpDialog = new() { Filter = "Executable files (*.exe)|*.exe" };
 
@@ -37,39 +64,64 @@ namespace SharpLauncher
                 CLIFpInput.Text = CLIFpDialog.FileName;
         }
 
-        // Load tag filters into list
-        private void SettingsTabControl_TabChanged(object sender, EventArgs e)
+        // Clear data
+        private void DataClear_click(object sender, EventArgs e)
         {
-            if (((TabControl)sender).SelectedIndex == 1)
+            switch (((Button)sender).Name)
             {
-                if (File.Exists("filters.json"))
-                {
-                    using (StreamReader jsonStream = new("filters.json"))
-                    {
-                        filterJSON = jsonStream.ReadToEnd();
+                case "DataClearLegacy":
+                    Directory.Delete(Config.FlashpointPath + @"\Legacy\htdocs", true);
+                    Directory.CreateDirectory(Config.FlashpointPath + @"\Legacy\htdocs");
 
-                        dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
+                    SetDownloadedFileSizes();
+                    MessageBox.Show("File deletion successful!", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                        foreach (var item in filterArray)
-                        {
-                            ListViewItem filterItem = new((string)item.name);
-                            filterItem.SubItems.Add((string)item.description);
-                            filterItem.Checked = item.filtered;
+                    break;
 
-                            FilterList.Items.Add(filterItem);
-                        }
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("filters.json was not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    SettingsTabControl.SelectTab(0);
-                }
+                case "DataClearGameZIP":
+                    Directory.Delete(Config.FlashpointPath + @"\Data\Games", true);
+                    Directory.CreateDirectory(Config.FlashpointPath + @"\Data\Games");
+
+                    SetDownloadedFileSizes();
+                    MessageBox.Show("File deletion successful!", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    break;
+
+                case "DataClearCache":
+                    Process clearCache = new();
+
+                    clearCache.StartInfo.FileName = "RunDll32.exe";
+                    clearCache.StartInfo.Arguments = "InetCpl.cpl, ClearMyTracksByProcess 8";
+
+                    clearCache.Start();
+
+                    break;
+            }
+        }
+
+        private void SettingsTabControl_tabChanged(object sender, EventArgs e)
+        {
+            int selectedTab = ((TabControl)sender).SelectedIndex;
+
+            if (selectedTab == 1 && !File.Exists("filters.json"))
+            {
+                MessageBox.Show("filters.json was not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                SettingsTabControl.SelectTab(0);
+            }
+            else if (selectedTab == 2
+                  && (!Directory.Exists(Config.FlashpointPath + @"\Legacy\htdocs")
+                  || !Directory.Exists(Config.FlashpointPath + @"\Data\Games")))
+            {
+                MessageBox.Show(
+                    "Entry download folders were not found! Is your Flashpoint path set correctly?", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error
+                );
+                SettingsTabControl.SelectTab(0);
             }
         }
 
         // Write values to file and close
-        private void OKButton_Click(object sender, EventArgs e)
+        private void OKButton_click(object sender, EventArgs e)
         {
             // Check if database and CLIFp exist under Flashpoint path
             if (!File.Exists(PathInput.Text + @"\Data\flashpoint.sqlite")
@@ -114,6 +166,22 @@ namespace SharpLauncher
         }
 
         // Close without saving
-        private void CancelButton_Click(object sender, EventArgs e) { Close(); }
+        private void CancelButton_click(object sender, EventArgs e) { Close(); }
+
+        // Fill in total file sizes in Data tab
+        private void SetDownloadedFileSizes()
+        {
+            int legacyFileSize = (int)
+                new DirectoryInfo(Config.FlashpointPath + @"\Legacy\htdocs")
+                .EnumerateFiles("*", SearchOption.AllDirectories).Sum(i => i.Length);
+            int gameZIPFileSize = (int)
+                new DirectoryInfo(Config.FlashpointPath + @"\Data\Games")
+                .EnumerateFiles("*", SearchOption.AllDirectories).Sum(i => i.Length);
+
+            DataLegacySize.Text = "The total file size of downloaded entries using the Legacy format is " +
+                ((legacyFileSize - (legacyFileSize % 1048576)) / 1048576) + " MB.";
+            DataGameZIPSize.Text = "The total file size of downloaded entries using the GameZIP format is " +
+                ((gameZIPFileSize - (gameZIPFileSize % 1048576)) / 1048576) + " MB.";
+        }
     }
 }
