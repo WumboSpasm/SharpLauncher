@@ -441,6 +441,9 @@ namespace SharpLauncher
         // Focus on a random entry when Random button is clicked
         private void RandomButton_Click(object sender, EventArgs e)
         {
+            if (ArchiveList.VirtualListSize == 0)
+                return;
+
             int randomEntryIndex = rng.Next(ArchiveList.VirtualListSize);
 
             ArchiveList.Select();
