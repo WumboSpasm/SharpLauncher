@@ -49,6 +49,7 @@
             this.ArchiveRadioGames = new System.Windows.Forms.RadioButton();
             this.DebugLabel = new System.Windows.Forms.Label();
             this.ArchiveListFooter = new System.Windows.Forms.Panel();
+            this.RandomButton = new System.Windows.Forms.Button();
             this.EntryCountLabel = new System.Windows.Forms.Label();
             this.AdjustColumnsButton = new System.Windows.Forms.Button();
             this.PlayContainer = new System.Windows.Forms.Panel();
@@ -367,6 +368,7 @@
             // 
             // ArchiveListFooter
             // 
+            this.ArchiveListFooter.Controls.Add(this.RandomButton);
             this.ArchiveListFooter.Controls.Add(this.EntryCountLabel);
             this.ArchiveListFooter.Controls.Add(this.AdjustColumnsButton);
             this.ArchiveListFooter.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -375,6 +377,23 @@
             this.ArchiveListFooter.Name = "ArchiveListFooter";
             this.ArchiveListFooter.Size = new System.Drawing.Size(644, 27);
             this.ArchiveListFooter.TabIndex = 10;
+            // 
+            // RandomButton
+            // 
+            this.RandomButton.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.RandomButton.FlatAppearance.BorderSize = 0;
+            this.RandomButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent;
+            this.RandomButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Transparent;
+            this.RandomButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.RandomButton.Image = global::SharpLauncher.Properties.Resources.random;
+            this.RandomButton.Location = new System.Drawing.Point(308, 1);
+            this.RandomButton.Margin = new System.Windows.Forms.Padding(0);
+            this.RandomButton.Name = "RandomButton";
+            this.RandomButton.Padding = new System.Windows.Forms.Padding(0, 0, 1, 1);
+            this.RandomButton.Size = new System.Drawing.Size(25, 25);
+            this.RandomButton.TabIndex = 3;
+            this.RandomButton.UseVisualStyleBackColor = true;
+            this.RandomButton.Click += new System.EventHandler(this.RandomButton_Click);
             // 
             // EntryCountLabel
             // 
@@ -812,5 +831,6 @@
         private LinkLabel HomeLinkWiki;
         private LinkLabel HomeLinkGitHub;
         private LinkLabel HomeLinkDiscord;
+        private Button RandomButton;
     }
 }

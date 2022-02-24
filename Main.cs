@@ -71,6 +71,8 @@ namespace SharpLauncher
         // Check if images have been loaded
         bool logoLoaded = false;
         bool screenshotLoaded = false;
+        // A Random object for the Random button
+        Random rng = new();
 
         /*--------+
          | EVENTS |
@@ -103,6 +105,7 @@ namespace SharpLauncher
             AlternateButton.Text = char.ConvertFromUtf32(0x2BC5);
 
             HomeContainer.Location = GetHomepagePosition();
+            RandomButton.Location = GetRandomButtonPosition();
         }
 
         private void Main_resize(object sender, EventArgs e)
@@ -120,6 +123,9 @@ namespace SharpLauncher
 
             // Re-position Home tab contents
             HomeContainer.Location = GetHomepagePosition();
+
+            // Center Random button
+            RandomButton.Location = GetRandomButtonPosition();
         }
 
         // Initialize list when Archive tab is accessed for the first time
@@ -432,6 +438,16 @@ namespace SharpLauncher
         // Reroute Adjust Columns button to its appropriate function
         private void AdjustColumnsButton_click(object sender, EventArgs e) { AdjustColumns(); }
 
+        // Focus on a random entry when Random button is clicked
+        private void RandomButton_Click(object sender, EventArgs e)
+        {
+            int randomEntryIndex = rng.Next(ArchiveList.VirtualListSize);
+
+            ArchiveList.Select();
+            ArchiveList.Items[randomEntryIndex].Selected = true;
+            ArchiveList.Items[randomEntryIndex].EnsureVisible();
+        }
+
         // Change library when left panel radio is changed
         private void ArchiveRadio_checkedChanged(object sender, EventArgs e)
         {
@@ -558,11 +574,18 @@ namespace SharpLauncher
                     if (DatabaseQuery($"SELECT id FROM game WHERE id = '{id}'").Count == 0)
                         continue;
 
-                    queryTitle.Add(DatabaseQuery($"SELECT title FROM game WHERE id = '{id}'")[0]);
-                    queryDeveloper.Add(DatabaseQuery($"SELECT developer FROM game WHERE id = '{id}'")[0]);
-                    queryPublisher.Add(DatabaseQuery($"SELECT publisher FROM game WHERE id = '{id}'")[0]);
-                    queryTags.Add(DatabaseQuery($"SELECT tagsStr FROM game WHERE id = '{id}'")[0]);
-                    queryID.Add(id);
+                    string QueryTemplate(string column) =>
+                        $"SELECT {column} FROM game WHERE id = '{id}'" +
+                        (querySearch != "" ? $" AND title LIKE '%{querySearch}%'" : "") + queryOperation;
+
+                    if (DatabaseQuery(QueryTemplate("title")).Count > 0)
+                    {
+                        queryTitle.Add(DatabaseQuery(QueryTemplate("title"))[0]);
+                        queryDeveloper.Add(DatabaseQuery(QueryTemplate("developer"))[0]);
+                        queryPublisher.Add(DatabaseQuery(QueryTemplate("publisher"))[0]);
+                        queryTags.Add(DatabaseQuery(QueryTemplate("tagsStr"))[0]);
+                        queryID.Add(id);
+                    }
                 }
             }
             else
@@ -708,7 +731,7 @@ namespace SharpLauncher
                             foreach (string[] field in metadataFields)
                                 if (operationParams[0] == field[1])
                                 {
-                                    queryOperation += $" AND {operationParams[0]} LIKE '%{operationParams[1]}%'";
+                                    queryOperation += $" AND {operationParams[0]} LIKE '%{operationParams[1]}%' ";
                                     break;
                                 }
 
@@ -804,6 +827,8 @@ namespace SharpLauncher
                 (HomeTab.Width - HomeContainer.Width) / 2,
                 (HomeTab.Height - HomeContainer.Height) / 2
             );
+
+        private Point GetRandomButtonPosition() => new Point((ArchiveListFooter.Width - RandomButton.Width) / 2, 1);
 
         // Leave the right amount of room for metadata text box
         private int GetInfoHeight()
