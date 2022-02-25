@@ -47,11 +47,11 @@ namespace SharpLauncher
         // Characters that cause issues in searches ( % _ ' " )
         string unsafeChars = "%_\'\""; 
         // Query fragments used to fetch entries
-        string queryLibrary = "arcade";
+        string queryLibrary = "";
         int queryOrderBy = 0;
         int queryDirection = 1;
         string querySearch = "";
-        string queryOperation = "";
+        List<string> queryOperations = new();
         // Template for list items
         class QueryItem
         {
@@ -71,8 +71,6 @@ namespace SharpLauncher
         // Check if images have been loaded
         bool logoLoaded = false;
         bool screenshotLoaded = false;
-        // A Random object for the Random button
-        Random rng = new();
 
         /*--------+
          | EVENTS |
@@ -114,7 +112,7 @@ namespace SharpLauncher
             if (columnChanged)
                 ScaleColumns();
             else
-                AdjustColumns();
+                ResetColumns();
 
             prevWidth = ArchiveList.ClientSize.Width;
 
@@ -139,7 +137,7 @@ namespace SharpLauncher
                 else if (columnChanged)
                     ScaleColumns();
                 else
-                    AdjustColumns();
+                    ResetColumns();
             }
             else
                 HomeContainer.Location = GetHomepagePosition();
@@ -435,10 +433,11 @@ namespace SharpLauncher
         // Preserve arrow cursor when hovering over selected item
         private void ArchiveList_mouseMove(object sender, MouseEventArgs e) { base.Cursor = Cursors.Arrow; }
 
-        // Reroute Adjust Columns button to its appropriate function
-        private void AdjustColumnsButton_click(object sender, EventArgs e) { AdjustColumns(); }
+        // Direct Reset Columns button to its appropriate function
+        private void ResetColumnsButton_click(object sender, EventArgs e) { ResetColumns(); }
 
         // Focus on a random entry when Random button is clicked
+        Random rng = new();
         private void RandomButton_Click(object sender, EventArgs e)
         {
             if (ArchiveList.VirtualListSize == 0)
@@ -452,12 +451,21 @@ namespace SharpLauncher
         }
 
         // Change library when left panel radio is changed
+        bool activateOnce = true;
         private void ArchiveRadio_checkedChanged(object sender, EventArgs e)
         {
+            // Prevent event from firing twice
+            activateOnce = !activateOnce;
+
+            if (!activateOnce)
+                return;
+
             RadioButton checkedRadio = (RadioButton)sender;
 
             if (checkedRadio.Checked)
             {
+                if (checkedRadio.Name == "ArchiveRadioEverything")
+                    queryLibrary = "";
                 if (checkedRadio.Name == "ArchiveRadioGames")
                     queryLibrary = "arcade";
                 if (checkedRadio.Name == "ArchiveRadioAnimations")
@@ -523,9 +531,6 @@ namespace SharpLauncher
 
                 if (Encoding.ASCII.GetString(header).Contains("SQLite format"))
                 {
-                    LoadFilteredTags();
-                    RefreshDatabase();
-
                     // Add columns to list and get width for later
                     if (ArchiveList.Columns.Count != columnHeaders.Length)
                     {
@@ -538,10 +543,8 @@ namespace SharpLauncher
                         prevWidth = ArchiveList.ClientSize.Width;
                     }
 
-                    if (queryLibrary == "arcade")
-                        ArchiveRadioGames.Checked = true;
-                    else if (queryLibrary == "theatre")
-                        ArchiveRadioAnimations.Checked = true;
+                    LoadFilteredTags();
+                    RefreshDatabase();
 
                     return;
                 }
@@ -577,16 +580,18 @@ namespace SharpLauncher
                     if (DatabaseQuery($"SELECT id FROM game WHERE id = '{id}'").Count == 0)
                         continue;
 
-                    string QueryTemplate(string column) =>
+                    // Alternate query template for favorites, play history
+                    string GetAltQuery(string column) =>
                         $"SELECT {column} FROM game WHERE id = '{id}'" +
-                        (querySearch != "" ? $" AND title LIKE '%{querySearch}%'" : "") + queryOperation;
+                        (querySearch != "" ? $" AND title LIKE '%{querySearch}%'" : "") +
+                        (queryOperations.Count != 0 ? " AND " + String.Join(" AND ", queryOperations) : "");
 
-                    if (DatabaseQuery(QueryTemplate("title")).Count > 0)
+                    if (DatabaseQuery(GetAltQuery("title")).Count > 0)
                     {
-                        queryTitle.Add(DatabaseQuery(QueryTemplate("title"))[0]);
-                        queryDeveloper.Add(DatabaseQuery(QueryTemplate("developer"))[0]);
-                        queryPublisher.Add(DatabaseQuery(QueryTemplate("publisher"))[0]);
-                        queryTags.Add(DatabaseQuery(QueryTemplate("tagsStr"))[0]);
+                        queryTitle.Add(DatabaseQuery(GetAltQuery("title"))[0]);
+                        queryDeveloper.Add(DatabaseQuery(GetAltQuery("developer"))[0]);
+                        queryPublisher.Add(DatabaseQuery(GetAltQuery("publisher"))[0]);
+                        queryTags.Add(DatabaseQuery(GetAltQuery("tagsStr"))[0]);
                         queryID.Add(id);
                     }
                 }
@@ -625,7 +630,7 @@ namespace SharpLauncher
             if (columnChanged)
                 ScaleColumns();
             else
-                AdjustColumns();
+                ResetColumns();
         }
 
         private bool InitializeCLIFp()
@@ -686,14 +691,39 @@ namespace SharpLauncher
         }
 
         // Query template to make things easier
-        private string GetQuery(string column, int offset = -1) =>
-            $"SELECT {column} FROM game WHERE library = '{queryLibrary}'" +
-            (querySearch != "" ? $" AND title LIKE '%{querySearch}%'" : "") + queryOperation +
-            $"ORDER BY title {(offset != -1 ? $"LIMIT {offset}, 1" : "")}";
+        private string GetQuery(string column, int offset = -1)
+        {
+            List<string> queryFragments = new() { $"SELECT {column} FROM game" };
+
+            if (queryLibrary != "" || querySearch != "" || queryOperations.Count != 0)
+            {
+                queryFragments.Add("WHERE");
+
+                List<string> queryConditions = new();
+
+                if (queryLibrary != "")
+                    queryConditions.Add($"library = '{queryLibrary}'");
+                if (querySearch != "")
+                    queryConditions.Add($"title LIKE '%{querySearch}%'");
+                foreach (string operation in queryOperations)
+                    queryConditions.Add(operation);
+
+                queryFragments.Add(String.Join(" AND ", queryConditions));
+            }
+
+            queryFragments.Add("ORDER BY title");
+
+            if (offset != -1)
+                queryFragments.Add($"LIMIT {offset}, 1");
+
+            MessageBox.Show(String.Join(' ', queryFragments));
+
+            return String.Join(' ', queryFragments);
+        }
 
         private void ExecuteSearchQuery()
         {
-            queryOperation = "";
+            queryOperations = new();
 
             StringBuilder safeQuery = new();
 
@@ -734,7 +764,7 @@ namespace SharpLauncher
                             foreach (string[] field in metadataFields)
                                 if (operationParams[0] == field[1])
                                 {
-                                    queryOperation += $" AND {operationParams[0]} LIKE '%{operationParams[1]}%' ";
+                                    queryOperations.Add($"{operationParams[0]} LIKE '%{operationParams[1]}%'");
                                     break;
                                 }
 
@@ -777,13 +807,14 @@ namespace SharpLauncher
         }
 
         // Resize columns to fill list width
-        private void AdjustColumns()
+        private void ResetColumns()
         {
             int divisor = ArchiveList.Columns.Count + 1;
 
             ArchiveList.BeginUpdate();
             for (int i = 0; i < ArchiveList.Columns.Count; i++)
             {
+                // Double width of first column
                 columnWidths[i] = (ArchiveList.ClientSize.Width / divisor) * (i == 0 ? 2 : 1);
                 ArchiveList.Columns[i].Width = (int)columnWidths[i];
             }

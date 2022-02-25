@@ -39,11 +39,6 @@ namespace SharpLauncher
                     }
                 }
             }
-
-            // Load downloaded entry file sizes
-            if (Directory.Exists(Config.FlashpointPath + @"\Legacy\htdocs")
-             && Directory.Exists(Config.FlashpointPath + @"\Data\Games"))
-                SetDownloadedFileSizes();
         }
 
         // Browse for Flashpoint path
@@ -70,8 +65,8 @@ namespace SharpLauncher
             switch (((Button)sender).Name)
             {
                 case "DataClearLegacy":
-                    Directory.Delete(Config.FlashpointPath + @"\Legacy\htdocs", true);
-                    Directory.CreateDirectory(Config.FlashpointPath + @"\Legacy\htdocs");
+                    Directory.Delete(PathInput.Text + @"\Legacy\htdocs", true);
+                    Directory.CreateDirectory(PathInput.Text + @"\Legacy\htdocs");
 
                     SetDownloadedFileSizes();
                     MessageBox.Show("File deletion successful!", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -79,8 +74,8 @@ namespace SharpLauncher
                     break;
 
                 case "DataClearGameZIP":
-                    Directory.Delete(Config.FlashpointPath + @"\Data\Games", true);
-                    Directory.CreateDirectory(Config.FlashpointPath + @"\Data\Games");
+                    Directory.Delete(PathInput.Text + @"\Data\Games", true);
+                    Directory.CreateDirectory(PathInput.Text + @"\Data\Games");
 
                     SetDownloadedFileSizes();
                     MessageBox.Show("File deletion successful!", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -109,15 +104,17 @@ namespace SharpLauncher
                 SettingsTabControl.SelectTab(0);
             }
             else if (selectedTab == 2
-                  && (!Directory.Exists(Config.FlashpointPath + @"\Legacy\htdocs")
-                  || !Directory.Exists(Config.FlashpointPath + @"\Data\Games")))
+                  && (!Directory.Exists(PathInput.Text + @"\Legacy\htdocs")
+                  || !Directory.Exists(PathInput.Text + @"\Data\Games")))
             {
                 MessageBox.Show(
-                    "Entry download folders were not found! Is your Flashpoint path set correctly?", "Error", 
+                    "Entry download folders were not found! Is your Flashpoint path set correctly?", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error
                 );
                 SettingsTabControl.SelectTab(0);
             }
+            else if (selectedTab == 2)
+                SetDownloadedFileSizes();
         }
 
         // Write values to file and close
@@ -172,10 +169,10 @@ namespace SharpLauncher
         private void SetDownloadedFileSizes()
         {
             int legacyFileSize = (int)
-                new DirectoryInfo(Config.FlashpointPath + @"\Legacy\htdocs")
+                new DirectoryInfo(PathInput.Text + @"\Legacy\htdocs")
                 .EnumerateFiles("*", SearchOption.AllDirectories).Sum(i => i.Length);
             int gameZIPFileSize = (int)
-                new DirectoryInfo(Config.FlashpointPath + @"\Data\Games")
+                new DirectoryInfo(PathInput.Text + @"\Data\Games")
                 .EnumerateFiles("*", SearchOption.AllDirectories).Sum(i => i.Length);
 
             DataLegacySize.Text = "The total file size of downloaded entries using the Legacy format is " +
