@@ -716,8 +716,6 @@ namespace SharpLauncher
             if (offset != -1)
                 queryFragments.Add($"LIMIT {offset}, 1");
 
-            MessageBox.Show(String.Join(' ', queryFragments));
-
             return String.Join(' ', queryFragments);
         }
 
