@@ -260,13 +260,14 @@
             // 
             // DataClearContainer
             // 
-            this.DataClearContainer.ColumnCount = 3;
-            this.DataClearContainer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33F));
-            this.DataClearContainer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.34F));
-            this.DataClearContainer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33F));
+            this.DataClearContainer.ColumnCount = 4;
+            this.DataClearContainer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 35F));
+            this.DataClearContainer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 35F));
+            this.DataClearContainer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 5F));
+            this.DataClearContainer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
             this.DataClearContainer.Controls.Add(this.DataClearLegacy, 0, 0);
             this.DataClearContainer.Controls.Add(this.DataClearGameZIP, 1, 0);
-            this.DataClearContainer.Controls.Add(this.DataClearCache, 2, 0);
+            this.DataClearContainer.Controls.Add(this.DataClearCache, 3, 0);
             this.DataClearContainer.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.DataClearContainer.Location = new System.Drawing.Point(3, 126);
             this.DataClearContainer.Margin = new System.Windows.Forms.Padding(4);
@@ -281,7 +282,7 @@
             this.DataClearLegacy.Dock = System.Windows.Forms.DockStyle.Fill;
             this.DataClearLegacy.Location = new System.Drawing.Point(3, 3);
             this.DataClearLegacy.Name = "DataClearLegacy";
-            this.DataClearLegacy.Size = new System.Drawing.Size(163, 26);
+            this.DataClearLegacy.Size = new System.Drawing.Size(172, 26);
             this.DataClearLegacy.TabIndex = 0;
             this.DataClearLegacy.Text = "Clear Legacy downloads";
             this.DataClearLegacy.UseVisualStyleBackColor = true;
@@ -290,9 +291,9 @@
             // DataClearGameZIP
             // 
             this.DataClearGameZIP.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.DataClearGameZIP.Location = new System.Drawing.Point(172, 3);
+            this.DataClearGameZIP.Location = new System.Drawing.Point(181, 3);
             this.DataClearGameZIP.Name = "DataClearGameZIP";
-            this.DataClearGameZIP.Size = new System.Drawing.Size(164, 26);
+            this.DataClearGameZIP.Size = new System.Drawing.Size(172, 26);
             this.DataClearGameZIP.TabIndex = 1;
             this.DataClearGameZIP.Text = "Clear GameZIP downloads";
             this.DataClearGameZIP.UseVisualStyleBackColor = true;
@@ -301,11 +302,11 @@
             // DataClearCache
             // 
             this.DataClearCache.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.DataClearCache.Location = new System.Drawing.Point(342, 3);
+            this.DataClearCache.Location = new System.Drawing.Point(384, 3);
             this.DataClearCache.Name = "DataClearCache";
-            this.DataClearCache.Size = new System.Drawing.Size(165, 26);
+            this.DataClearCache.Size = new System.Drawing.Size(123, 26);
             this.DataClearCache.TabIndex = 2;
-            this.DataClearCache.Text = "Clear cached save data";
+            this.DataClearCache.Text = "Clear cache";
             this.DataClearCache.UseVisualStyleBackColor = true;
             this.DataClearCache.Click += new System.EventHandler(this.DataClear_click);
             // 
@@ -340,8 +341,8 @@
             this.DataLabel.Padding = new System.Windows.Forms.Padding(3, 0, 3, 0);
             this.DataLabel.Size = new System.Drawing.Size(510, 38);
             this.DataLabel.TabIndex = 2;
-            this.DataLabel.Text = "The size of Flashpoint grows with the amount of entries you play. Cached save dat" +
-    "a can take up storage space as well.";
+            this.DataLabel.Text = "The size of Flashpoint grows with the amount of entries you play. Additionally, c" +
+    "ached files created by these entries can take up disk space.";
             this.DataLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // SettingsControls

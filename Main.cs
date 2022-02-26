@@ -30,6 +30,7 @@ namespace SharpLauncher
             new[] { "Release Date", "releaseDate" },
             new[] { "Platform", "platform" },
             new[] { "Version", "version" },
+            new[] { "Library", "library" },
             new[] { "Tags", "tagsStr" },
             new[] { "Language", "language" },
             new[] { "Play Mode", "playMode" },
@@ -44,8 +45,6 @@ namespace SharpLauncher
         List<double> columnWidths = new();
         // Names of tags to be filtered
         List<string> filteredTags = new();
-        // Characters that cause issues in searches ( % _ ' " )
-        string unsafeChars = "%_\'\""; 
         // Query fragments used to fetch entries
         string queryLibrary = "";
         int queryOrderBy = 0;
@@ -95,9 +94,22 @@ namespace SharpLauncher
             else
                 File.Create("favorites.fp");
 
+            // Add columns to list and get width for later
+
+            for (int i = 0; i < columnHeaders.Length; i++)
+            {
+                ArchiveList.Columns.Add(columnHeaders[i]);
+                columnWidths.Add(ArchiveList.Columns[i].Width);
+            }
+
+            ResetColumns();
+
             // Why Visual Studio doesn't let me do this the regular way, I don't know
             SearchBox.AutoSize = false;
             SearchBox.Height = 20;
+
+            // Fix search box being randomly foxused when launcher is opened
+            HomeContainer.Select();
 
             // Give the additional apps button an arrow
             AlternateButton.Text = char.ConvertFromUtf32(0x2BC5);
@@ -221,14 +233,28 @@ namespace SharpLauncher
 
             for (int i = 1; i < metadataOutput.Count; i++)
                 if (metadataOutput[i] != "")
-                {
-                    if (metadataFields[i][0] == "Format")
-                        entryData += $"\\b {metadataFields[i][0]}: \\b0 {(metadataOutput[i] == "0" ? "Legacy" : "GameZIP")}\\line";
-                    else if (metadataFields[i][0] == "Notes" || metadataFields[i][0] == "Original Description")
-                        entryData += $"\\line\\b {metadataFields[i][0]}:\\line\\b0 {ToUnicode(metadataOutput[i])}\\line";
-                    else
-                        entryData += $"\\b {metadataFields[i][0]}: \\b0 {ToUnicode(metadataOutput[i])}\\line";
-                }
+                    switch (metadataFields[i][0])
+                    {
+                        case "Library":
+                            entryData +=
+                                $"\\b {metadataFields[i][0]}: \\b0 " +
+                                ToUnicode(metadataOutput[i][0].ToString().ToUpper() + metadataOutput[i][1..]) +
+                                "\\line";
+                            break;
+
+                        case "Format":
+                            entryData += $"\\b {metadataFields[i][0]}: \\b0 {(metadataOutput[i] == "0" ? "Legacy" : "GameZIP")}\\line";
+                            break;
+
+                        case "Notes":
+                        case "Original Description":
+                            entryData += $"\\line\\b {metadataFields[i][0]}:\\line\\b0 {ToUnicode(metadataOutput[i])}\\line";
+                            break;
+
+                        default:
+                            entryData += $"\\b {metadataFields[i][0]}: \\b0 {ToUnicode(metadataOutput[i])}\\line";
+                            break;
+                    }
 
             entryData += "}";
 
@@ -531,20 +557,10 @@ namespace SharpLauncher
 
                 if (Encoding.ASCII.GetString(header).Contains("SQLite format"))
                 {
-                    // Add columns to list and get width for later
-                    if (ArchiveList.Columns.Count != columnHeaders.Length)
-                    {
-                        for (int i = 0; i < columnHeaders.Length; i++)
-                        {
-                            ArchiveList.Columns.Add(columnHeaders[i]);
-                            columnWidths.Add(ArchiveList.Columns[i].Width);
-                        }
-
-                        prevWidth = ArchiveList.ClientSize.Width;
-                    }
-
                     LoadFilteredTags();
                     RefreshDatabase();
+
+                    prevWidth = ArchiveList.ClientSize.Width;
 
                     return;
                 }
@@ -728,7 +744,7 @@ namespace SharpLauncher
             // Replace unsafe characters
             foreach (char inputChar in SearchBox.Text)
             {
-                if (unsafeChars.Contains(inputChar))
+                if (inputChar == '\'' || inputChar == '"')
                     safeQuery.Append('_');
                 else
                     safeQuery.Append(inputChar);
@@ -762,7 +778,21 @@ namespace SharpLauncher
                             foreach (string[] field in metadataFields)
                                 if (operationParams[0] == field[1])
                                 {
-                                    queryOperations.Add($"{operationParams[0]} LIKE '%{operationParams[1]}%'");
+                                    string[] operationValues = operationParams[1].Split("|");
+
+                                    // Check for OR | operators and update query accordingly
+                                    if (operationValues.Length > 1)
+                                    {
+                                        List<string> queryOr = new();
+
+                                        foreach (string value in operationValues)
+                                            queryOr.Add($"{operationParams[0]} LIKE '{value}'");
+
+                                        queryOperations.Add($"({String.Join(" OR ", queryOr)})");
+                                    }
+                                    else
+                                        queryOperations.Add($"{operationParams[0]} LIKE '{operationParams[1]}'");
+
                                     break;
                                 }
 
@@ -780,6 +810,8 @@ namespace SharpLauncher
 
             // Apply remaining string to generic search query
             querySearch = tempSearch;
+
+            MessageBox.Show("WHERE " + String.Join(" AND ", queryOperations));
 
             // Refresh and open list
             RefreshDatabase();
