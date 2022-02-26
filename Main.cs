@@ -811,8 +811,6 @@ namespace SharpLauncher
             // Apply remaining string to generic search query
             querySearch = tempSearch;
 
-            MessageBox.Show("WHERE " + String.Join(" AND ", queryOperations));
-
             // Refresh and open list
             RefreshDatabase();
             TabControl.SelectTab(1);
