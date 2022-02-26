@@ -84,16 +84,6 @@ namespace SharpLauncher
             else
                 Config.Write();
 
-            if (File.Exists("downloads.fp"))
-                playedEntries = File.ReadAllLines("downloads.fp").ToList();
-            else
-                File.Create("downloads.fp");
-
-            if (File.Exists("favorites.fp"))
-                favoritedEntries = File.ReadAllLines("favorites.fp").ToList();
-            else
-                File.Create("favorites.fp");
-
             // Add columns to list and get width for later
 
             for (int i = 0; i < columnHeaders.Length; i++)
@@ -333,13 +323,14 @@ namespace SharpLauncher
             LaunchEntry.StartInfo.Arguments = $"play -i {entryID}";
             LaunchEntry.Start();
 
+            EnsurePlaysLoaded();
+
             // Add to list of played entries (if it hasn't been played already)
             if (!playedEntries.Contains(entryID))
             {
                 playedEntries.Add(entryID);
 
-                using (StreamWriter newText = File.AppendText("downloads.fp"))
-                    newText.WriteLine(entryID);
+                UpdateListFile("downloads.fp", playedEntries);
             }
         }
 
@@ -384,8 +375,7 @@ namespace SharpLauncher
                 {
                     playedEntries.Add(entryParentID);
 
-                    using (StreamWriter newText = File.AppendText("downloads.fp"))
-                        newText.WriteLine(entryParentID);
+                    UpdateListFile("downloads.fp", playedEntries);
                 }
             }
 
@@ -395,6 +385,8 @@ namespace SharpLauncher
         // Add or remove entry from favorites list and change image
         private void FavoriteButton_checkedChanged(object sender, EventArgs e)
         {
+            EnsureFavoritesLoaded();
+
             CheckBox favoriteButton = (CheckBox)sender;
 
             string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
@@ -414,13 +406,7 @@ namespace SharpLauncher
                 favoriteButton.ImageIndex = 0;
             }
 
-            using (FileStream favorites = new("favorites.fp", FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
-            {
-                lock (favorites)
-                    favorites.SetLength(0);
-
-                favorites.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, favoritedEntries)));
-            }
+            UpdateListFile("favorites.fp", favoritedEntries);
         }
 
         // Update columnWidths in case column is changed manually
@@ -490,12 +476,30 @@ namespace SharpLauncher
 
             if (checkedRadio.Checked)
             {
-                if (checkedRadio.Name == "ArchiveRadioEverything")
-                    queryLibrary = "";
-                if (checkedRadio.Name == "ArchiveRadioGames")
-                    queryLibrary = "arcade";
-                if (checkedRadio.Name == "ArchiveRadioAnimations")
-                    queryLibrary = "theatre";
+                switch (checkedRadio.Name)
+                {
+                    case "ArchiveRadioEverything":
+                        queryLibrary = "";
+                        break;
+
+                    case "ArchiveRadioGames":
+                        queryLibrary = "arcade";
+                        break;
+
+                    case "ArchiveRadioAnimations":
+                        queryLibrary = "theatre";
+                        break;
+
+                    case "ArchiveRadioPlays":
+                        if (File.Exists("downloads.fp") && playedEntries.Count == 0)
+                            playedEntries = File.ReadAllLines("downloads.fp").ToList();
+                        break;
+
+                    case "ArchiveRadioFavorites":
+                        if (File.Exists("favorites.fp") && favoritedEntries.Count == 0)
+                            favoritedEntries = File.ReadAllLines("favorites.fp").ToList();
+                        break;
+                }
 
                 RefreshDatabase();
             }
@@ -685,6 +689,31 @@ namespace SharpLauncher
                     "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
                     "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
                 );
+        }
+
+        // Handle read/write from .fp files
+
+        private void EnsurePlaysLoaded()
+        {
+            if (File.Exists("downloads.fp") && playedEntries.Count == 0)
+                playedEntries = File.ReadAllLines("downloads.fp").ToList();
+        }
+
+        private void EnsureFavoritesLoaded()
+        {
+            if (File.Exists("favorites.fp") && favoritedEntries.Count == 0)
+                favoritedEntries = File.ReadAllLines("favorites.fp").ToList();
+        }
+
+        private void UpdateListFile(string fileName, List<string> list)
+        {
+            using (FileStream file = new(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
+            {
+                lock (file)
+                    file.SetLength(0);
+
+                file.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, list)));
+            }
         }
 
         // Return items from the Flashpoint database
