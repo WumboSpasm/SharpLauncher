@@ -773,7 +773,7 @@ namespace SharpLauncher
             // Replace unsafe characters
             foreach (char inputChar in SearchBox.Text)
             {
-                if (inputChar == '\'' || inputChar == '"')
+                if (inputChar == '\'' || inputChar == '"' || inputChar == '%')
                     safeQuery.Append('_');
                 else
                     safeQuery.Append(inputChar);
@@ -815,12 +815,12 @@ namespace SharpLauncher
                                         List<string> queryOr = new();
 
                                         foreach (string value in operationValues)
-                                            queryOr.Add($"{operationParams[0]} LIKE '{value}'");
+                                            queryOr.Add($"{operationParams[0]} LIKE '%{value}%'");
 
                                         queryOperations.Add($"({String.Join(" OR ", queryOr)})");
                                     }
                                     else
-                                        queryOperations.Add($"{operationParams[0]} LIKE '{operationParams[1]}'");
+                                        queryOperations.Add($"{operationParams[0]} LIKE '%{operationParams[1]}%'");
 
                                     break;
                                 }
