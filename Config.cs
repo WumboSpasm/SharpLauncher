@@ -20,13 +20,19 @@ namespace SharpLauncher
                 JObject readConfig = JObject.Parse(jsonStream.ReadToEnd());
 
                 if (((JToken)readConfig["FlashpointPath"]).Type != JTokenType.Null)
+                {
                     Config.FlashpointPath = (string?)readConfig["FlashpointPath"];
+                }
 
                 if (((JToken)readConfig["CLIFpPath"]).Type != JTokenType.Null)
+                {
                     Config.CLIFpPath = (string?)readConfig["CLIFpPath"];
+                }
 
                 if (((JToken)readConfig["FlashpointServer"]).Type != JTokenType.Null)
+                {
                     Config.FlashpointServer = (string?)readConfig["FlashpointServer"];
+                }
             }
         }
 
@@ -36,7 +42,9 @@ namespace SharpLauncher
             using (FileStream config = new("config.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
             {
                 lock (config)
+                {
                     config.SetLength(0);
+                }
 
                 JObject writeConfig = new();
 

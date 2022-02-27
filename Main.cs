@@ -80,9 +80,13 @@ namespace SharpLauncher
             // Create data files if they don't exist, otherwise load
 
             if (File.Exists("config.json") && File.ReadAllText("config.json").Length > 0)
+            {
                 Config.Read();
+            }
             else
+            {
                 Config.Write();
+            }
 
             // Add columns to list and get width for later
 
@@ -112,9 +116,13 @@ namespace SharpLauncher
         {
             // Scale column widths to list width
             if (columnChanged)
+            {
                 ScaleColumns();
+            }
             else
+            {
                 ResetColumns();
+            }
 
             prevWidth = ArchiveList.ClientSize.Width;
 
@@ -135,14 +143,22 @@ namespace SharpLauncher
             if (((TabControl)sender).SelectedIndex == 1)
             {
                 if (Config.NeedsRefresh)
+                {
                     InitializeDatabase();
+                }
                 else if (columnChanged)
+                {
                     ScaleColumns();
+                }
                 else
+                {
                     ResetColumns();
+                }
             }
             else
+            {
                 HomeContainer.Location = GetHomepagePosition();
+            }
         }
 
         // Execute search if enter is pressed
@@ -167,7 +183,9 @@ namespace SharpLauncher
             Config.Read();
 
             if (TabControl.SelectedIndex == 1 && Config.NeedsRefresh)
+            {
                 InitializeDatabase();
+            }
         }
 
         // Display items on list when fetched
@@ -202,18 +220,17 @@ namespace SharpLauncher
             string entryID = queryCache[selectedIndices[0]].ID;
 
             for (int i = 0; i < metadataFields.Count; i++)
+            {
                 metadataOutput.Add(
                     DatabaseQuery($"SELECT {metadataFields[i][1]} from GAME where id = '{entryID}'")[0]
                 );
+            }
 
             // Header
 
             ArchiveInfoTitle.Text = metadataOutput[0];
 
-            if (metadataOutput[3] != "")
-                ArchiveInfoDeveloper.Text = $"by {metadataOutput[3]}";
-            else
-                ArchiveInfoDeveloper.Text = "by unknown developer";
+            ArchiveInfoDeveloper.Text = metadataOutput[3] != "" ? $"by {metadataOutput[3]}" : "by unknown developer";
 
             ArchiveInfoData.Height = GetInfoHeight();
 
@@ -222,7 +239,9 @@ namespace SharpLauncher
             string entryData = @"{\rtf1 ";
 
             for (int i = 1; i < metadataOutput.Count; i++)
+            {
                 if (metadataOutput[i] != "")
+                {
                     switch (metadataFields[i][0])
                     {
                         case "Library":
@@ -245,6 +264,8 @@ namespace SharpLauncher
                             entryData += $"\\b {metadataFields[i][0]}: \\b0 {ToUnicode(metadataOutput[i])}\\line";
                             break;
                     }
+                }
+            }
 
             entryData += "}";
 
@@ -253,8 +274,10 @@ namespace SharpLauncher
             // Images
 
             if (!ArchiveImagesContainer.Visible)
+            {
                 ArchiveImagesContainer.Visible = true;
-            
+            }
+
             foreach (string folder in new string[] { "Logos", "Screenshots" })
             {
                 string[] imageTree = { entryID.Substring(0, 2), entryID.Substring(2, 2) };
@@ -276,9 +299,13 @@ namespace SharpLauncher
                 else
                 {
                     if (folder == "Logos")
+                    {
                         ArchiveImagesLogo.ImageLocation = Config.FlashpointServer + imagePath;
+                    }
                     else if (folder == "Screenshots")
+                    {
                         ArchiveImagesScreenshot.ImageLocation = Config.FlashpointServer + imagePath;
+                    }
                 }
             }
 
@@ -316,7 +343,9 @@ namespace SharpLauncher
         private void ArchiveList_itemAccess(object sender, EventArgs e)
         {
             if (!InitializeCLIFp())
+            {
                 return;
+            }
 
             string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
 
@@ -359,7 +388,9 @@ namespace SharpLauncher
         private void AlternateMenu_itemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
             if (!InitializeCLIFp())
+            {
                 return;
+            }
 
             string entryID = (string)e.ClickedItem.Tag;
             string entryAppPath = DatabaseQuery($"SELECT applicationPath FROM additional_app WHERE id = '{entryID}'")[0];
@@ -394,14 +425,18 @@ namespace SharpLauncher
             if (favoriteButton.Checked)
             {
                 if (!favoritedEntries.Contains(entryID))
+                {
                     favoritedEntries.Add(entryID);
+                }
 
                 favoriteButton.ImageIndex = 1;
             }
             else
             {
                 if (favoritedEntries.Contains(entryID))
+                {
                     favoritedEntries.Remove(entryID);
+                }
 
                 favoriteButton.ImageIndex = 0;
             }
@@ -428,8 +463,12 @@ namespace SharpLauncher
 
             // Remove any indicators that might be visible
             for (int i = 0; i < columnHeaders.Length; i++)
+            {
                 if (ArchiveList.Columns[i].Text != columnHeaders[i])
+                {
                     ArchiveList.Columns[i].Text = columnHeaders[i];
+                }
+            }
 
             // Add a new arrow indicator to column header
             string arrow = char.ConvertFromUtf32(0x2192 + queryDirection);
@@ -453,7 +492,9 @@ namespace SharpLauncher
         private void RandomButton_Click(object sender, EventArgs e)
         {
             if (ArchiveList.VirtualListSize == 0)
+            {
                 return;
+            }
 
             int randomEntryIndex = rng.Next(ArchiveList.VirtualListSize);
 
@@ -470,7 +511,9 @@ namespace SharpLauncher
             activateOnce = !activateOnce;
 
             if (!activateOnce)
+            {
                 return;
+            }
 
             RadioButton checkedRadio = (RadioButton)sender;
 
@@ -492,12 +535,18 @@ namespace SharpLauncher
 
                     case "ArchiveRadioPlays":
                         if (File.Exists("downloads.fp") && playedEntries.Count == 0)
+                        {
                             playedEntries = File.ReadAllLines("downloads.fp").ToList();
+                        }
+
                         break;
 
                     case "ArchiveRadioFavorites":
                         if (File.Exists("favorites.fp") && favoritedEntries.Count == 0)
+                        {
                             favoritedEntries = File.ReadAllLines("favorites.fp").ToList();
+                        }
+
                         break;
                 }
 
@@ -508,9 +557,13 @@ namespace SharpLauncher
         private void ArchiveImages_loadCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
         {
             if (((PictureBox)sender).Name == "ArchiveImagesLogo")
+            {
                 logoLoaded = true;
+            }
             else if (((PictureBox)sender).Name == "ArchiveImagesScreenshot")
+            {
                 screenshotLoaded = true;
+            }
         }
 
         // Display picture viwwer 
@@ -549,7 +602,9 @@ namespace SharpLauncher
         private void InitializeDatabase()
         {
             if (Config.NeedsRefresh)
+            {
                 Config.NeedsRefresh = false;
+            }
 
             string databasePath = Config.FlashpointPath + @"\Data\flashpoint.sqlite";
             byte[] header = new byte[16];
@@ -557,7 +612,9 @@ namespace SharpLauncher
             if (File.Exists(databasePath))
             {
                 using (FileStream fileStream = new(databasePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
                     fileStream.Read(header, 0, 16);
+                }
 
                 if (Encoding.ASCII.GetString(header).Contains("SQLite format"))
                 {
@@ -598,7 +655,9 @@ namespace SharpLauncher
                 foreach (string id in ArchiveRadioPlays.Checked ? playedEntries : favoritedEntries)
                 {
                     if (DatabaseQuery($"SELECT id FROM game WHERE id = '{id}'").Count == 0)
+                    {
                         continue;
+                    }
 
                     // Alternate query template for favorites, play history
                     string GetAltQuery(string column) =>
@@ -627,7 +686,9 @@ namespace SharpLauncher
 
             // If item is not filtered, create QueryItem object and add to queryCache
             for (int i = 0; i < queryTitle.Count; i++)
+            {
                 if (!filteredTags.Intersect(queryTags[i].Split("; ")).Any())
+                {
                     queryCache.Add(new QueryItem
                     {
                         Title = queryTitle[i],
@@ -635,6 +696,8 @@ namespace SharpLauncher
                         Publisher = queryPublisher[i],
                         ID = queryID[i]
                     });
+                }
+            }
 
             // Sort new queryCache
             SortColumns();
@@ -648,9 +711,13 @@ namespace SharpLauncher
 
             // Prevent column widths from breaking out of list
             if (columnChanged)
+            {
                 ScaleColumns();
+            }
             else
+            {
                 ResetColumns();
+            }
         }
 
         private bool InitializeCLIFp()
@@ -679,16 +746,24 @@ namespace SharpLauncher
                     dynamic? filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
 
                     foreach (var item in filterArray)
+                    {
                         if (item.filtered == true)
+                        {
                             foreach (var tag in item.tags)
+                            {
                                 filteredTags.Add(tag.ToString());
+                            }
+                        }
+                    }
                 }
             }
             else
+            {
                 MessageBox.Show(
                     "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
                     "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
                 );
+            }
         }
 
         // Handle read/write from .fp files
@@ -696,13 +771,17 @@ namespace SharpLauncher
         private void EnsurePlaysLoaded()
         {
             if (File.Exists("downloads.fp") && playedEntries.Count == 0)
+            {
                 playedEntries = File.ReadAllLines("downloads.fp").ToList();
+            }
         }
 
         private void EnsureFavoritesLoaded()
         {
             if (File.Exists("favorites.fp") && favoritedEntries.Count == 0)
+            {
                 favoritedEntries = File.ReadAllLines("favorites.fp").ToList();
+            }
         }
 
         private void UpdateListFile(string fileName, List<string> list)
@@ -710,7 +789,9 @@ namespace SharpLauncher
             using (FileStream file = new(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
             {
                 lock (file)
+                {
                     file.SetLength(0);
+                }
 
                 file.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, list)));
             }
@@ -727,8 +808,12 @@ namespace SharpLauncher
             List<string> data = new();
 
             using (SqliteDataReader dataReader = command.ExecuteReader())
+            {
                 while (dataReader.Read())
+                {
                     data.Add(dataReader.IsDBNull(0) ? "" : dataReader.GetString(0));
+                }
+            }
 
             connection.Close();
 
@@ -747,11 +832,19 @@ namespace SharpLauncher
                 List<string> queryConditions = new();
 
                 if (queryLibrary != "")
+                {
                     queryConditions.Add($"library = '{queryLibrary}'");
+                }
+
                 if (querySearch != "")
+                {
                     queryConditions.Add($"title LIKE '%{querySearch}%'");
+                }
+
                 foreach (string operation in queryOperations)
+                {
                     queryConditions.Add(operation);
+                }
 
                 queryFragments.Add(String.Join(" AND ", queryConditions));
             }
@@ -759,7 +852,9 @@ namespace SharpLauncher
             queryFragments.Add("ORDER BY title");
 
             if (offset != -1)
+            {
                 queryFragments.Add($"LIMIT {offset}, 1");
+            }
 
             return String.Join(' ', queryFragments);
         }
@@ -774,9 +869,13 @@ namespace SharpLauncher
             foreach (char inputChar in SearchBox.Text)
             {
                 if (inputChar == '\'' || inputChar == '"')
+                {
                     safeQuery.Append('_');
+                }
                 else
+                {
                     safeQuery.Append(inputChar);
+                }
             }
 
             string tempSearch = safeQuery.ToString();
@@ -804,7 +903,9 @@ namespace SharpLauncher
 
                         // Create operation if parameters are valid
                         if (operationParams.Length == 2)
+                        {
                             foreach (string[] field in metadataFields)
+                            {
                                 if (operationParams[0] == field[1])
                                 {
                                     string[] operationValues = operationParams[1].Split("|");
@@ -815,15 +916,21 @@ namespace SharpLauncher
                                         List<string> queryOr = new();
 
                                         foreach (string value in operationValues)
+                                        {
                                             queryOr.Add($"{operationParams[0]} LIKE '{value}'");
+                                        }
 
                                         queryOperations.Add($"({String.Join(" OR ", queryOr)})");
                                     }
                                     else
+                                    {
                                         queryOperations.Add($"{operationParams[0]} LIKE '{operationParams[1]}'");
+                                    }
 
                                     break;
                                 }
+                            }
+                        }
 
                         // Remove brackets
                         tempSearch = tempSearch.Remove(leftBracket, rightBracket - leftBracket + 1);
@@ -833,9 +940,14 @@ namespace SharpLauncher
 
             // Remove padding
             while (tempSearch.Length > 0 && tempSearch[0] == ' ')
+            {
                 tempSearch = tempSearch.Remove(0, 1);
+            }
+
             while (tempSearch.Length > 0 && tempSearch[tempSearch.Length - 1] == ' ')
+            {
                 tempSearch = tempSearch.Remove(tempSearch.Length - 1);
+            }
 
             // Apply remaining string to generic search query
             querySearch = tempSearch;
@@ -878,7 +990,9 @@ namespace SharpLauncher
             ArchiveList.EndUpdate();
 
             if (columnChanged)
+            {
                 columnChanged = false;
+            }
         }
 
         // Sort items by a specific column
@@ -927,8 +1041,12 @@ namespace SharpLauncher
             int desiredHeight = ArchiveInfoContainer.Height - 14;
 
             foreach (Control control in ArchiveInfoContainer.Controls)
+            {
                 if (control.Name != "ArchiveInfoData")
+                {
                     desiredHeight -= control.Height;
+                }
+            }
 
             return desiredHeight;
         }
@@ -956,11 +1074,17 @@ namespace SharpLauncher
             foreach (char c in data)
             {
                 if (c == '\\' || c == '{' || c == '}')
+                {
                     escapedData.Append(@"\" + c);
+                }
                 else if (c <= 0x7f)
+                {
                     escapedData.Append(c);
+                }
                 else
+                {
                     escapedData.Append(@"\u" + Convert.ToUInt32(c) + "?");
+                }
             }
 
             return escapedData.ToString().Replace("\n", @"\line ");
