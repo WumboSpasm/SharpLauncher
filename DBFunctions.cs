@@ -5,6 +5,8 @@ namespace SharpLauncher
     // TODO: write all the documentation for this, and comment it.
     public static class DBFunctions
     {
+        // The size of block to read from the database.
+        public const int BlockSize = 500;
 
         // Return game or animation entries from the Flashpoint database.
         public static List<QueryItem> DatabaseQueryEntry(string query)
@@ -182,6 +184,92 @@ namespace SharpLauncher
 
             return String.Join(' ', queryFragments);
         }
+
+        /// <summary>
+        /// Gets the proper query string for a block of data, using keyset pagination to avaoid the bad performance of OFFSET.
+        /// Sorts by sortyByColumn, using Id as a secondary sort for when sortByColumn is non-uniqu.
+        /// </summary>
+        /// <param name="extraOperations">The extra conditions to put on the data.</param>
+        /// <param name="lastElem">The last element of the last block, in the column sortByColumn.</param>
+        /// <param name="lastId">The last element of the last block, in the column Id.</param>
+        /// <param name="sortByColumn">The column on which the keyset pagination will be performed. This column must contain only unique values.</param>
+        /// <param name="sortDirection">The direction to sort. If true, sort ascending (a-z). If false, sort descending (z-a)</param>
+        /// <param name="blockSize">The size of the block to query.</param>
+        /// <param name="search">The string to search for.</param>
+        /// <param name="library">The library to search in.</param>
+        /// <returns>A query string representing the block query.</returns>
+        public static string GetQueryBlock(List<string> extraOperations, string lastElem = "", string lastId = "", string sortByColumn = "title", bool sortDirection = true, int blockSize = BlockSize, string search = "", string library = "arcade")
+        {
+            char sortOperator = sortDirection ? '>' : '<';
+            string sortTerm = sortDirection ? "ASC" : "DESC";
+            List<string> queryFragments = new() { $"SELECT title,developer,publisher,id,tagsStr FROM game" };
+
+            if (lastElem != "" || lastId != "" || library != "" || search != "" || extraOperations.Count != 0)
+            {
+                queryFragments.Add("WHERE");
+
+                List<string> queryConditions = new();
+                if (lastElem != "" || lastId != "")
+                {
+                    queryConditions.Add($"({sortByColumn}, id) {sortOperator} ('{lastElem.Replace("'","''")}', '{lastId.Replace("'", "''")}')");
+                }
+
+                if (library != "")
+                {
+                    // Don't rely on an unsynchronized global, instead use an argument.
+                    queryConditions.Add($"library = '{library.Replace("'", "''")}'");
+                }
+
+                if (search != "")
+                {
+                    queryConditions.Add($"title LIKE '%{search.Replace("'", "''")}%'");
+                }
+
+                foreach (string operation in extraOperations)
+                {
+                    queryConditions.Add(operation);
+                }
+
+                queryFragments.Add(String.Join(" AND ", queryConditions));
+            }
+
+            queryFragments.Add($"ORDER BY {sortByColumn} {sortTerm}, id {sortTerm}");
+
+            queryFragments.Add($"LIMIT {blockSize}");
+
+            return String.Join(' ', queryFragments);
+        }
+
+        /// <summary>
+        /// Filter data according to filteredTags and set lastElem to the last element of data. Also set blockSize to the size of data.
+        /// </summary>
+        /// <param name="data">The data to be filtered.</param>
+        /// <param name="filteredTags">The tags to filter out.</param>
+        /// <param name="lastElem">The last element of data (unfiltered) will be placed here.</param>
+        /// <param name="blockSize">The size of data will be placed here.</param>
+        /// <returns>The filtered data.</returns>
+        public static List<QueryItem> FilterDataBlock(List<QueryItem> data, List<string> filteredTags, out QueryItem lastElem, out int blockSize)
+        {
+            // Set blockSize to the size of data.
+            blockSize = data.Count;
+            // Set lastElem to the last element of data, or a new element if data is empty.
+            lastElem = blockSize > 0 ? data[^1] : new();
+            // Return the filtered data.
+            return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Split("; ")).Any());
+        }
+
+        /// <summary>
+        /// Filter data according to filteredTags.
+        /// </summary>
+        /// <param name="data">The data to be filtered.</param>
+        /// <param name="filteredTags">The tags to filter out.</param>
+        /// <returns>The filtered data.</returns>
+        public static List<QueryItem> FilterData(List<QueryItem> data, List<string> filteredTags)
+        {
+            // Return the filtered data.
+            return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Split("; ")).Any());
+        }
+
         // Alternate query template for favorites, play history
         public static string GetAltQuery(string gameID, string search, List<string> extraOperations)
         {

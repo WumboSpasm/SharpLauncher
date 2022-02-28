@@ -558,7 +558,7 @@ namespace SharpLauncher
                         break;
                 }
 
-                RefreshDatabase();
+                RefreshDatabase_Block();
             }
         }
 
@@ -627,7 +627,7 @@ namespace SharpLauncher
                 if (Encoding.ASCII.GetString(header).Contains("SQLite format"))
                 {
                     LoadFilteredTags();
-                    RefreshDatabase();
+                    RefreshDatabase_Block();
 
                     prevWidth = ArchiveList.ClientSize.Width;
 
@@ -652,6 +652,14 @@ namespace SharpLauncher
             new Thread(() => RefreshDatabase_OnThread(columnChanged, ArchiveRadioPlays.Checked, ArchiveRadioFavorites.Checked,
                 playedEntries, favoritedEntries, querySearch, queryOperations, queryLibrary)).Start();
         }
+
+        // Generate new cache and refresh list
+        private void RefreshDatabase_Block()
+        {
+            new Thread(() => RefreshDatabase_OnThread_BlockBased(columnChanged, ArchiveRadioPlays.Checked, ArchiveRadioFavorites.Checked,
+                playedEntries, favoritedEntries, querySearch, queryOperations, queryLibrary, BlockSize, columnHeaders[queryOrderBy], queryDirection)).Start();
+        }
+
         // TODO: MAKE THIS THREAD-SAFE, i.e. near-static.
         public void RefreshDatabase_OnThread(bool colChanged, bool playsChecked, bool favoritesChecked, List<string> playedEnts, List<string> favoritedEnts,
             string qSearch, List<string> qOperations, string qLibrary)
@@ -701,6 +709,107 @@ namespace SharpLauncher
 
                 // Sort new queryCache
                 SortColumns();
+
+                // Display entry count in bottom right corner
+                SetEntryCountText($"Displaying {length} entr{(length == 1 ? "y" : "ies")}.");
+
+                // Force list to reload items
+                SetArchiveListLength(length);
+
+                // Prevent column widths from breaking out of list
+                if (colChanged)
+                {
+                    ScaleColumns();
+                }
+                else
+                {
+                    ResetColumns();
+                }
+            }
+        }
+        // TODO: MAKE THIS THREAD-SAFE, i.e. near-static.
+        public void RefreshDatabase_OnThread_BlockBased(bool colChanged, bool playsChecked, bool favoritesChecked, List<string> playedEnts, List<string> favoritedEnts,
+            string qSearch, List<string> qOperations, string qLibrary, int blockSize, string sortBy, int direction)
+        {
+            lock (DBRefreshLock)
+            {
+                ClearInfoPanel();
+                SetEntryCountText("Loading...");
+                lock (queryCacheLock)
+                {
+                    SetArchiveListLength(0);
+                    queryCache.Clear();
+                }
+
+                List<QueryItem> temp;
+                QueryItem lastItem = new();
+                int lastBlockSize = blockSize;
+                // queryCache.Count, but without the need for locking.
+                int length = 0;
+
+                // Get values to be inserted into QueryItem objects
+                if (playsChecked || favoritesChecked)
+                {
+                    temp = new();
+                    foreach (string id in playsChecked ? playedEnts : favoritedEnts)
+                    {
+                        // TODO: disable this, and ask Wumbo why it's here. We shouldn't have invalid IDs.
+                        /*if (DatabaseQuery($"SELECT id FROM game WHERE id = '{id}'").Count == 0)
+                        {
+                            continue;
+                        }*/
+
+                        // TODO: make one enormous list of OR'd conditions, so that we don't end up with hundreds of separate
+                        // queries, when we could have one large one.
+                        temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, qSearch, qOperations)));
+                    }
+                    SortColumns();
+                }
+                else
+                {
+                    // Tracks whether or not we've displayed the first page already.
+                    bool pastFirstPage = false;
+                    // Keep going until we get back fewer than we requested: when that happens, we're at the end.
+                    while (lastBlockSize == blockSize)
+                    {
+                        // If we haven't yet displayed the first page and we have enough results to do so, do it.
+                        if (!pastFirstPage && length >= blockSize)
+                        {
+                            // Set the list length appropriately.
+                            SetArchiveListLength(length);
+                            // Scale the columns nicely.
+                            if (colChanged)
+                            {
+                                ScaleColumns();
+                            }
+                            else
+                            {
+                                ResetColumns();
+                            }
+                            // Prevent this from running again.
+                            pastFirstPage = true;
+                        }
+
+                        // Query the DB for one block.
+                        temp = FilterDataBlock(DatabaseQueryEntry(GetQueryBlock(qOperations, lastElem: lastItem.GetPropertyFromName(sortBy), lastId: lastItem.ID,
+                            sortByColumn: sortBy.ToLower(), sortDirection: direction == 1, blockSize: blockSize, search: qSearch, library: qLibrary)),
+                            // Set lastItem and lastBlockSize properly.
+                            filteredTags, out lastItem, out lastBlockSize);
+
+                        // Increase the length by temp's length - all of temp's elements will be added to queryCache.
+                        length += temp.Count;
+
+                        // Lock queryCache and add all of temp's elements.
+                        lock (queryCacheLock)
+                        {
+                            queryCache.AddRange(temp);
+                        }
+                        
+                    }
+                }
+
+                // Sort new queryCache
+                //SortColumns();
 
                 // Display entry count in bottom right corner
                 SetEntryCountText($"Displaying {length} entr{(length == 1 ? "y" : "ies")}.");
@@ -887,7 +996,7 @@ namespace SharpLauncher
             querySearch = tempSearch;
 
             // Refresh and open list
-            RefreshDatabase();
+            RefreshDatabase_Block();
             TabControl.SelectTab(1);
         }
 
