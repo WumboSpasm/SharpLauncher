@@ -2,6 +2,7 @@ using System.Text;
 using System.Diagnostics;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
+using static SharpLauncher.DBFunctions;
 
 namespace SharpLauncher
 {
@@ -18,27 +19,8 @@ namespace SharpLauncher
 
         // Previous width of the list
         int prevWidth;
-        // Metadata fields to be retrieved alongside their proper names
-        List<string[]> metadataFields = new()
-        {
-            new[] { "Title", "title" },
-            new[] { "Alternate Titles", "alternateTitles" },
-            new[] { "Series", "series" },
-            new[] { "Developer", "developer" },
-            new[] { "Publisher", "publisher" },
-            new[] { "Source", "source" },
-            new[] { "Release Date", "releaseDate" },
-            new[] { "Platform", "platform" },
-            new[] { "Version", "version" },
-            new[] { "Library", "library" },
-            new[] { "Tags", "tagsStr" },
-            new[] { "Language", "language" },
-            new[] { "Play Mode", "playMode" },
-            new[] { "Status", "status" },
-            new[] { "Format", "activeDataOnDisk" },
-            new[] { "Notes", "notes" },
-            new[] { "Original Description", "originalDescription" }
-        };
+        
+        
         // Titles to be displayed above each column
         string[] columnHeaders = { "Title", "Developer", "Publisher" };
         // Calculated column widths before conversion to int
@@ -51,16 +33,13 @@ namespace SharpLauncher
         int queryDirection = 1;
         string querySearch = "";
         List<string> queryOperations = new();
-        // Template for list items
-        class QueryItem
-        {
-            public string Title { get; set; } = "";
-            public string Developer { get; set; } = "";
-            public string Publisher { get; set; } = "";
-            public string ID { get; set; } = "";
-        }
+        
         // Cache of all items to be displayed in list
         List<QueryItem> queryCache = new();
+        // An object for locking access to the queryCache between threads.
+        readonly object queryCacheLock = new object();
+        // A ManualResetEvent that the main thread should wait on until the queryCache is ready for reading.
+        ManualResetEventSlim queryCacheWH = new(true);
         // Array of all entries that have been played
         List<string> playedEntries = new();
         // Array of all entries that have been favorited
@@ -144,6 +123,7 @@ namespace SharpLauncher
             {
                 if (Config.NeedsRefresh)
                 {
+                    // TODO: Move this.
                     InitializeDatabase();
                 }
                 else if (columnChanged)
@@ -216,60 +196,20 @@ namespace SharpLauncher
                 return;
             }
 
-            List<string> metadataOutput = new(metadataFields.Count);
-            string entryID = queryCache[selectedIndices[0]].ID;
-
-            for (int i = 0; i < metadataFields.Count; i++)
-            {
-                metadataOutput.Add(
-                    DatabaseQuery($"SELECT {metadataFields[i][1]} from GAME where id = '{entryID}'")[0]
-                );
-            }
+            
+            QueryItem entry = queryCache[selectedIndices[0]];
+            MetaDataObj metadataOutput = DatabaseQueryMeta(entry, queryLibrary);
 
             // Header
 
-            ArchiveInfoTitle.Text = metadataOutput[0];
+            ArchiveInfoTitle.Text = metadataOutput.Title;
 
-            ArchiveInfoDeveloper.Text = metadataOutput[3] != "" ? $"by {metadataOutput[3]}" : "by unknown developer";
+            ArchiveInfoDeveloper.Text = metadataOutput.Developer != "" ? $"by {metadataOutput.Developer}" : "by unknown developer";
 
             ArchiveInfoData.Height = GetInfoHeight();
 
             // Metadata
-
-            string entryData = @"{\rtf1 ";
-
-            for (int i = 1; i < metadataOutput.Count; i++)
-            {
-                if (metadataOutput[i] != "")
-                {
-                    switch (metadataFields[i][0])
-                    {
-                        case "Library":
-                            entryData +=
-                                $"\\b {metadataFields[i][0]}: \\b0 " +
-                                ToUnicode(metadataOutput[i][0].ToString().ToUpper() + metadataOutput[i][1..]) +
-                                "\\line";
-                            break;
-
-                        case "Format":
-                            entryData += $"\\b {metadataFields[i][0]}: \\b0 {(metadataOutput[i] == "0" ? "Legacy" : "GameZIP")}\\line";
-                            break;
-
-                        case "Notes":
-                        case "Original Description":
-                            entryData += $"\\line\\b {metadataFields[i][0]}:\\line\\b0 {ToUnicode(metadataOutput[i])}\\line";
-                            break;
-
-                        default:
-                            entryData += $"\\b {metadataFields[i][0]}: \\b0 {ToUnicode(metadataOutput[i])}\\line";
-                            break;
-                    }
-                }
-            }
-
-            entryData += "}";
-
-            ArchiveInfoData.Rtf = entryData;
+            ArchiveInfoData.Rtf = BuildEntryData(metadataOutput);
 
             // Images
 
@@ -280,8 +220,8 @@ namespace SharpLauncher
 
             foreach (string folder in new string[] { "Logos", "Screenshots" })
             {
-                string[] imageTree = { entryID.Substring(0, 2), entryID.Substring(2, 2) };
-                string imagePath = $"\\Data\\Images\\{folder}\\{imageTree[0]}\\{imageTree[1]}\\{entryID}.png";
+                string[] imageTree = { entry.ID.Substring(0, 2), entry.ID.Substring(2, 2) };
+                string imagePath = $"\\Data\\Images\\{folder}\\{imageTree[0]}\\{imageTree[1]}\\{entry.ID}.png";
 
                 if (File.Exists(Config.FlashpointPath + imagePath))
                 {
@@ -311,10 +251,8 @@ namespace SharpLauncher
 
             // Footer
 
-            List<string> additionalApps = DatabaseQuery($"SELECT name FROM additional_app WHERE parentGameId = '{entryID}'");
-
             // Display or hide additional apps button if they exist
-            if (additionalApps.Count > 0)
+            if (DatabaseGetAddAppCount(entry.ID) > 0)
             {
                 PlayButton.Width = 238;
                 AlternateButton.Visible = true;
@@ -337,6 +275,51 @@ namespace SharpLauncher
             }
 
             PlayContainer.Visible = true;
+        }
+
+        /// <summary>
+        /// Builds the string to display in the panel from a metadata input.
+        /// </summary>
+        /// <param name="meta">The metadata object describing the selected game.</param>
+        /// <returns>The RTF display string.</returns>
+        private static string BuildEntryData(MetaDataObj meta)
+        {
+            string entryData = @"{\rtf1 ";
+            entryData += meta.AlternateTitles == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["alternateTitles"]}: \\b0 {ToUnicode(meta.AlternateTitles)}\\line";
+            entryData += meta.Series == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["series"]}: \\b0 {ToUnicode(meta.Series)}\\line";
+            entryData += meta.Developer == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["developer"]}: \\b0 {ToUnicode(meta.Developer)}\\line";
+            entryData += meta.Publisher == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["publisher"]}: \\b0 {ToUnicode(meta.Publisher)}\\line";
+            entryData += meta.Source == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["source"]}: \\b0 {ToUnicode(meta.Source)}\\line";
+            entryData += meta.ReleaseDate == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["releaseDate"]}: \\b0 {ToUnicode(meta.ReleaseDate)}\\line";
+            entryData += meta.Platform == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["platform"]}: \\b0 {ToUnicode(meta.Platform)}\\line";
+            entryData += meta.Version == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["version"]}: \\b0 {ToUnicode(meta.Version)}\\line";
+            entryData += meta.Library == "" ? "" : $"\\b {MetaDataObj.metadataFields["library"]}: \\b0 " +
+                                ToUnicode(meta.Library[0].ToString().ToUpper() + meta.Library[1..]) +
+                                "\\line";
+            entryData += meta.Tags == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["tagsStr"]}: \\b0 {ToUnicode(meta.Tags)}\\line";
+            entryData += meta.Language == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["language"]}: \\b0 {ToUnicode(meta.Language)}\\line";
+            entryData += meta.PlayMode == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["playMode"]}: \\b0 {ToUnicode(meta.PlayMode)}\\line";
+            entryData += meta.Status == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["status"]}: \\b0 {ToUnicode(meta.Status)}\\line";
+            entryData += meta.Format == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["activeDataOnDisk"]}: \\b0 {(meta.Format == "0" ? "Legacy" : "GameZIP")}\\line";
+            entryData += meta.Notes == "" ? "" :
+                $"\\line\\b {MetaDataObj.metadataFields["notes"]}:\\line\\b0 {ToUnicode(meta.Notes)}\\line";
+            entryData += meta.OriginalDescription == "" ? "" :
+                $"\\line\\b {MetaDataObj.metadataFields["originalDescription"]}:\\line\\b0 {ToUnicode(meta.OriginalDescription)}\\line";
+            entryData += "}";
+            return entryData;
         }
 
         // Launch selected entry
@@ -370,10 +353,10 @@ namespace SharpLauncher
             string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
 
             int i = 0;
-            foreach (string id in DatabaseQuery($"SELECT id FROM additional_app WHERE parentGameId = '{entryID}'"))
+            foreach (AddApp entry in DatabaseQueryAddApp(entryID))
             {
-                AlternateMenu.Items.Add($"Launch: " + DatabaseQuery($"SELECT name FROM additional_app WHERE id = '{id}'")[0]);
-                AlternateMenu.Items[i].Tag = id;
+                AlternateMenu.Items.Add($"Launch: " + entry.Name);
+                AlternateMenu.Items[i].Tag = entry;
 
                 i++;
             }
@@ -392,19 +375,17 @@ namespace SharpLauncher
                 return;
             }
 
-            string entryID = (string)e.ClickedItem.Tag;
-            string entryAppPath = DatabaseQuery($"SELECT applicationPath FROM additional_app WHERE id = '{entryID}'")[0];
+            AddApp entry = (AddApp)e.ClickedItem.Tag;
 
-            LaunchEntry.StartInfo.Arguments = $"play -i {entryID}";
+            LaunchEntry.StartInfo.Arguments = $"play -i {entry.ID}";
 
-            if (entryAppPath != ":extras:" && entryAppPath != ":message:")
+            if (entry.ApplicationPath != ":extras:" && entry.ApplicationPath != ":message:")
             {
-                string entryParentID = DatabaseQuery($"SELECT parentGameId FROM additional_app WHERE id = '{entryID}'")[0];
 
                 // Add to list of played entries (if it hasn't been played already)
-                if (!playedEntries.Contains(entryParentID))
+                if (!playedEntries.Contains(entry.ParentGameId))
                 {
-                    playedEntries.Add(entryParentID);
+                    playedEntries.Add(entry.ParentGameId);
 
                     UpdateListFile("downloads.fp", playedEntries);
                 }
@@ -638,6 +619,7 @@ namespace SharpLauncher
         }
 
         // Generate new cache and refresh list
+        // TODO: make this into a thread wrapper-func.
         private void RefreshDatabase()
         {
             ClearInfoPanel();
@@ -648,54 +630,44 @@ namespace SharpLauncher
             List<string> queryPublisher = new();
             List<string> queryTags = new();
             List<string> queryID = new();
+            List<QueryItem> temp;
 
             // Get values to be inserted into QueryItem objects
             if (ArchiveRadioPlays.Checked || ArchiveRadioFavorites.Checked)
             {
+                temp = new();
                 foreach (string id in ArchiveRadioPlays.Checked ? playedEntries : favoritedEntries)
                 {
-                    if (DatabaseQuery($"SELECT id FROM game WHERE id = '{id}'").Count == 0)
+                    // TODO: disable this, and ask Wumbo why it's here. We shouldn't have invalid IDs.
+                    /*if (DatabaseQuery($"SELECT id FROM game WHERE id = '{id}'").Count == 0)
                     {
                         continue;
-                    }
+                    }*/
 
                     // Alternate query template for favorites, play history
-                    string GetAltQuery(string column) =>
-                        $"SELECT {column} FROM game WHERE id = '{id}'" +
-                        (querySearch != "" ? $" AND title LIKE '%{querySearch}%'" : "") +
-                        (queryOperations.Count != 0 ? " AND " + String.Join(" AND ", queryOperations) : "");
-
-                    if (DatabaseQuery(GetAltQuery("title")).Count > 0)
-                    {
-                        queryTitle.Add(DatabaseQuery(GetAltQuery("title"))[0]);
-                        queryDeveloper.Add(DatabaseQuery(GetAltQuery("developer"))[0]);
-                        queryPublisher.Add(DatabaseQuery(GetAltQuery("publisher"))[0]);
-                        queryTags.Add(DatabaseQuery(GetAltQuery("tagsStr"))[0]);
-                        queryID.Add(id);
-                    }
+                    string GetAltQuery(string gameID, string search, List<string> extraOperations) =>
+                        $"SELECT title,developer,publisher,id,tagsStr FROM game WHERE id = '{gameID}'" +
+                        (search != "" ? $" AND title LIKE '%{search}%'" : "") +
+                        (extraOperations.Count != 0 ? " AND " + String.Join(" AND ", extraOperations) : "");
+                    // TODO: make one enormous list of OR'd conditions, so that we don't end up with hundreds of separate
+                    // queries, when we could have one large one.
+                    temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, querySearch, queryOperations)));
                 }
             }
             else
             {
-                queryTitle = DatabaseQuery(GetQuery("title"));
-                queryDeveloper = DatabaseQuery(GetQuery("developer"));
-                queryPublisher = DatabaseQuery(GetQuery("publisher"));
-                queryTags = DatabaseQuery(GetQuery("tagsStr"));
-                queryID = DatabaseQuery(GetQuery("id"));
+                temp = DatabaseQueryEntry(GetQuery(queryOperations, querySearch, queryLibrary));
             }
 
             // If item is not filtered, create QueryItem object and add to queryCache
-            for (int i = 0; i < queryTitle.Count; i++)
+            for (int i = 0; i < temp.Count; i++)
             {
-                if (!filteredTags.Intersect(queryTags[i].Split("; ")).Any())
+                if (!filteredTags.Intersect(temp[i].tagsStr.Split("; ")).Any())
                 {
-                    queryCache.Add(new QueryItem
+                    lock (queryCacheLock)
                     {
-                        Title = queryTitle[i],
-                        Developer = queryDeveloper[i],
-                        Publisher = queryPublisher[i],
-                        ID = queryID[i]
-                    });
+                        queryCache.Add(temp[i]);
+                    }
                 }
             }
 
@@ -788,6 +760,7 @@ namespace SharpLauncher
         {
             using (FileStream file = new(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
             {
+                // TODO: wtf is this?
                 lock (file)
                 {
                     file.SetLength(0);
@@ -796,80 +769,22 @@ namespace SharpLauncher
                 file.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, list)));
             }
         }
-
-        // Return items from the Flashpoint database
-        private List<string> DatabaseQuery(string query)
-        {
-            SqliteConnection connection = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
-            connection.Open();
-
-            SqliteCommand command = new(query, connection);
-
-            List<string> data = new();
-
-            using (SqliteDataReader dataReader = command.ExecuteReader())
-            {
-                while (dataReader.Read())
-                {
-                    data.Add(dataReader.IsDBNull(0) ? "" : dataReader.GetString(0));
-                }
-            }
-
-            connection.Close();
-
-            return data;
-        }
-
-        // Query template to make things easier
-        private string GetQuery(string column, int offset = -1)
-        {
-            List<string> queryFragments = new() { $"SELECT {column} FROM game" };
-
-            if (queryLibrary != "" || querySearch != "" || queryOperations.Count != 0)
-            {
-                queryFragments.Add("WHERE");
-
-                List<string> queryConditions = new();
-
-                if (queryLibrary != "")
-                {
-                    queryConditions.Add($"library = '{queryLibrary}'");
-                }
-
-                if (querySearch != "")
-                {
-                    queryConditions.Add($"title LIKE '%{querySearch}%'");
-                }
-
-                foreach (string operation in queryOperations)
-                {
-                    queryConditions.Add(operation);
-                }
-
-                queryFragments.Add(String.Join(" AND ", queryConditions));
-            }
-
-            queryFragments.Add("ORDER BY title");
-
-            if (offset != -1)
-            {
-                queryFragments.Add($"LIMIT {offset}, 1");
-            }
-
-            return String.Join(' ', queryFragments);
-        }
-
+        // TODO: mess with this, ensure it escapes stuff properly.
         private void ExecuteSearchQuery()
         {
+            // TODO: memory leak
             queryOperations = new();
 
             StringBuilder safeQuery = new();
 
             // Replace unsafe characters
+            // TODO: slow? benchmark this.
             foreach (char inputChar in SearchBox.Text)
             {
                 if (inputChar == '\'' || inputChar == '"')
                 {
+                    // Fine, but I don't like it.
+                    // TODO: discuss better ways to do this.
                     safeQuery.Append('_');
                 }
                 else
@@ -891,12 +806,13 @@ namespace SharpLauncher
                 // Iterate through each group of brackets
                 for (int i = 0; i < leftBracketCount; i++)
                 {
-                    // Get indexes of brackets
+                    // Get indicies of brackets
+                    // HACK: because this doesn't correctly deal with nested brackets.
                     int leftBracket = tempSearch.IndexOf('[');
                     int rightBracket = tempSearch.IndexOf(']');
 
                     // Check if brackets are formatted correctly
-                    if (rightBracket > leftBracket)
+                    if (rightBracket > leftBracket && leftBracket != -1)
                     {
                         // Get array containing each parameter
                         string[] operationParams = tempSearch.Substring(leftBracket + 1, rightBracket - leftBracket - 1).Split(':');
@@ -904,51 +820,43 @@ namespace SharpLauncher
                         // Create operation if parameters are valid
                         if (operationParams.Length == 2)
                         {
-                            foreach (string[] field in metadataFields)
+                            // TODO: aliases of meta names.
+                            if (MetaDataObj.metadataFields.ContainsKey(operationParams[0]))
                             {
-                                if (operationParams[0] == field[1])
+                                
+
+                                // Check for OR | operators and update query accordingly
+                                if (operationParams[1].Contains('|'))
                                 {
+                                    // TODO: make this efficient. How many lists are we using?
                                     string[] operationValues = operationParams[1].Split("|");
+                                    List<string> queryOr = new();
 
-                                    // Check for OR | operators and update query accordingly
-                                    if (operationValues.Length > 1)
+                                    foreach (string value in operationValues)
                                     {
-                                        List<string> queryOr = new();
-
-                                        foreach (string value in operationValues)
-                                        {
-                                            queryOr.Add($"{operationParams[0]} LIKE '{value}'");
-                                        }
-
-                                        queryOperations.Add($"({String.Join(" OR ", queryOr)})");
-                                    }
-                                    else
-                                    {
-                                        queryOperations.Add($"{operationParams[0]} LIKE '{operationParams[1]}'");
+                                        queryOr.Add($"{operationParams[0]} LIKE '%{value}%'");
                                     }
 
-                                    break;
+                                    queryOperations.Add($"({string.Join(" OR ", queryOr)})");
                                 }
+                                else
+                                {
+                                    queryOperations.Add($"{operationParams[0]} LIKE '%{operationParams[1]}%'");
+                                }
+
+                                break;
                             }
                         }
 
-                        // Remove brackets
+                        // Remove brackets and everything in them.
                         tempSearch = tempSearch.Remove(leftBracket, rightBracket - leftBracket + 1);
                     }
                 }
             }
 
             // Remove padding
-            while (tempSearch.Length > 0 && tempSearch[0] == ' ')
-            {
-                tempSearch = tempSearch.Remove(0, 1);
-            }
-
-            while (tempSearch.Length > 0 && tempSearch[tempSearch.Length - 1] == ' ')
-            {
-                tempSearch = tempSearch.Remove(tempSearch.Length - 1);
-            }
-
+            tempSearch = tempSearch.Trim();
+            
             // Apply remaining string to generic search query
             querySearch = tempSearch;
 
