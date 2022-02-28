@@ -1,7 +1,6 @@
-using System.Text;
-using System.Diagnostics;
-using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
+using System.Diagnostics;
+using System.Text;
 using static SharpLauncher.DBFunctions;
 
 namespace SharpLauncher
@@ -171,11 +170,14 @@ namespace SharpLauncher
         // Display items on list when fetched
         private void ArchiveList_retrieveItem(object sender, RetrieveVirtualItemEventArgs e)
         {
-            ListViewItem entry = new(queryCache[e.ItemIndex].Title);
-            entry.SubItems.Add(queryCache[e.ItemIndex].Developer);
-            entry.SubItems.Add(queryCache[e.ItemIndex].Publisher);
-
-            e.Item = entry;
+            QueryItem item;
+            lock (queryCacheLock)
+            {
+                item = queryCache[e.ItemIndex];
+            }
+            e.Item = new(item.Title);
+            e.Item.SubItems.Add(item.Developer);
+            e.Item.SubItems.Add(item.Publisher);
         }
 
         // Display information about selected entry in info panel
@@ -195,9 +197,11 @@ namespace SharpLauncher
                 ClearInfoPanel();
                 return;
             }
-
-            
-            QueryItem entry = queryCache[selectedIndices[0]];
+            QueryItem entry;
+            lock (queryCacheLock)
+            {
+                entry = queryCache[selectedIndices[0]];
+            }
             MetaDataObj metadataOutput = DatabaseQueryMeta(entry, queryLibrary);
 
             // Header
@@ -263,7 +267,7 @@ namespace SharpLauncher
                 PlayButton.Width = 253;
             }
 
-            if (favoritedEntries.Contains(queryCache[ArchiveList.SelectedIndices[0]].ID))
+            if (favoritedEntries.Contains(entry.ID))
             {
                 FavoriteButton.Checked = true;
                 FavoriteButton.ImageIndex = 1;
@@ -330,7 +334,11 @@ namespace SharpLauncher
                 return;
             }
 
-            string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
+            string entryID;
+            lock (queryCacheLock)
+            {
+                entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
+            }
 
             LaunchEntry.StartInfo.Arguments = $"play -i {entryID}";
             LaunchEntry.Start();
@@ -350,7 +358,12 @@ namespace SharpLauncher
         private void AlternateButton_click(object sender, EventArgs e)
         {
             AlternateMenu.Items.Clear();
-            string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
+
+            string entryID;
+            lock (queryCacheLock)
+            {
+                entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
+            }
 
             int i = 0;
             foreach (AddApp entry in DatabaseQueryAddApp(entryID))
@@ -401,7 +414,11 @@ namespace SharpLauncher
 
             CheckBox favoriteButton = (CheckBox)sender;
 
-            string entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
+            string entryID;
+            lock (queryCacheLock)
+            {
+                entryID = queryCache[ArchiveList.SelectedIndices[0]].ID;
+            }
 
             if (favoriteButton.Checked)
             {
@@ -458,8 +475,14 @@ namespace SharpLauncher
             SortColumns();
             ClearInfoPanel();
 
+            int length;
+            lock (queryCacheLock)
+            {
+                length = queryCache.Count;
+            }
+
             ArchiveList.VirtualListSize = 0;
-            ArchiveList.VirtualListSize = Convert.ToInt32(queryCache.Count);
+            ArchiveList.VirtualListSize = Convert.ToInt32(length);
         }
 
         // Preserve arrow cursor when hovering over selected item
@@ -623,13 +646,11 @@ namespace SharpLauncher
         private void RefreshDatabase()
         {
             ClearInfoPanel();
-            queryCache.Clear();
+            lock (queryCacheLock)
+            {
+                queryCache.Clear();
+            }
 
-            List<string> queryTitle = new();
-            List<string> queryDeveloper = new();
-            List<string> queryPublisher = new();
-            List<string> queryTags = new();
-            List<string> queryID = new();
             List<QueryItem> temp;
 
             // Get values to be inserted into QueryItem objects
@@ -660,26 +681,23 @@ namespace SharpLauncher
             }
 
             // If item is not filtered, create QueryItem object and add to queryCache
-            for (int i = 0; i < temp.Count; i++)
+            temp = temp.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Split("; ")).Any());
+            int length;
+            lock (queryCacheLock)
             {
-                if (!filteredTags.Intersect(temp[i].tagsStr.Split("; ")).Any())
-                {
-                    lock (queryCacheLock)
-                    {
-                        queryCache.Add(temp[i]);
-                    }
-                }
+                queryCache.AddRange(temp);
+                length = queryCache.Count;
             }
 
             // Sort new queryCache
             SortColumns();
 
             // Display entry count in bottom right corner
-            EntryCountLabel.Text = $"Displaying {queryCache.Count} entr{(queryCache.Count == 1 ? "y" : "ies")}.";
+            EntryCountLabel.Text = $"Displaying {length} entr{(length == 1 ? "y" : "ies")}.";
 
             // Force list to reload items
             ArchiveList.VirtualListSize = 0;
-            ArchiveList.VirtualListSize = Convert.ToInt32(queryCache.Count);
+            ArchiveList.VirtualListSize = Convert.ToInt32(length);
 
             // Prevent column widths from breaking out of list
             if (columnChanged)
@@ -907,27 +925,36 @@ namespace SharpLauncher
             switch (columnHeaders[queryOrderBy])
             {
                 case "Title":
-                    queryCache = (
+                    lock (queryCacheLock)
+                    {
+                        queryCache = (
                         queryDirection == 1
                         ? queryCache.OrderBy(i => i.Title)
                         : queryCache.OrderByDescending(i => i.Title)
                     ).ToList();
+                    }
                     break;
 
                 case "Developer":
-                    queryCache = (
+                    lock (queryCacheLock)
+                    {
+                        queryCache = (
                         queryDirection == 1
                         ? queryCache.OrderBy(i => i.Developer)
                         : queryCache.OrderByDescending(i => i.Developer)
                     ).ToList();
+                    }
                     break;
 
                 case "Publisher":
-                    queryCache = (
+                    lock (queryCacheLock)
+                    {
+                        queryCache = (
                         queryDirection == 1
                         ? queryCache.OrderBy(i => i.Publisher)
                         : queryCache.OrderByDescending(i => i.Publisher)
                     ).ToList();
+                    }
                     break;
             }
         }
