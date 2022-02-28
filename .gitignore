@@ -1,3 +1,8 @@
 SharpLauncher.csproj.user
 .editorconfig
 Properties/PublishProfiles/
+filters.json
+obj
+bin
+.vs
+Data
