@@ -36,9 +36,11 @@ namespace SharpLauncher
         // Cache of all items to be displayed in list
         List<QueryItem> queryCache = new();
         // An object for locking access to the queryCache between threads.
-        readonly object queryCacheLock = new object();
+        readonly object queryCacheLock = new();
         // A ManualResetEvent that the main thread should wait on until the queryCache is ready for reading.
         ManualResetEventSlim queryCacheWH = new(true);
+        // A lock to ensure that we only run one DB refresh at a time.
+        readonly object DBRefreshLock = new();
         // Array of all entries that have been played
         List<string> playedEntries = new();
         // Array of all entries that have been favorited
@@ -88,6 +90,9 @@ namespace SharpLauncher
 
             HomeContainer.Location = GetHomepagePosition();
             RandomButton.Location = GetRandomButtonPosition();
+
+            // Run this on startup, it will outsource the actual db-reading to another thread.
+            InitializeDatabase();
         }
 
         private void Main_resize(object sender, EventArgs e)
@@ -122,7 +127,6 @@ namespace SharpLauncher
             {
                 if (Config.NeedsRefresh)
                 {
-                    // TODO: Move this.
                     InitializeDatabase();
                 }
                 else if (columnChanged)
@@ -645,68 +649,74 @@ namespace SharpLauncher
         // TODO: make this into a thread wrapper-func.
         private void RefreshDatabase()
         {
-            ClearInfoPanel();
-            lock (queryCacheLock)
+            new Thread(() => RefreshDatabase_OnThread(columnChanged, ArchiveRadioPlays.Checked, ArchiveRadioFavorites.Checked,
+                playedEntries, favoritedEntries, querySearch, queryOperations, queryLibrary)).Start();
+        }
+        // TODO: MAKE THIS THREAD-SAFE, i.e. near-static.
+        public void RefreshDatabase_OnThread(bool colChanged, bool playsChecked, bool favoritesChecked, List<string> playedEnts, List<string> favoritedEnts,
+            string qSearch, List<string> qOperations, string qLibrary)
+        {
+            lock (DBRefreshLock)
             {
-                queryCache.Clear();
-            }
-
-            List<QueryItem> temp;
-
-            // Get values to be inserted into QueryItem objects
-            if (ArchiveRadioPlays.Checked || ArchiveRadioFavorites.Checked)
-            {
-                temp = new();
-                foreach (string id in ArchiveRadioPlays.Checked ? playedEntries : favoritedEntries)
+                ClearInfoPanel();
+                SetEntryCountText("Loading...");
+                lock (queryCacheLock)
                 {
-                    // TODO: disable this, and ask Wumbo why it's here. We shouldn't have invalid IDs.
-                    /*if (DatabaseQuery($"SELECT id FROM game WHERE id = '{id}'").Count == 0)
-                    {
-                        continue;
-                    }*/
-
-                    // Alternate query template for favorites, play history
-                    string GetAltQuery(string gameID, string search, List<string> extraOperations) =>
-                        $"SELECT title,developer,publisher,id,tagsStr FROM game WHERE id = '{gameID}'" +
-                        (search != "" ? $" AND title LIKE '%{search}%'" : "") +
-                        (extraOperations.Count != 0 ? " AND " + String.Join(" AND ", extraOperations) : "");
-                    // TODO: make one enormous list of OR'd conditions, so that we don't end up with hundreds of separate
-                    // queries, when we could have one large one.
-                    temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, querySearch, queryOperations)));
+                    SetArchiveListLength(0);
+                    queryCache.Clear();
                 }
-            }
-            else
-            {
-                temp = DatabaseQueryEntry(GetQuery(queryOperations, querySearch, queryLibrary));
-            }
 
-            // If item is not filtered, create QueryItem object and add to queryCache
-            temp = temp.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Split("; ")).Any());
-            int length;
-            lock (queryCacheLock)
-            {
-                queryCache.AddRange(temp);
-                length = queryCache.Count;
-            }
+                List<QueryItem> temp;
 
-            // Sort new queryCache
-            SortColumns();
+                // Get values to be inserted into QueryItem objects
+                if (playsChecked || favoritesChecked)
+                {
+                    temp = new();
+                    foreach (string id in playsChecked ? playedEnts : favoritedEnts)
+                    {
+                        // TODO: disable this, and ask Wumbo why it's here. We shouldn't have invalid IDs.
+                        /*if (DatabaseQuery($"SELECT id FROM game WHERE id = '{id}'").Count == 0)
+                        {
+                            continue;
+                        }*/
 
-            // Display entry count in bottom right corner
-            EntryCountLabel.Text = $"Displaying {length} entr{(length == 1 ? "y" : "ies")}.";
+                        // TODO: make one enormous list of OR'd conditions, so that we don't end up with hundreds of separate
+                        // queries, when we could have one large one.
+                        temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, qSearch, qOperations)));
+                    }
+                }
+                else
+                {
+                    temp = DatabaseQueryEntry(GetQuery(qOperations, qSearch, qLibrary));
+                }
 
-            // Force list to reload items
-            ArchiveList.VirtualListSize = 0;
-            ArchiveList.VirtualListSize = Convert.ToInt32(length);
+                // If item is not filtered, create QueryItem object and add to queryCache
+                temp = temp.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Split("; ")).Any());
+                int length;
+                lock (queryCacheLock)
+                {
+                    queryCache.AddRange(temp);
+                    length = queryCache.Count;
+                }
 
-            // Prevent column widths from breaking out of list
-            if (columnChanged)
-            {
-                ScaleColumns();
-            }
-            else
-            {
-                ResetColumns();
+                // Sort new queryCache
+                SortColumns();
+
+                // Display entry count in bottom right corner
+                SetEntryCountText($"Displaying {length} entr{(length == 1 ? "y" : "ies")}.");
+
+                // Force list to reload items
+                SetArchiveListLength(length);
+
+                // Prevent column widths from breaking out of list
+                if (colChanged)
+                {
+                    ScaleColumns();
+                }
+                else
+                {
+                    ResetColumns();
+                }
             }
         }
 
@@ -889,9 +899,20 @@ namespace SharpLauncher
             SettingsMenu.ShowDialog();
         }
 
-        // Resize columns proportional to new list size
+        /// <summary>
+        /// Resize columns proportional to new list size
+        /// Self-invokes on main thread if needed.
+        /// </summary>
         private void ScaleColumns()
         {
+            // If we're not on the main thread,
+            if (ArchiveList.InvokeRequired)
+            {
+                // Invoke this on the main thread.
+                ArchiveList.Invoke(delegate { ScaleColumns(); });
+                // Return so that we don't continue to the other stuff.
+                return;
+            }
             for (int i = 0; i < ArchiveList.Columns.Count; i++)
             {
                 columnWidths[i] *= (double)ArchiveList.ClientSize.Width / prevWidth;
@@ -899,9 +920,20 @@ namespace SharpLauncher
             }
         }
 
-        // Resize columns to fill list width
+        /// <summary>
+        /// Resize columns to fill list width.
+        /// Self-invokes on main thread if needed.
+        /// </summary>
         private void ResetColumns()
         {
+            // If we're not on the main thread,
+            if (ArchiveList.InvokeRequired)
+            {
+                // Invoke this on the main thread.
+                ArchiveList.Invoke(delegate { ResetColumns(); });
+                // Return so that we don't continue to the other stuff.
+                return;
+            }
             int divisor = ArchiveList.Columns.Count + 1;
 
             ArchiveList.BeginUpdate();
@@ -983,9 +1015,20 @@ namespace SharpLauncher
 
             return desiredHeight;
         }
-
+        /// <summary>
+        /// Clears the info panel on the left.
+        /// Invokes itself on the main thread if needed.
+        /// </summary>
         private void ClearInfoPanel()
         {
+            // If we're not on the main thread,
+            if (ArchiveInfoData.InvokeRequired)
+            {
+                // Invoke this on the main thread.
+                ArchiveInfoData.Invoke(delegate { ClearInfoPanel(); });
+                // Return so that we don't continue to the other stuff.
+                return;
+            }
             ArchiveInfoTitle.Text = "";
             ArchiveInfoDeveloper.Text = "";
             ArchiveInfoData.Rtf = "";
@@ -996,6 +1039,40 @@ namespace SharpLauncher
             logoLoaded = false;
             screenshotLoaded = false;
             PlayContainer.Visible = false;
+        }
+
+        /// <summary>
+        /// A wrapper around ArchiveList.VirtualListSize that self-invokes on the main thread before setting.
+        /// </summary>
+        /// <param name="newlen">The new value for ArchiveList.VirtualListSize.</param>
+        private void SetArchiveListLength(int newlen)
+        {
+            // If we're not on the main thread,
+            if (ArchiveList.InvokeRequired)
+            {
+                // Invoke this on the main thread.
+                ArchiveList.Invoke(delegate { SetArchiveListLength(newlen); });
+                // Return so that we don't continue to the other stuff.
+                return;
+            }
+            ArchiveList.VirtualListSize = newlen;
+        }
+
+        /// <summary>
+        /// A wrapper around EntryCountLabel.Text that self-invokes on the main thread before setting.
+        /// </summary>
+        /// <param name="newlen">The new value for EntryCountLabel.Text.</param>
+        private void SetEntryCountText(string newText)
+        {
+            // If we're not on the main thread,
+            if (EntryCountLabel.InvokeRequired)
+            {
+                // Invoke this on the main thread.
+                EntryCountLabel.Invoke(delegate { SetEntryCountText(newText); });
+                // Return so that we don't continue to the other stuff.
+                return;
+            }
+            EntryCountLabel.Text = newText;
         }
 
         // Make strings suitable for RTF text box

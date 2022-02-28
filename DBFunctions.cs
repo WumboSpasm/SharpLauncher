@@ -182,5 +182,12 @@ namespace SharpLauncher
 
             return String.Join(' ', queryFragments);
         }
+        // Alternate query template for favorites, play history
+        public static string GetAltQuery(string gameID, string search, List<string> extraOperations)
+        {
+            return $"SELECT title,developer,publisher,id,tagsStr FROM game WHERE id = '{gameID}'" +
+            (search != "" ? $" AND title LIKE '%{search}%'" : "") +
+            (extraOperations.Count != 0 ? " AND " + String.Join(" AND ", extraOperations) : "");
+        }
     }
 }
