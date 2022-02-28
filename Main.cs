@@ -781,7 +781,7 @@ namespace SharpLauncher
             // TODO: slow? benchmark this.
             foreach (char inputChar in SearchBox.Text)
             {
-                if (inputChar == '\'' || inputChar == '"')
+                if (inputChar == '\'' || inputChar == '"' || inputChar == '%')
                 {
                     // Fine, but I don't like it.
                     // TODO: discuss better ways to do this.
@@ -843,11 +843,9 @@ namespace SharpLauncher
                                 {
                                     queryOperations.Add($"{operationParams[0]} LIKE '%{operationParams[1]}%'");
                                 }
-
-                                break;
                             }
                         }
-
+                        
                         // Remove brackets and everything in them.
                         tempSearch = tempSearch.Remove(leftBracket, rightBracket - leftBracket + 1);
                     }
