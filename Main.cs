@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Text;
@@ -754,6 +755,8 @@ namespace SharpLauncher
                 }
                 else
                 {
+                    SqliteConnection connection = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
+                    connection.Open();
                     // Keep going until we get back fewer than we requested: when that happens, we're at the end.
                     while (lastBlockSize == blockSize)
                     {
@@ -768,7 +771,7 @@ namespace SharpLauncher
                         lock (filterLock)
                         {
                             temp = FilterDataBlock(DatabaseQueryEntry(GetQueryBlock(qOperations, lastElem: lastItem.GetPropertyFromName(sortBy), lastId: lastItem.ID,
-                            sortByColumn: sortBy.ToLower(), sortDirection: direction == 1, blockSize: blockSize, search: qSearch, library: qLibrary)),
+                            sortByColumn: sortBy.ToLower(), sortDirection: direction == 1, blockSize: blockSize, search: qSearch, library: qLibrary), connection),
                             // Set lastItem and lastBlockSize properly.
                             tagFilters, out lastItem, out lastBlockSize);
                         }
@@ -780,11 +783,16 @@ namespace SharpLauncher
                         }
 
                     }
+                    connection.Close();
                 }
 
                 // Sort new queryCache
                 //SortColumns();
-
+                int length;
+                lock (queryCacheLock)
+                {
+                    length = queryCache.Count;
+                }
                 // Display entry count in bottom right corner
                 SetEntryCountText($"Displaying {length} entr{(length == 1 ? "y" : "ies")}.");
 

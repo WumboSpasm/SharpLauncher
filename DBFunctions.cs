@@ -9,13 +9,17 @@ namespace SharpLauncher
         public const int BlockSize = 5000;
 
         // Return game or animation entries from the Flashpoint database.
-        public static List<QueryItem> DatabaseQueryEntry(string query)
+        public static List<QueryItem> DatabaseQueryEntry(string query, SqliteConnection? conn = null)
         {
-            // TODO: make this persistent.
-            SqliteConnection connection = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
-            connection.Open();
+            bool persistentConn = true;
+            if (conn == null)
+            {
+                persistentConn = false;
+                conn = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
+                conn.Open();
+            }
 
-            SqliteCommand command = new(query, connection);
+            SqliteCommand command = new(query, conn);
 
             List<QueryItem> data = new();
 
@@ -33,23 +37,30 @@ namespace SharpLauncher
                     });
                 }
             }
-
-            connection.Close();
+            if (!persistentConn)
+            {
+                conn.Close();
+            }
 
             return data;
         }
 
         // Return metadata about an entry from the Flashpoint database.
-        public static MetaDataObj DatabaseQueryMeta(QueryItem entry, string library = "")
+        public static MetaDataObj DatabaseQueryMeta(QueryItem entry, string library = "", SqliteConnection? conn = null)
         {
-            // TODO: make this persistent.
-            SqliteConnection connection = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
-            connection.Open();
+            bool persistentConn = true;
+            if (conn == null)
+            {
+                persistentConn = false;
+                conn = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
+                conn.Open();
+            }
+            
             // Yes, I'm hard-coding this. Sue me.
             SqliteCommand command = new($"SELECT alternateTitles,series,source,releaseDate,platform,version,library,language,playMode,status,activeDataOnDisk,notes,originalDescription " +
                 $"FROM game " +
                 $"WHERE id='{entry.ID.Replace("'", "''")}' " +
-                (library == "" ? "" : $"AND library='{library.Replace("'", "''")}'"), connection);
+                (library == "" ? "" : $"AND library='{library.Replace("'", "''")}'"), conn);
             // TODO: memory leak?
             MetaDataObj data = new();
 
@@ -80,8 +91,10 @@ namespace SharpLauncher
                     };
                 }
             }
-
-            connection.Close();
+            if (!persistentConn)
+            {
+                conn.Close();
+            }
 
             return data;
         }
