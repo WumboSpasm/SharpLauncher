@@ -193,7 +193,16 @@ namespace SharpLauncher
             {
                 entry = queryCache[selectedIndices[0]];
             }
-            MetaDataObj metadataOutput = DatabaseQueryMeta(entry, queryLibrary);
+
+            MetaDataObj? metadataOutput = DatabaseQueryMeta(entry, queryLibrary);
+
+            // Check: was the entry found?
+            if (metadataOutput == null)
+            {
+                // Error: the entry wasn't found in the database.
+                // Exit nicely, instead of making a mess of things.
+                return;
+            }
 
             // Header
 
