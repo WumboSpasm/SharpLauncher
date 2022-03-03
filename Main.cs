@@ -2,6 +2,7 @@ using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Text;
 using static SharpLauncher.DBFunctions;
+using static SharpLauncher.Settings;
 
 namespace SharpLauncher
 {
@@ -29,7 +30,7 @@ namespace SharpLauncher
         string queryLibrary = "";
         string querySearch = "";
         List<string> queryOperations = new();
-        
+
         // Cache of all items to be displayed in list
         public static List<QueryItem> queryCache = new();
         // An object for locking access to the queryCache between threads.
@@ -38,6 +39,10 @@ namespace SharpLauncher
         ManualResetEventSlim queryCacheWH = new(true);
         // A lock to ensure that we only run one DB refresh at a time.
         readonly object DBRefreshLock = new();
+        // Locks access to downloads.fp.
+        readonly object downloadsFPLock = new();
+        // Locks access to favorites.fp.
+        readonly object favoritesFPLock = new();
         // Array of all entries that have been played
         List<string> playedEntries = new();
         // Array of all entries that have been favorited
@@ -350,7 +355,7 @@ namespace SharpLauncher
             {
                 playedEntries.Add(entryID);
 
-                UpdateListFile("downloads.fp", playedEntries);
+                UpdateListFile("downloads.fp", playedEntries, downloadsFPLock);
             }
         }
 
@@ -400,7 +405,7 @@ namespace SharpLauncher
                 {
                     playedEntries.Add(entry.ParentGameId);
 
-                    UpdateListFile("downloads.fp", playedEntries);
+                    UpdateListFile("downloads.fp", playedEntries, downloadsFPLock);
                 }
             }
 
@@ -439,7 +444,7 @@ namespace SharpLauncher
                 favoriteButton.ImageIndex = 0;
             }
 
-            UpdateListFile("favorites.fp", favoritedEntries);
+            UpdateListFile("favorites.fp", favoritedEntries, favoritesFPLock);
         }
 
         // Update columnWidths in case column is changed manually
@@ -620,9 +625,9 @@ namespace SharpLauncher
         private void RefreshDatabase_Block()
         {
             new Thread(() => RefreshDatabase_OnThread_BlockBased(columnChanged, ArchiveRadioPlays.Checked, ArchiveRadioFavorites.Checked,
-                playedEntries, favoritedEntries, querySearch, queryOperations, queryLibrary, BlockSize, 
+                playedEntries, favoritedEntries, querySearch, queryOperations, queryLibrary, BlockSize,
                 ArchiveList.PrimarySortColumn == null ? "Title" : ArchiveList.PrimarySortColumn.AspectName,
-                ArchiveList.PrimarySortOrder == SortOrder.Descending ? 0 : 1)).Start();
+                ArchiveList.PrimarySortOrder == SortOrder.Descending ? 0 : 1, filteredTags)).Start();
         }
 
         // TODO: MAKE THIS THREAD-SAFE, i.e. near-static.
@@ -664,7 +669,11 @@ namespace SharpLauncher
                 }
 
                 // If item is not filtered, create QueryItem object and add to queryCache
-                temp = temp.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Split("; ")).Any());
+                lock (filterLock)
+                {
+                    temp = temp.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Split("; ")).Any());
+                }
+
                 int length;
                 lock (queryCacheLock)
                 {
@@ -694,7 +703,7 @@ namespace SharpLauncher
         }
         // TODO: MAKE THIS THREAD-SAFE, i.e. near-static.
         public void RefreshDatabase_OnThread_BlockBased(bool colChanged, bool playsChecked, bool favoritesChecked, List<string> playedEnts, List<string> favoritedEnts,
-            string qSearch, List<string> qOperations, string qLibrary, int blockSize, string sortBy, int direction)
+            string qSearch, List<string> qOperations, string qLibrary, int blockSize, string sortBy, int direction, List<string> tagFilters)
         {
             lock (DBRefreshLock)
             {
@@ -710,9 +719,15 @@ namespace SharpLauncher
                 QueryItem lastItem = new();
                 int lastBlockSize = blockSize;
                 // queryCache.Count, but without the need for locking.
-                // TODO: remove this.
-                int length = 0;
-
+                // Scale the columns nicely.
+                if (colChanged)
+                {
+                    ScaleColumns();
+                }
+                else
+                {
+                    ResetColumns();
+                }
                 // Get values to be inserted into QueryItem objects
                 if (playsChecked || favoritesChecked)
                 {
@@ -729,12 +744,16 @@ namespace SharpLauncher
                         // queries, when we could have one large one.
                         temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, qSearch, qOperations)));
                     }
+                    temp = FilterData(temp, tagFilters);
+                    lock (queryCacheLock)
+                    {
+                        queryCache.AddRange(temp);
+                    }
+                    UpdateArchiveListLength();
                     ArchiveList.Sort();
                 }
                 else
                 {
-                    // Tracks whether or not we've displayed the first page already.
-                    bool pastFirstPage = false;
                     // Keep going until we get back fewer than we requested: when that happens, we're at the end.
                     while (lastBlockSize == blockSize)
                     {
@@ -743,34 +762,23 @@ namespace SharpLauncher
                         {
                             // Set the list length appropriately.
                             UpdateArchiveListLength();
-                            // Scale the columns nicely.
-                            if (colChanged)
-                            {
-                                ScaleColumns();
-                            }
-                            else
-                            {
-                                ResetColumns();
-                            }
-                            // Prevent this from running again.
-                            pastFirstPage = true;
                         }
 
                         // Query the DB for one block.
-                        temp = FilterDataBlock(DatabaseQueryEntry(GetQueryBlock(qOperations, lastElem: lastItem.GetPropertyFromName(sortBy), lastId: lastItem.ID,
+                        lock (filterLock)
+                        {
+                            temp = FilterDataBlock(DatabaseQueryEntry(GetQueryBlock(qOperations, lastElem: lastItem.GetPropertyFromName(sortBy), lastId: lastItem.ID,
                             sortByColumn: sortBy.ToLower(), sortDirection: direction == 1, blockSize: blockSize, search: qSearch, library: qLibrary)),
                             // Set lastItem and lastBlockSize properly.
-                            filteredTags, out lastItem, out lastBlockSize);
-
-                        // Increase the length by temp's length - all of temp's elements will be added to queryCache.
-                        length += temp.Count;
+                            tagFilters, out lastItem, out lastBlockSize);
+                        }
 
                         // Lock queryCache and add all of temp's elements.
                         lock (queryCacheLock)
                         {
                             queryCache.AddRange(temp);
                         }
-                        
+
                     }
                 }
 
@@ -812,32 +820,40 @@ namespace SharpLauncher
 
         private void LoadFilteredTags()
         {
-            filteredTags.Clear();
-
-            if (File.Exists("filters.json"))
+            bool errorState = false;
+            lock (filterLock)
             {
-                using (StreamReader jsonStream = new("filters.json"))
-                {
-                    dynamic? filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
+                filteredTags.Clear();
 
-                    foreach (var item in filterArray)
+                if (File.Exists("filters.json"))
+                {
+                    using (StreamReader jsonStream = new("filters.json"))
                     {
-                        if (item.filtered == true)
+                        dynamic? filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
+
+                        foreach (var item in filterArray)
                         {
-                            foreach (var tag in item.tags)
+                            if (item.filtered == true)
                             {
-                                filteredTags.Add(tag.ToString());
+                                foreach (var tag in item.tags)
+                                {
+                                    filteredTags.Add(tag.ToString());
+                                }
                             }
                         }
                     }
                 }
+                else
+                {
+                    errorState = true;
+                }
             }
-            else
+            if (errorState)
             {
                 MessageBox.Show(
-                    "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
-                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
-                );
+                        "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
+                        "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
+                    );
             }
         }
 
@@ -859,17 +875,17 @@ namespace SharpLauncher
             }
         }
 
-        private void UpdateListFile(string fileName, List<string> list)
+        private void UpdateListFile(string fileName, List<string> list, object locker)
         {
-            using (FileStream file = new(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
+            lock (locker)
             {
-                // TODO: wtf is this?
-                lock (file)
+                using (FileStream file = new(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
                 {
-                    file.SetLength(0);
-                }
 
-                file.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, list)));
+                    file.SetLength(0);
+
+                    file.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, list)));
+                }
             }
         }
         // TODO: mess with this, ensure it escapes stuff properly.
@@ -926,7 +942,7 @@ namespace SharpLauncher
                             // TODO: aliases of meta names.
                             if (MetaDataObj.metadataFields.ContainsKey(operationParams[0]))
                             {
-                                
+
 
                                 // Check for OR | operators and update query accordingly
                                 if (operationParams[1].Contains('|'))
@@ -948,7 +964,7 @@ namespace SharpLauncher
                                 }
                             }
                         }
-                        
+
                         // Remove brackets and everything in them.
                         tempSearch = tempSearch.Remove(leftBracket, rightBracket - leftBracket + 1);
                     }
@@ -957,7 +973,7 @@ namespace SharpLauncher
 
             // Remove padding
             tempSearch = tempSearch.Trim();
-            
+
             // Apply remaining string to generic search query
             querySearch = tempSearch;
 
