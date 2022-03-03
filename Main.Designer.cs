@@ -31,7 +31,7 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.ArchiveLayout = new System.Windows.Forms.TableLayoutPanel();
-            this.ArchiveList = new System.Windows.Forms.ListView();
+            this.ArchiveList = new SharpLauncher.FPVirtualObjectListView();
             this.ArchiveInfoContainer = new System.Windows.Forms.FlowLayoutPanel();
             this.ArchiveInfoTitle = new System.Windows.Forms.Label();
             this.ArchiveInfoDeveloper = new System.Windows.Forms.Label();
@@ -76,6 +76,10 @@
             this.ButtonContainer = new System.Windows.Forms.Panel();
             this.LaunchEntry = new System.Diagnostics.Process();
             this.AlternateMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.TitleColumn = new BrightIdeasSoftware.OLVColumn();
+            this.DeveloperColumn = new BrightIdeasSoftware.OLVColumn();
+            this.PublisherColumn = new BrightIdeasSoftware.OLVColumn();
+            this.IDColumn = new BrightIdeasSoftware.OLVColumn();
             this.ArchiveLayout.SuspendLayout();
             this.ArchiveInfoContainer.SuspendLayout();
             this.ArchiveImagesContainer.SuspendLayout();
@@ -119,8 +123,40 @@
             this.ArchiveLayout.Size = new System.Drawing.Size(1244, 685);
             this.ArchiveLayout.TabIndex = 3;
             // 
+            // TitleColumn
+            // 
+            this.TitleColumn.AspectName = "Title";
+            this.TitleColumn.Text = "Title";
+            // 
+            // DeveloperColumn
+            // 
+            this.DeveloperColumn.AspectName = "Developer";
+            this.DeveloperColumn.Text = "Developer";
+            // 
+            // PublisherColumn
+            // 
+            this.PublisherColumn.AspectName = "Publisher";
+            this.PublisherColumn.Text = "Publisher";
+            // 
+            // IDColumn
+            // 
+            this.IDColumn.AspectName = "ID";
+            this.IDColumn.Text = "UUID";
+            this.IDColumn.IsVisible = false;
+            this.IDColumn.Width = 0;
+            // 
             // ArchiveList
             // 
+            this.ArchiveList.AllColumns.Add(this.TitleColumn);
+            this.ArchiveList.AllColumns.Add(this.DeveloperColumn);
+            this.ArchiveList.AllColumns.Add(this.PublisherColumn);
+            this.ArchiveList.AllColumns.Add(this.IDColumn);
+            this.ArchiveList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.TitleColumn,
+            this.DeveloperColumn,
+            this.PublisherColumn,
+            this.IDColumn});
+            this.ArchiveList.SecondarySortColumn = this.IDColumn;
             this.ArchiveList.AllowColumnReorder = true;
             this.ArchiveList.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveList.FullRowSelect = true;
@@ -135,10 +171,8 @@
             this.ArchiveList.UseCompatibleStateImageBehavior = false;
             this.ArchiveList.View = System.Windows.Forms.View.Details;
             this.ArchiveList.VirtualMode = true;
-            this.ArchiveList.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.ArchiveList_columnClick);
             this.ArchiveList.ColumnWidthChanged += new System.Windows.Forms.ColumnWidthChangedEventHandler(this.ArchiveList_columnChanged);
             this.ArchiveList.ItemActivate += new System.EventHandler(this.ArchiveList_itemAccess);
-            this.ArchiveList.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.ArchiveList_retrieveItem);
             this.ArchiveList.SelectedIndexChanged += new System.EventHandler(this.ArchiveList_itemSelect);
             this.ArchiveList.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ArchiveList_mouseMove);
             // 
@@ -798,7 +832,7 @@
 
         #endregion
         private TableLayoutPanel ArchiveLayout;
-        private ListView ArchiveList;
+        private FPVirtualObjectListView ArchiveList;
         private TabControl TabControl;
         private TabPage HomeTab;
         private TabPage ArchiveTab;
@@ -843,5 +877,12 @@
         private LinkLabel HomeLinkDiscord;
         private Button RandomButton;
         private RadioButton ArchiveRadioEverything;
+        private BrightIdeasSoftware.OLVColumn TitleColumn;
+        private BrightIdeasSoftware.OLVColumn DeveloperColumn;
+        private BrightIdeasSoftware.OLVColumn PublisherColumn;
+        // Needed as the secondary sort column. Will be invisible by default.
+        private BrightIdeasSoftware.OLVColumn IDColumn;
+        // TODO: maybe add a tagsStr column? Not sure what we would use it for.
+
     }
 }

@@ -142,6 +142,7 @@ namespace SharpLauncher
             if (filterJSON.Length > 0)
                 using (FileStream filters = new("filters.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
                 {
+                    // TODO: wtf is this?
                     lock (filters)
                         filters.SetLength(0);
 

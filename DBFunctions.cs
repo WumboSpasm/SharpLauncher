@@ -6,7 +6,7 @@ namespace SharpLauncher
     public static class DBFunctions
     {
         // The size of block to read from the database.
-        public const int BlockSize = 500;
+        public const int BlockSize = 5000;
 
         // Return game or animation entries from the Flashpoint database.
         public static List<QueryItem> DatabaseQueryEntry(string query)
@@ -187,7 +187,7 @@ namespace SharpLauncher
 
         /// <summary>
         /// Gets the proper query string for a block of data, using keyset pagination to avaoid the bad performance of OFFSET.
-        /// Sorts by sortyByColumn, using Id as a secondary sort for when sortByColumn is non-uniqu.
+        /// Sorts by sortyByColumn, using Id as a secondary sort for when sortByColumn is non-unique.
         /// </summary>
         /// <param name="extraOperations">The extra conditions to put on the data.</param>
         /// <param name="lastElem">The last element of the last block, in the column sortByColumn.</param>

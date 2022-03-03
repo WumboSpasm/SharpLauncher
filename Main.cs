@@ -10,6 +10,9 @@ namespace SharpLauncher
         public Main()
         {
             InitializeComponent();
+            // Call RebuildColumns to pick up on IDColumn's invisibility.
+            ArchiveList.RebuildColumns();
+            this.DoubleBuffered = true;
         }
 
         /*-----------+
@@ -18,25 +21,19 @@ namespace SharpLauncher
 
         // Previous width of the list
         int prevWidth;
-        
-        
-        // Titles to be displayed above each column
-        string[] columnHeaders = { "Title", "Developer", "Publisher" };
         // Calculated column widths before conversion to int
         List<double> columnWidths = new();
         // Names of tags to be filtered
         List<string> filteredTags = new();
         // Query fragments used to fetch entries
         string queryLibrary = "";
-        int queryOrderBy = 0;
-        int queryDirection = 1;
         string querySearch = "";
         List<string> queryOperations = new();
         
         // Cache of all items to be displayed in list
-        List<QueryItem> queryCache = new();
+        public static List<QueryItem> queryCache = new();
         // An object for locking access to the queryCache between threads.
-        readonly object queryCacheLock = new();
+        public static readonly object queryCacheLock = new();
         // A ManualResetEvent that the main thread should wait on until the queryCache is ready for reading.
         ManualResetEventSlim queryCacheWH = new(true);
         // A lock to ensure that we only run one DB refresh at a time.
@@ -68,11 +65,10 @@ namespace SharpLauncher
                 Config.Write();
             }
 
-            // Add columns to list and get width for later
+            // Get width for later
 
-            for (int i = 0; i < columnHeaders.Length; i++)
+            for (int i = 0; i < ArchiveList.Columns.Count; i++)
             {
-                ArchiveList.Columns.Add(columnHeaders[i]);
                 columnWidths.Add(ArchiveList.Columns[i].Width);
             }
 
@@ -456,39 +452,6 @@ namespace SharpLauncher
             }
         }
 
-        // Automatically sort clicked column
-        private void ArchiveList_columnClick(object sender, ColumnClickEventArgs e)
-        {
-            // Set column to sort by and reverse direction
-            queryOrderBy = e.Column;
-            queryDirection *= -1;
-
-            // Remove any indicators that might be visible
-            for (int i = 0; i < columnHeaders.Length; i++)
-            {
-                if (ArchiveList.Columns[i].Text != columnHeaders[i])
-                {
-                    ArchiveList.Columns[i].Text = columnHeaders[i];
-                }
-            }
-
-            // Add a new arrow indicator to column header
-            string arrow = char.ConvertFromUtf32(0x2192 + queryDirection);
-            ArchiveList.Columns[queryOrderBy].Text = $"{columnHeaders[queryOrderBy]}  {arrow}";
-
-            SortColumns();
-            ClearInfoPanel();
-
-            int length;
-            lock (queryCacheLock)
-            {
-                length = queryCache.Count;
-            }
-
-            ArchiveList.VirtualListSize = 0;
-            ArchiveList.VirtualListSize = Convert.ToInt32(length);
-        }
-
         // Preserve arrow cursor when hovering over selected item
         private void ArchiveList_mouseMove(object sender, MouseEventArgs e) { base.Cursor = Cursors.Arrow; }
 
@@ -657,7 +620,9 @@ namespace SharpLauncher
         private void RefreshDatabase_Block()
         {
             new Thread(() => RefreshDatabase_OnThread_BlockBased(columnChanged, ArchiveRadioPlays.Checked, ArchiveRadioFavorites.Checked,
-                playedEntries, favoritedEntries, querySearch, queryOperations, queryLibrary, BlockSize, columnHeaders[queryOrderBy], queryDirection)).Start();
+                playedEntries, favoritedEntries, querySearch, queryOperations, queryLibrary, BlockSize, 
+                ArchiveList.PrimarySortColumn == null ? "Title" : ArchiveList.PrimarySortColumn.AspectName,
+                ArchiveList.PrimarySortOrder == SortOrder.Descending ? 0 : 1)).Start();
         }
 
         // TODO: MAKE THIS THREAD-SAFE, i.e. near-static.
@@ -670,9 +635,9 @@ namespace SharpLauncher
                 SetEntryCountText("Loading...");
                 lock (queryCacheLock)
                 {
-                    SetArchiveListLength(0);
                     queryCache.Clear();
                 }
+                UpdateArchiveListLength();
 
                 List<QueryItem> temp;
 
@@ -708,13 +673,13 @@ namespace SharpLauncher
                 }
 
                 // Sort new queryCache
-                SortColumns();
+                ArchiveList.Sort();
 
                 // Display entry count in bottom right corner
                 SetEntryCountText($"Displaying {length} entr{(length == 1 ? "y" : "ies")}.");
 
                 // Force list to reload items
-                SetArchiveListLength(length);
+                UpdateArchiveListLength();
 
                 // Prevent column widths from breaking out of list
                 if (colChanged)
@@ -737,14 +702,15 @@ namespace SharpLauncher
                 SetEntryCountText("Loading...");
                 lock (queryCacheLock)
                 {
-                    SetArchiveListLength(0);
                     queryCache.Clear();
                 }
+                UpdateArchiveListLength();
 
                 List<QueryItem> temp;
                 QueryItem lastItem = new();
                 int lastBlockSize = blockSize;
                 // queryCache.Count, but without the need for locking.
+                // TODO: remove this.
                 int length = 0;
 
                 // Get values to be inserted into QueryItem objects
@@ -763,7 +729,7 @@ namespace SharpLauncher
                         // queries, when we could have one large one.
                         temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, qSearch, qOperations)));
                     }
-                    SortColumns();
+                    ArchiveList.Sort();
                 }
                 else
                 {
@@ -773,10 +739,10 @@ namespace SharpLauncher
                     while (lastBlockSize == blockSize)
                     {
                         // If we haven't yet displayed the first page and we have enough results to do so, do it.
-                        if (!pastFirstPage && length >= blockSize)
+                        if (true)//(!pastFirstPage && length >= blockSize)
                         {
                             // Set the list length appropriately.
-                            SetArchiveListLength(length);
+                            UpdateArchiveListLength();
                             // Scale the columns nicely.
                             if (colChanged)
                             {
@@ -815,7 +781,7 @@ namespace SharpLauncher
                 SetEntryCountText($"Displaying {length} entr{(length == 1 ? "y" : "ies")}.");
 
                 // Force list to reload items
-                SetArchiveListLength(length);
+                UpdateArchiveListLength();
 
                 // Prevent column widths from breaking out of list
                 if (colChanged)
@@ -1060,46 +1026,6 @@ namespace SharpLauncher
             }
         }
 
-        // Sort items by a specific column
-        private void SortColumns()
-        {
-            switch (columnHeaders[queryOrderBy])
-            {
-                case "Title":
-                    lock (queryCacheLock)
-                    {
-                        queryCache = (
-                        queryDirection == 1
-                        ? queryCache.OrderBy(i => i.Title)
-                        : queryCache.OrderByDescending(i => i.Title)
-                    ).ToList();
-                    }
-                    break;
-
-                case "Developer":
-                    lock (queryCacheLock)
-                    {
-                        queryCache = (
-                        queryDirection == 1
-                        ? queryCache.OrderBy(i => i.Developer)
-                        : queryCache.OrderByDescending(i => i.Developer)
-                    ).ToList();
-                    }
-                    break;
-
-                case "Publisher":
-                    lock (queryCacheLock)
-                    {
-                        queryCache = (
-                        queryDirection == 1
-                        ? queryCache.OrderBy(i => i.Publisher)
-                        : queryCache.OrderByDescending(i => i.Publisher)
-                    ).ToList();
-                    }
-                    break;
-            }
-        }
-
         // Position homepage contents to middle of window
         private Point GetHomepagePosition() =>
             new Point(
@@ -1151,20 +1077,20 @@ namespace SharpLauncher
         }
 
         /// <summary>
-        /// A wrapper around ArchiveList.VirtualListSize that self-invokes on the main thread before setting.
+        /// A wrapper around ArchiveList.UpdateVirtualListSize that self-invokes on the main thread before setting.
         /// </summary>
-        /// <param name="newlen">The new value for ArchiveList.VirtualListSize.</param>
-        private void SetArchiveListLength(int newlen)
+        /// <remarks>This obtains the new length by calling FPVirtualListDataSource.GetObjectCount.</remarks>
+        private void UpdateArchiveListLength()
         {
             // If we're not on the main thread,
             if (ArchiveList.InvokeRequired)
             {
                 // Invoke this on the main thread.
-                ArchiveList.Invoke(delegate { SetArchiveListLength(newlen); });
+                ArchiveList.Invoke(delegate { UpdateArchiveListLength(); });
                 // Return so that we don't continue to the other stuff.
                 return;
             }
-            ArchiveList.VirtualListSize = newlen;
+            ArchiveList.UpdateVirtualListSize();
         }
 
         /// <summary>
