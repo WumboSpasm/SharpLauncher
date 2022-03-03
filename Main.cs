@@ -691,16 +691,7 @@ namespace SharpLauncher
                 List<QueryItem> temp;
                 QueryItem lastItem = new();
                 int lastBlockSize = blockSize;
-                // queryCache.Count, but without the need for locking.
-                // Scale the columns nicely.
-                if (colChanged)
-                {
-                    ScaleColumns();
-                }
-                else
-                {
-                    ResetColumns();
-                }
+                
                 // Get values to be inserted into QueryItem objects
                 if (playsChecked || favoritesChecked)
                 {
@@ -722,13 +713,21 @@ namespace SharpLauncher
                     SqliteConnection connection = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
                     connection.Open();
                     // Keep going until we get back fewer than we requested: when that happens, we're at the end.
-                    while (lastBlockSize == blockSize)
+                    // Ooh, look at me being clever. For-loops can have arbitrary conditions. This is a while-loop, but with a loop counter.
+                    for (int iterationNum=0; lastBlockSize == blockSize; iterationNum++)
                     {
-                        // If we haven't yet displayed the first page and we have enough results to do so, do it.
-                        if (true)//(!pastFirstPage && length >= blockSize)
+                        // Update the columns after the first block is done.
+                        if (iterationNum == 1)
                         {
-                            // Set the list length appropriately.
-                            UpdateArchiveListLength();
+                            // Scale the columns nicely.
+                            if (colChanged)
+                            {
+                                ScaleColumns();
+                            }
+                            else
+                            {
+                                ResetColumns();
+                            }
                         }
 
                         // Query the DB for one block.
@@ -745,6 +744,8 @@ namespace SharpLauncher
                         {
                             queryCache.AddRange(temp);
                         }
+                        // Set the list length appropriately.
+                        UpdateArchiveListLength();
 
                     }
                     connection.Close();
