@@ -7,6 +7,8 @@ namespace SharpLauncher
 {
     public partial class Settings : Form
     {
+
+        public static readonly object filterLock = new();
         // String copy of filters.json
         private string filterJSON = "";
 
@@ -23,19 +25,22 @@ namespace SharpLauncher
             // Load tag filters
             if (File.Exists("filters.json"))
             {
-                using (StreamReader jsonStream = new("filters.json"))
+                lock (filterLock)
                 {
-                    filterJSON = jsonStream.ReadToEnd();
-
-                    dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
-
-                    foreach (var item in filterArray)
+                    using (StreamReader jsonStream = new("filters.json"))
                     {
-                        ListViewItem filterItem = new((string)item.name);
-                        filterItem.SubItems.Add((string)item.description);
-                        filterItem.Checked = item.filtered;
+                        filterJSON = jsonStream.ReadToEnd();
 
-                        FilterList.Items.Add(filterItem);
+                        dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
+
+                        foreach (var item in filterArray)
+                        {
+                            ListViewItem filterItem = new((string)item.name);
+                            filterItem.SubItems.Add((string)item.description);
+                            filterItem.Checked = item.filtered;
+
+                            FilterList.Items.Add(filterItem);
+                        }
                     }
                 }
             }
@@ -140,22 +145,27 @@ namespace SharpLauncher
             Config.Write();
 
             if (filterJSON.Length > 0)
-                using (FileStream filters = new("filters.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+            {
+                lock (filterLock)
                 {
-                    lock (filters)
+                    using (FileStream filters = new("filters.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+                    {
+
                         filters.SetLength(0);
 
-                    dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
+                        dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
 
-                    int i = 0;
-                    foreach (var item in filterArray)
-                    {
-                        filterArray[i].filtered = FilterList.Items[i].Checked;
-                        i++;
+                        int i = 0;
+                        foreach (var item in filterArray)
+                        {
+                            filterArray[i].filtered = FilterList.Items[i].Checked;
+                            i++;
+                        }
+
+                        filters.Write(Encoding.ASCII.GetBytes(filterArray.ToString()));
                     }
-
-                    filters.Write(Encoding.ASCII.GetBytes(filterArray.ToString()));
                 }
+            }
 
             Config.NeedsRefresh = true;
 

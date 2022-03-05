@@ -53,6 +53,21 @@
         public string Publisher { get; set; } = "";
         public string ID { get; set; } = "";
         public string tagsStr { get; set; } = "";
+        public string GetPropertyFromName(string field)
+        {
+            switch (field.ToLower())
+            {
+                case "title":
+                    return Title;
+                case "developer":
+                    return Developer;
+                case "publisher":
+                    return Publisher;
+                case "id":
+                    return ID;
+            }
+            return "";
+        }
     }
 
     // Template for Add-Apps

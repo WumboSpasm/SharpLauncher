@@ -1,7 +1,9 @@
+using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Text;
 using static SharpLauncher.DBFunctions;
+using static SharpLauncher.Settings;
 
 namespace SharpLauncher
 {
@@ -10,6 +12,9 @@ namespace SharpLauncher
         public Main()
         {
             InitializeComponent();
+            // Call RebuildColumns to pick up on IDColumn's invisibility.
+            ArchiveList.RebuildColumns();
+            this.DoubleBuffered = true;
         }
 
         /*-----------+
@@ -18,29 +23,25 @@ namespace SharpLauncher
 
         // Previous width of the list
         int prevWidth;
-        
-        
-        // Titles to be displayed above each column
-        string[] columnHeaders = { "Title", "Developer", "Publisher" };
         // Calculated column widths before conversion to int
         List<double> columnWidths = new();
         // Names of tags to be filtered
         List<string> filteredTags = new();
         // Query fragments used to fetch entries
         string queryLibrary = "";
-        int queryOrderBy = 0;
-        int queryDirection = 1;
         string querySearch = "";
         List<string> queryOperations = new();
-        
+
         // Cache of all items to be displayed in list
-        List<QueryItem> queryCache = new();
+        public static List<QueryItem> queryCache = new();
         // An object for locking access to the queryCache between threads.
-        readonly object queryCacheLock = new();
-        // A ManualResetEvent that the main thread should wait on until the queryCache is ready for reading.
-        ManualResetEventSlim queryCacheWH = new(true);
+        public static readonly object queryCacheLock = new();
         // A lock to ensure that we only run one DB refresh at a time.
         readonly object DBRefreshLock = new();
+        // Locks access to downloads.fp.
+        readonly object downloadsFPLock = new();
+        // Locks access to favorites.fp.
+        readonly object favoritesFPLock = new();
         // Array of all entries that have been played
         List<string> playedEntries = new();
         // Array of all entries that have been favorited
@@ -54,7 +55,7 @@ namespace SharpLauncher
         /*--------+
          | EVENTS |
          +--------*/
-
+        #region Form Component Triggers
         private void Main_load(object sender, EventArgs e)
         {
             // Create data files if they don't exist, otherwise load
@@ -68,11 +69,10 @@ namespace SharpLauncher
                 Config.Write();
             }
 
-            // Add columns to list and get width for later
+            // Get width for later
 
-            for (int i = 0; i < columnHeaders.Length; i++)
+            for (int i = 0; i < ArchiveList.Columns.Count; i++)
             {
-                ArchiveList.Columns.Add(columnHeaders[i]);
                 columnWidths.Add(ArchiveList.Columns[i].Width);
             }
 
@@ -171,19 +171,6 @@ namespace SharpLauncher
             }
         }
 
-        // Display items on list when fetched
-        private void ArchiveList_retrieveItem(object sender, RetrieveVirtualItemEventArgs e)
-        {
-            QueryItem item;
-            lock (queryCacheLock)
-            {
-                item = queryCache[e.ItemIndex];
-            }
-            e.Item = new(item.Title);
-            e.Item.SubItems.Add(item.Developer);
-            e.Item.SubItems.Add(item.Publisher);
-        }
-
         // Display information about selected entry in info panel
         private void ArchiveList_itemSelect(object sender, EventArgs e)
         {
@@ -206,7 +193,16 @@ namespace SharpLauncher
             {
                 entry = queryCache[selectedIndices[0]];
             }
-            MetaDataObj metadataOutput = DatabaseQueryMeta(entry, queryLibrary);
+
+            MetaDataObj? metadataOutput = DatabaseQueryMeta(entry, queryLibrary);
+
+            // Check: was the entry found?
+            if (metadataOutput == null)
+            {
+                // Error: the entry wasn't found in the database.
+                // Exit nicely, instead of making a mess of things.
+                return;
+            }
 
             // Header
 
@@ -225,7 +221,7 @@ namespace SharpLauncher
             {
                 ArchiveImagesContainer.Visible = true;
             }
-
+            // TODO: make images persistent.
             foreach (string folder in new string[] { "Logos", "Screenshots" })
             {
                 string[] imageTree = { entry.ID.Substring(0, 2), entry.ID.Substring(2, 2) };
@@ -354,7 +350,7 @@ namespace SharpLauncher
             {
                 playedEntries.Add(entryID);
 
-                UpdateListFile("downloads.fp", playedEntries);
+                UpdateListFile("downloads.fp", playedEntries, downloadsFPLock);
             }
         }
 
@@ -404,7 +400,7 @@ namespace SharpLauncher
                 {
                     playedEntries.Add(entry.ParentGameId);
 
-                    UpdateListFile("downloads.fp", playedEntries);
+                    UpdateListFile("downloads.fp", playedEntries, downloadsFPLock);
                 }
             }
 
@@ -443,7 +439,7 @@ namespace SharpLauncher
                 favoriteButton.ImageIndex = 0;
             }
 
-            UpdateListFile("favorites.fp", favoritedEntries);
+            UpdateListFile("favorites.fp", favoritedEntries, favoritesFPLock);
         }
 
         // Update columnWidths in case column is changed manually
@@ -454,39 +450,6 @@ namespace SharpLauncher
                 columnWidths[e.ColumnIndex] = ArchiveList.Columns[e.ColumnIndex].Width;
                 columnChanged = true;
             }
-        }
-
-        // Automatically sort clicked column
-        private void ArchiveList_columnClick(object sender, ColumnClickEventArgs e)
-        {
-            // Set column to sort by and reverse direction
-            queryOrderBy = e.Column;
-            queryDirection *= -1;
-
-            // Remove any indicators that might be visible
-            for (int i = 0; i < columnHeaders.Length; i++)
-            {
-                if (ArchiveList.Columns[i].Text != columnHeaders[i])
-                {
-                    ArchiveList.Columns[i].Text = columnHeaders[i];
-                }
-            }
-
-            // Add a new arrow indicator to column header
-            string arrow = char.ConvertFromUtf32(0x2192 + queryDirection);
-            ArchiveList.Columns[queryOrderBy].Text = $"{columnHeaders[queryOrderBy]}  {arrow}";
-
-            SortColumns();
-            ClearInfoPanel();
-
-            int length;
-            lock (queryCacheLock)
-            {
-                length = queryCache.Count;
-            }
-
-            ArchiveList.VirtualListSize = 0;
-            ArchiveList.VirtualListSize = Convert.ToInt32(length);
         }
 
         // Preserve arrow cursor when hovering over selected item
@@ -558,7 +521,7 @@ namespace SharpLauncher
                         break;
                 }
 
-                RefreshDatabase();
+                RefreshDatabase_Block();
             }
         }
 
@@ -601,202 +564,7 @@ namespace SharpLauncher
             }
         }
 
-        /*-----------+
-         | FUNCTIONS |
-         +-----------*/
-
-        // Check if database is valid and load if so
-        // Adapted from https://stackoverflow.com/a/70291358
-        private void InitializeDatabase()
-        {
-            if (Config.NeedsRefresh)
-            {
-                Config.NeedsRefresh = false;
-            }
-
-            string databasePath = Config.FlashpointPath + @"\Data\flashpoint.sqlite";
-            byte[] header = new byte[16];
-
-            if (File.Exists(databasePath))
-            {
-                using (FileStream fileStream = new(databasePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    fileStream.Read(header, 0, 16);
-                }
-
-                if (Encoding.ASCII.GetString(header).Contains("SQLite format"))
-                {
-                    LoadFilteredTags();
-                    RefreshDatabase();
-
-                    prevWidth = ArchiveList.ClientSize.Width;
-
-                    return;
-                }
-            }
-
-            ArchiveList.VirtualListSize = 0;
-            ClearInfoPanel();
-
-            MessageBox.Show("Database is either corrupted or missing!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            TabControl.SelectTab(0);
-            OpenSettings();
-
-            Config.NeedsRefresh = true;
-        }
-
-        // Generate new cache and refresh list
-        // TODO: make this into a thread wrapper-func.
-        private void RefreshDatabase()
-        {
-            new Thread(() => RefreshDatabase_OnThread(columnChanged, ArchiveRadioPlays.Checked, ArchiveRadioFavorites.Checked,
-                playedEntries, favoritedEntries, querySearch, queryOperations, queryLibrary)).Start();
-        }
-        // TODO: MAKE THIS THREAD-SAFE, i.e. near-static.
-        public void RefreshDatabase_OnThread(bool colChanged, bool playsChecked, bool favoritesChecked, List<string> playedEnts, List<string> favoritedEnts,
-            string qSearch, List<string> qOperations, string qLibrary)
-        {
-            lock (DBRefreshLock)
-            {
-                ClearInfoPanel();
-                SetEntryCountText("Loading...");
-                lock (queryCacheLock)
-                {
-                    SetArchiveListLength(0);
-                    queryCache.Clear();
-                }
-
-                List<QueryItem> temp;
-
-                // Get values to be inserted into QueryItem objects
-                if (playsChecked || favoritesChecked)
-                {
-                    temp = new();
-                    foreach (string id in playsChecked ? playedEnts : favoritedEnts)
-                    {
-                        // TODO: disable this, and ask Wumbo why it's here. We shouldn't have invalid IDs.
-                        /*if (DatabaseQuery($"SELECT id FROM game WHERE id = '{id}'").Count == 0)
-                        {
-                            continue;
-                        }*/
-
-                        // TODO: make one enormous list of OR'd conditions, so that we don't end up with hundreds of separate
-                        // queries, when we could have one large one.
-                        temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, qSearch, qOperations)));
-                    }
-                }
-                else
-                {
-                    temp = DatabaseQueryEntry(GetQuery(qOperations, qSearch, qLibrary));
-                }
-
-                // If item is not filtered, create QueryItem object and add to queryCache
-                temp = temp.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Split("; ")).Any());
-                int length;
-                lock (queryCacheLock)
-                {
-                    queryCache.AddRange(temp);
-                    length = queryCache.Count;
-                }
-
-                // Sort new queryCache
-                SortColumns();
-
-                // Display entry count in bottom right corner
-                SetEntryCountText($"Displaying {length} entr{(length == 1 ? "y" : "ies")}.");
-
-                // Force list to reload items
-                SetArchiveListLength(length);
-
-                // Prevent column widths from breaking out of list
-                if (colChanged)
-                {
-                    ScaleColumns();
-                }
-                else
-                {
-                    ResetColumns();
-                }
-            }
-        }
-
-        private bool InitializeCLIFp()
-        {
-            if (File.Exists(Config.CLIFpPath))
-            {
-                LaunchEntry.StartInfo.FileName = Config.CLIFpPath;
-                return true;
-            }
-            else
-            {
-                MessageBox.Show("CLIFp not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                OpenSettings();
-                return false;
-            }
-        }
-
-        private void LoadFilteredTags()
-        {
-            filteredTags.Clear();
-
-            if (File.Exists("filters.json"))
-            {
-                using (StreamReader jsonStream = new("filters.json"))
-                {
-                    dynamic? filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
-
-                    foreach (var item in filterArray)
-                    {
-                        if (item.filtered == true)
-                        {
-                            foreach (var tag in item.tags)
-                            {
-                                filteredTags.Add(tag.ToString());
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show(
-                    "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
-                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
-                );
-            }
-        }
-
-        // Handle read/write from .fp files
-
-        private void EnsurePlaysLoaded()
-        {
-            if (File.Exists("downloads.fp") && playedEntries.Count == 0)
-            {
-                playedEntries = File.ReadAllLines("downloads.fp").ToList();
-            }
-        }
-
-        private void EnsureFavoritesLoaded()
-        {
-            if (File.Exists("favorites.fp") && favoritedEntries.Count == 0)
-            {
-                favoritedEntries = File.ReadAllLines("favorites.fp").ToList();
-            }
-        }
-
-        private void UpdateListFile(string fileName, List<string> list)
-        {
-            using (FileStream file = new(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
-            {
-                // TODO: wtf is this?
-                lock (file)
-                {
-                    file.SetLength(0);
-                }
-
-                file.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, list)));
-            }
-        }
+        
         // TODO: mess with this, ensure it escapes stuff properly.
         private void ExecuteSearchQuery()
         {
@@ -851,7 +619,7 @@ namespace SharpLauncher
                             // TODO: aliases of meta names.
                             if (MetaDataObj.metadataFields.ContainsKey(operationParams[0]))
                             {
-                                
+
 
                                 // Check for OR | operators and update query accordingly
                                 if (operationParams[1].Contains('|'))
@@ -873,7 +641,7 @@ namespace SharpLauncher
                                 }
                             }
                         }
-                        
+
                         // Remove brackets and everything in them.
                         tempSearch = tempSearch.Remove(leftBracket, rightBracket - leftBracket + 1);
                     }
@@ -882,12 +650,12 @@ namespace SharpLauncher
 
             // Remove padding
             tempSearch = tempSearch.Trim();
-            
+
             // Apply remaining string to generic search query
             querySearch = tempSearch;
 
             // Refresh and open list
-            RefreshDatabase();
+            RefreshDatabase_Block();
             TabControl.SelectTab(1);
         }
 
@@ -897,6 +665,175 @@ namespace SharpLauncher
             SettingsMenu.FormClosed += new FormClosedEventHandler(SettingsMenu_formClosed);
 
             SettingsMenu.ShowDialog();
+        }
+        #endregion
+
+        #region Form Component-changing Functions
+
+        // Check if database is valid and load if so
+        // Adapted from https://stackoverflow.com/a/70291358
+        private void InitializeDatabase()
+        {
+            if (Config.NeedsRefresh)
+            {
+                Config.NeedsRefresh = false;
+            }
+
+            string databasePath = Config.FlashpointPath + @"\Data\flashpoint.sqlite";
+            byte[] header = new byte[16];
+
+            if (File.Exists(databasePath))
+            {
+                using (FileStream fileStream = new(databasePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    fileStream.Read(header, 0, 16);
+                }
+
+                if (Encoding.ASCII.GetString(header).Contains("SQLite format"))
+                {
+                    LoadFilteredTags();
+                    RefreshDatabase_Block();
+
+                    prevWidth = ArchiveList.ClientSize.Width;
+
+                    return;
+                }
+            }
+
+            ArchiveList.VirtualListSize = 0;
+            ClearInfoPanel();
+
+            MessageBox.Show("Database is either corrupted or missing!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            TabControl.SelectTab(0);
+            OpenSettings();
+
+            Config.NeedsRefresh = true;
+        }
+
+        // Generate new cache and refresh list
+        private void RefreshDatabase_Block()
+        {
+            new Thread(() => RefreshDatabase_OnThread_BlockBased(columnChanged, ArchiveRadioPlays.Checked, ArchiveRadioFavorites.Checked,
+                playedEntries, favoritedEntries, querySearch, queryOperations, queryLibrary, BlockSize,
+                ArchiveList.PrimarySortColumn == null ? "Title" : ArchiveList.PrimarySortColumn.AspectName,
+                ArchiveList.PrimarySortOrder == SortOrder.Descending ? 0 : 1, filteredTags)).Start();
+        }
+
+        // TODO: MAKE THIS THREAD-SAFE, i.e. near-static.
+        public void RefreshDatabase_OnThread_BlockBased(bool colChanged, bool playsChecked, bool favoritesChecked, List<string> playedEnts, List<string> favoritedEnts,
+            string qSearch, List<string> qOperations, string qLibrary, int blockSize, string sortBy, int direction, List<string> tagFilters)
+        {
+            lock (DBRefreshLock)
+            {
+                ClearInfoPanel();
+                SetEntryCountText("Loading...");
+                lock (queryCacheLock)
+                {
+                    queryCache.Clear();
+                }
+                UpdateArchiveListLength();
+
+                List<QueryItem> temp;
+                QueryItem lastItem = new();
+                int lastBlockSize = blockSize;
+                
+                // Get values to be inserted into QueryItem objects
+                if (playsChecked || favoritesChecked)
+                {
+                    temp = new();
+                    foreach (string id in playsChecked ? playedEnts : favoritedEnts)
+                    {
+                        temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, qSearch, qOperations)));
+                    }
+                    temp = FilterData(temp, tagFilters);
+                    lock (queryCacheLock)
+                    {
+                        queryCache.AddRange(temp);
+                    }
+                    UpdateArchiveListLength();
+                    ArchiveList.Sort();
+                }
+                else
+                {
+                    SqliteConnection connection = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
+                    connection.Open();
+                    // Keep going until we get back fewer than we requested: when that happens, we're at the end.
+                    // Ooh, look at me being clever. For-loops can have arbitrary conditions. This is a while-loop, but with a loop counter.
+                    for (int iterationNum=0; lastBlockSize == blockSize; iterationNum++)
+                    {
+                        // Update the columns after the first block is done.
+                        if (iterationNum == 1)
+                        {
+                            // Scale the columns nicely.
+                            if (colChanged)
+                            {
+                                ScaleColumns();
+                            }
+                            else
+                            {
+                                ResetColumns();
+                            }
+                        }
+
+                        // Query the DB for one block.
+                        lock (filterLock)
+                        {
+                            temp = FilterDataBlock(DatabaseQueryEntry(GetQueryBlock(qOperations, lastElem: lastItem.GetPropertyFromName(sortBy), lastId: lastItem.ID,
+                            sortByColumn: sortBy.ToLower(), sortDirection: direction == 1, blockSize: blockSize, search: qSearch, library: qLibrary), connection),
+                            // Set lastItem and lastBlockSize properly.
+                            tagFilters, out lastItem, out lastBlockSize);
+                        }
+
+                        // Lock queryCache and add all of temp's elements.
+                        lock (queryCacheLock)
+                        {
+                            queryCache.AddRange(temp);
+                        }
+                        // Set the list length appropriately.
+                        UpdateArchiveListLength();
+
+                    }
+                    connection.Close();
+                }
+
+                // Sort new queryCache
+                //SortColumns();
+                int length;
+                lock (queryCacheLock)
+                {
+                    length = queryCache.Count;
+                }
+                // Display entry count in bottom right corner
+                SetEntryCountText($"Displaying {length} entr{(length == 1 ? "y" : "ies")}.");
+
+                // Force list to reload items
+                UpdateArchiveListLength();
+
+                // Prevent column widths from breaking out of list
+                if (colChanged)
+                {
+                    ScaleColumns();
+                }
+                else
+                {
+                    ResetColumns();
+                }
+            }
+        }
+
+        private bool InitializeCLIFp()
+        {
+            if (File.Exists(Config.CLIFpPath))
+            {
+                LaunchEntry.StartInfo.FileName = Config.CLIFpPath;
+                return true;
+            }
+            else
+            {
+                MessageBox.Show("CLIFp not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                OpenSettings();
+                return false;
+            }
         }
 
         /// <summary>
@@ -951,70 +888,6 @@ namespace SharpLauncher
             }
         }
 
-        // Sort items by a specific column
-        private void SortColumns()
-        {
-            switch (columnHeaders[queryOrderBy])
-            {
-                case "Title":
-                    lock (queryCacheLock)
-                    {
-                        queryCache = (
-                        queryDirection == 1
-                        ? queryCache.OrderBy(i => i.Title)
-                        : queryCache.OrderByDescending(i => i.Title)
-                    ).ToList();
-                    }
-                    break;
-
-                case "Developer":
-                    lock (queryCacheLock)
-                    {
-                        queryCache = (
-                        queryDirection == 1
-                        ? queryCache.OrderBy(i => i.Developer)
-                        : queryCache.OrderByDescending(i => i.Developer)
-                    ).ToList();
-                    }
-                    break;
-
-                case "Publisher":
-                    lock (queryCacheLock)
-                    {
-                        queryCache = (
-                        queryDirection == 1
-                        ? queryCache.OrderBy(i => i.Publisher)
-                        : queryCache.OrderByDescending(i => i.Publisher)
-                    ).ToList();
-                    }
-                    break;
-            }
-        }
-
-        // Position homepage contents to middle of window
-        private Point GetHomepagePosition() =>
-            new Point(
-                (HomeTab.Width - HomeContainer.Width) / 2,
-                (HomeTab.Height - HomeContainer.Height) / 2
-            );
-
-        private Point GetRandomButtonPosition() => new Point((ArchiveListFooter.Width - RandomButton.Width) / 2, 1);
-
-        // Leave the right amount of room for metadata text box
-        private int GetInfoHeight()
-        {
-            int desiredHeight = ArchiveInfoContainer.Height - 14;
-
-            foreach (Control control in ArchiveInfoContainer.Controls)
-            {
-                if (control.Name != "ArchiveInfoData")
-                {
-                    desiredHeight -= control.Height;
-                }
-            }
-
-            return desiredHeight;
-        }
         /// <summary>
         /// Clears the info panel on the left.
         /// Invokes itself on the main thread if needed.
@@ -1042,20 +915,20 @@ namespace SharpLauncher
         }
 
         /// <summary>
-        /// A wrapper around ArchiveList.VirtualListSize that self-invokes on the main thread before setting.
+        /// A wrapper around ArchiveList.UpdateVirtualListSize that self-invokes on the main thread before setting.
         /// </summary>
-        /// <param name="newlen">The new value for ArchiveList.VirtualListSize.</param>
-        private void SetArchiveListLength(int newlen)
+        /// <remarks>This obtains the new length by calling FPVirtualListDataSource.GetObjectCount.</remarks>
+        private void UpdateArchiveListLength()
         {
             // If we're not on the main thread,
             if (ArchiveList.InvokeRequired)
             {
                 // Invoke this on the main thread.
-                ArchiveList.Invoke(delegate { SetArchiveListLength(newlen); });
+                ArchiveList.Invoke(delegate { UpdateArchiveListLength(); });
                 // Return so that we don't continue to the other stuff.
                 return;
             }
-            ArchiveList.VirtualListSize = newlen;
+            ArchiveList.UpdateVirtualListSize();
         }
 
         /// <summary>
@@ -1073,6 +946,151 @@ namespace SharpLauncher
                 return;
             }
             EntryCountLabel.Text = newText;
+        }
+        #endregion
+
+        #region Utility Functions
+
+        /// <summary>
+        /// Builds the string to display in the panel from a metadata input.
+        /// </summary>
+        /// <param name="meta">The metadata object describing the selected game.</param>
+        /// <returns>The RTF display string.</returns>
+        private static string BuildEntryData(MetaDataObj meta)
+        {
+            string entryData = @"{\rtf1 ";
+            entryData += meta.AlternateTitles == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["alternateTitles"]}: \\b0 {ToUnicode(meta.AlternateTitles)}\\line";
+            entryData += meta.Series == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["series"]}: \\b0 {ToUnicode(meta.Series)}\\line";
+            entryData += meta.Developer == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["developer"]}: \\b0 {ToUnicode(meta.Developer)}\\line";
+            entryData += meta.Publisher == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["publisher"]}: \\b0 {ToUnicode(meta.Publisher)}\\line";
+            entryData += meta.Source == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["source"]}: \\b0 {ToUnicode(meta.Source)}\\line";
+            entryData += meta.ReleaseDate == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["releaseDate"]}: \\b0 {ToUnicode(meta.ReleaseDate)}\\line";
+            entryData += meta.Platform == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["platform"]}: \\b0 {ToUnicode(meta.Platform)}\\line";
+            entryData += meta.Version == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["version"]}: \\b0 {ToUnicode(meta.Version)}\\line";
+            entryData += meta.Library == "" ? "" : $"\\b {MetaDataObj.metadataFields["library"]}: \\b0 " +
+                                ToUnicode(meta.Library[0].ToString().ToUpper() + meta.Library[1..]) +
+                                "\\line";
+            entryData += meta.Tags == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["tagsStr"]}: \\b0 {ToUnicode(meta.Tags)}\\line";
+            entryData += meta.Language == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["language"]}: \\b0 {ToUnicode(meta.Language)}\\line";
+            entryData += meta.PlayMode == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["playMode"]}: \\b0 {ToUnicode(meta.PlayMode)}\\line";
+            entryData += meta.Status == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["status"]}: \\b0 {ToUnicode(meta.Status)}\\line";
+            entryData += meta.Format == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["activeDataOnDisk"]}: \\b0 {(meta.Format == "0" ? "Legacy" : "GameZIP")}\\line";
+            entryData += meta.Notes == "" ? "" :
+                $"\\line\\b {MetaDataObj.metadataFields["notes"]}:\\line\\b0 {ToUnicode(meta.Notes)}\\line";
+            entryData += meta.OriginalDescription == "" ? "" :
+                $"\\line\\b {MetaDataObj.metadataFields["originalDescription"]}:\\line\\b0 {ToUnicode(meta.OriginalDescription)}\\line";
+            entryData += "}";
+            return entryData;
+        }
+
+        private void LoadFilteredTags()
+        {
+            bool errorState = false;
+            lock (filterLock)
+            {
+                filteredTags.Clear();
+
+                if (File.Exists("filters.json"))
+                {
+                    using (StreamReader jsonStream = new("filters.json"))
+                    {
+                        dynamic? filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
+
+                        foreach (var item in filterArray)
+                        {
+                            if (item.filtered == true)
+                            {
+                                foreach (var tag in item.tags)
+                                {
+                                    filteredTags.Add(tag.ToString());
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    errorState = true;
+                }
+            }
+            if (errorState)
+            {
+                MessageBox.Show(
+                        "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
+                        "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
+                    );
+            }
+        }
+
+        // Handle read/write from .fp files
+
+        private void EnsurePlaysLoaded()
+        {
+            if (File.Exists("downloads.fp") && playedEntries.Count == 0)
+
+            {
+                playedEntries = File.ReadAllLines("downloads.fp").ToList();
+            }
+        }
+
+        private void EnsureFavoritesLoaded()
+        {
+            if (File.Exists("favorites.fp") && favoritedEntries.Count == 0)
+            {
+                favoritedEntries = File.ReadAllLines("favorites.fp").ToList();
+            }
+        }
+
+        private void UpdateListFile(string fileName, List<string> list, object locker)
+        {
+            lock (locker)
+            {
+                using (FileStream file = new(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
+                {
+
+                    file.SetLength(0);
+
+                    file.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, list)));
+                }
+            }
+        }
+
+        // Position homepage contents to middle of window
+        private Point GetHomepagePosition() =>
+            new Point(
+                (HomeTab.Width - HomeContainer.Width) / 2,
+                (HomeTab.Height - HomeContainer.Height) / 2
+            );
+
+        private Point GetRandomButtonPosition() => new Point((ArchiveListFooter.Width - RandomButton.Width) / 2, 1);
+
+        // Leave the right amount of room for metadata text box
+        private int GetInfoHeight()
+        {
+            int desiredHeight = ArchiveInfoContainer.Height - 14;
+
+            foreach (Control control in ArchiveInfoContainer.Controls)
+            {
+                if (control.Name != "ArchiveInfoData")
+                {
+                    desiredHeight -= control.Height;
+                }
+            }
+
+            return desiredHeight;
         }
 
         // Make strings suitable for RTF text box
@@ -1099,10 +1117,9 @@ namespace SharpLauncher
 
             return escapedData.ToString().Replace("\n", @"\line ");
         }
+        #endregion
 
-        /*---------------+
-         | LINK HANDLERS |
-         +---------------*/
+        #region Link Handlers
 
         private void GitHubButton_click(object sender, EventArgs e)
         {
@@ -1129,5 +1146,6 @@ namespace SharpLauncher
                     break;
             }
         }
+        #endregion
     }
 }
