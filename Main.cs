@@ -281,6 +281,51 @@ namespace SharpLauncher
             PlayContainer.Visible = true;
         }
 
+        /// <summary>
+        /// Builds the string to display in the panel from a metadata input.
+        /// </summary>
+        /// <param name="meta">The metadata object describing the selected game.</param>
+        /// <returns>The RTF display string.</returns>
+        private static string BuildEntryData(MetaDataObj meta)
+        {
+            string entryData = @"{\rtf1 ";
+            entryData += meta.AlternateTitles == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["alternateTitles"]}: \\b0 {ToUnicode(meta.AlternateTitles)}\\line";
+            entryData += meta.Series == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["series"]}: \\b0 {ToUnicode(meta.Series)}\\line";
+            entryData += meta.Developer == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["developer"]}: \\b0 {ToUnicode(meta.Developer)}\\line";
+            entryData += meta.Publisher == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["publisher"]}: \\b0 {ToUnicode(meta.Publisher)}\\line";
+            entryData += meta.Source == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["source"]}: \\b0 {ToUnicode(meta.Source)}\\line";
+            entryData += meta.ReleaseDate == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["releaseDate"]}: \\b0 {ToUnicode(meta.ReleaseDate)}\\line";
+            entryData += meta.Platform == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["platform"]}: \\b0 {ToUnicode(meta.Platform)}\\line";
+            entryData += meta.Version == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["version"]}: \\b0 {ToUnicode(meta.Version)}\\line";
+            entryData += meta.Library == "" ? "" : $"\\b {MetaDataObj.metadataFields["library"]}: \\b0 " +
+                                ToUnicode(meta.Library[0].ToString().ToUpper() + meta.Library[1..]) +
+                                "\\line";
+            entryData += meta.Tags == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["tagsStr"]}: \\b0 {ToUnicode(meta.Tags)}\\line";
+            entryData += meta.Language == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["language"]}: \\b0 {ToUnicode(meta.Language)}\\line";
+            entryData += meta.PlayMode == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["playMode"]}: \\b0 {ToUnicode(meta.PlayMode)}\\line";
+            entryData += meta.Status == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["status"]}: \\b0 {ToUnicode(meta.Status)}\\line";
+            entryData += meta.Format == "" ? "" :
+                $"\\b {MetaDataObj.metadataFields["activeDataOnDisk"]}: \\b0 {(meta.Format == "0" ? "Legacy" : "GameZIP")}\\line";
+            entryData += meta.Notes == "" ? "" :
+                $"\\line\\b {MetaDataObj.metadataFields["notes"]}:\\line\\b0 {ToUnicode(meta.Notes)}\\line";
+            entryData += meta.OriginalDescription == "" ? "" :
+                $"\\line\\b {MetaDataObj.metadataFields["originalDescription"]}:\\line\\b0 {ToUnicode(meta.OriginalDescription)}\\line";
+            entryData += "}";
+            return entryData;
+        }
+
         // Launch selected entry
         private void ArchiveList_itemAccess(object sender, EventArgs e)
         {
@@ -995,6 +1040,7 @@ namespace SharpLauncher
         private void EnsurePlaysLoaded()
         {
             if (File.Exists("downloads.fp") && playedEntries.Count == 0)
+
             {
                 playedEntries = File.ReadAllLines("downloads.fp").ToList();
             }

@@ -35,6 +35,7 @@ namespace SharpLauncher
                     {
                         Config.FlashpointServer = (string?)readConfig["FlashpointServer"];
                     }
+
                 }
             }
         }
@@ -45,8 +46,10 @@ namespace SharpLauncher
             lock (configJsonLock)
             {
                 using (FileStream config = new("config.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+
                 {
                     config.SetLength(0);
+                }
 
                     JObject writeConfig = new();
 

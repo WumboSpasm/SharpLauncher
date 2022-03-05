@@ -99,6 +99,7 @@ namespace SharpLauncher
             using (SqliteDataReader dataReader = command.ExecuteReader())
             {
                 // As long as there are lines to read (note: id should be unique, so this should run at most once):
+
                 while (dataReader.Read())
                 {
                     // No need for a list: this should only run once.
@@ -134,7 +135,7 @@ namespace SharpLauncher
 
             return data;
         }
-
+                 
         /// <summary>
         /// Return add-app entries associated with a given parentGameId from the Flashpoint database.
         /// </summary>
@@ -169,6 +170,7 @@ namespace SharpLauncher
                 while (dataReader.Read())
                 {
                     // Read a row in and convert it to an AddApp object.
+
                     data.Add(new AddApp
                     {
                         ID = dataReader.IsDBNull(0) ? "" : dataReader.GetString(0),
