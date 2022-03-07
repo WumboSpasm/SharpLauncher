@@ -170,7 +170,6 @@ namespace SharpLauncher
                 while (dataReader.Read())
                 {
                     // Read a row in and convert it to an AddApp object.
-
                     data.Add(new AddApp
                     {
                         ID = dataReader.IsDBNull(0) ? "" : dataReader.GetString(0),
@@ -400,7 +399,7 @@ namespace SharpLauncher
             return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Split("; ")).Any());
         }
 
-        // Alternate query template for favorites, play history
+        // Alternate query template for retrieving entries via *.fp files.
         public static string GetAltQuery(string gameID, string search, List<string> extraOperations)
         {
             return $"SELECT title,developer,publisher,id,tagsStr FROM game WHERE id = '{gameID}'" +

@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using BrightIdeasSoftware;
+﻿using BrightIdeasSoftware;
 using static SharpLauncher.Main;
 namespace SharpLauncher
 {
@@ -45,7 +44,7 @@ namespace SharpLauncher
         /// <remarks>I declared the return type nullable, we'll see what the compiler thinks of that.</remarks>
         /// <param name="n">The index of the object in queryCache.</param>
         /// <returns>queryCache[n], or null if the index is out of bounds.</returns>
-        public override object GetNthObject(int n)
+        public override object? GetNthObject(int n)
         {
             // Lock queryCache so that nobody else can access it.
             lock (queryCacheLock)

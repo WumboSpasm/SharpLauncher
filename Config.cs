@@ -5,14 +5,16 @@ namespace SharpLauncher
 {
     public static class Config
     {
-        // Configuration data
+        // Strings to hold configuration data.
         public static string FlashpointPath { get; set; } = ".";
         public static string CLIFpPath { get; set; } = @".\CLIFp\CLIFp.exe";
         public static string FlashpointServer { get; set; } = "http://infinity.unstable.life/Flashpoint";
-        public static readonly object configJsonLock = new();
+
         public static bool NeedsRefresh { get; set; } = true;
 
-        // Replace data with values from config file
+        public static readonly object configJsonLock = new();
+
+        // Update configuration with data from config.json.
         public static void Read()
         {
             lock (configJsonLock)
@@ -40,16 +42,14 @@ namespace SharpLauncher
             }
         }
 
-        // Write data values to config file
+        // Write configuration data to config.json.
         public static void Write()
         {
             lock (configJsonLock)
             {
                 using (FileStream config = new("config.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
-
                 {
                     config.SetLength(0);
-                }
 
                     JObject writeConfig = new();
 

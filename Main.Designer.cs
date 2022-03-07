@@ -489,6 +489,7 @@
             this.AlternateButton.Name = "AlternateButton";
             this.AlternateButton.Size = new System.Drawing.Size(15, 25);
             this.AlternateButton.TabIndex = 10;
+            this.AlternateButton.Text = char.ConvertFromUtf32(0x2BC5);
             this.AlternateButton.UseVisualStyleBackColor = true;
             this.AlternateButton.Click += new System.EventHandler(this.AlternateButton_click);
             // 
@@ -731,11 +732,12 @@
             // 
             // SearchBox
             // 
+            this.SearchBox.AutoSize = false;
             this.SearchBox.Location = new System.Drawing.Point(154, 6);
             this.SearchBox.Margin = new System.Windows.Forms.Padding(0);
             this.SearchBox.Name = "SearchBox";
             this.SearchBox.PlaceholderText = "Search the archive...";
-            this.SearchBox.Size = new System.Drawing.Size(200, 23);
+            this.SearchBox.Size = new System.Drawing.Size(200, 20);
             this.SearchBox.TabIndex = 2;
             this.SearchBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.SearchBox_keyDown);
             // 

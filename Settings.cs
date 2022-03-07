@@ -7,22 +7,21 @@ namespace SharpLauncher
 {
     public partial class Settings : Form
     {
-
-        public static readonly object filterLock = new();
-        // String copy of filters.json
+        // A string containing a copy of filters.json.
         private string filterJSON = "";
 
-        // Read values from file
+        public static readonly object filterLock = new();
+
         public Settings()
         {
             InitializeComponent();
 
-            // Load paths
+            // Load configuration data into text boxes.
             PathInput.Text = Config.FlashpointPath;
             CLIFpInput.Text = Config.CLIFpPath;
             ServerInput.Text = Config.FlashpointServer;
 
-            // Load tag filters
+            // Load tag filters into Filters menu.
             if (File.Exists("filters.json"))
             {
                 lock (filterLock)
@@ -46,7 +45,8 @@ namespace SharpLauncher
             }
         }
 
-        // Browse for Flashpoint path
+        // Open file dialogs for Flashpoint and CLIFp paths when Browse button is clicked.
+
         private void PathButton_click(object sender, EventArgs e)
         {
             CommonOpenFileDialog PathDialog = new() { IsFolderPicker = true };
@@ -55,7 +55,6 @@ namespace SharpLauncher
                 PathInput.Text = PathDialog.FileName;
         }
 
-        // Browse for CLIFp path
         private void CLIFpButton_click(object sender, EventArgs e)
         {
             OpenFileDialog CLIFpDialog = new() { Filter = "Executable files (*.exe)|*.exe" };
@@ -64,7 +63,7 @@ namespace SharpLauncher
                 CLIFpInput.Text = CLIFpDialog.FileName;
         }
 
-        // Clear data
+        // Clear data corresponding to clicked button in Data tab.
         private void DataClear_click(object sender, EventArgs e)
         {
             switch (((Button)sender).Name)
@@ -99,6 +98,7 @@ namespace SharpLauncher
             }
         }
 
+        // Throw errors if needed data is not found.
         private void SettingsTabControl_tabChanged(object sender, EventArgs e)
         {
             int selectedTab = ((TabControl)sender).SelectedIndex;
@@ -122,7 +122,7 @@ namespace SharpLauncher
                 SetDownloadedFileSizes();
         }
 
-        // Write values to file and close
+        // Write values to file and close the menu when the OK button is clicked.
         private void OKButton_click(object sender, EventArgs e)
         {
             // Check if database and CLIFp exist under Flashpoint path
@@ -172,10 +172,10 @@ namespace SharpLauncher
             Close();
         }
 
-        // Close without saving
+        // Close menu without saving if the Cancel button is clicked.
         private void CancelButton_click(object sender, EventArgs e) { Close(); }
 
-        // Fill in total file sizes in Data tab
+        // Fill in total file sizes in the Data tab.
         private void SetDownloadedFileSizes()
         {
             int legacyFileSize = (int)
