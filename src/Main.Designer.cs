@@ -1,4 +1,6 @@
-﻿namespace SharpLauncher
+﻿using System.Windows.Forms;
+
+namespace SharpLauncher
 {
     partial class Main
     {
@@ -31,7 +33,6 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.ArchiveLayout = new System.Windows.Forms.TableLayoutPanel();
-            this.ArchiveList = new SharpLauncher.FPVirtualObjectListView();
             this.ArchiveInfoContainer = new System.Windows.Forms.FlowLayoutPanel();
             this.ArchiveInfoTitle = new System.Windows.Forms.Label();
             this.ArchiveInfoDeveloper = new System.Windows.Forms.Label();
@@ -76,10 +77,11 @@
             this.ButtonContainer = new System.Windows.Forms.Panel();
             this.LaunchEntry = new System.Diagnostics.Process();
             this.AlternateMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.TitleColumn = new BrightIdeasSoftware.OLVColumn();
-            this.DeveloperColumn = new BrightIdeasSoftware.OLVColumn();
-            this.PublisherColumn = new BrightIdeasSoftware.OLVColumn();
-            this.IDColumn = new BrightIdeasSoftware.OLVColumn();
+            this.ArchiveList = new SharpLauncher.FPVirtualObjectListView();
+            this.TitleColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
+            this.DeveloperColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
+            this.PublisherColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
+            this.IDColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.ArchiveLayout.SuspendLayout();
             this.ArchiveInfoContainer.SuspendLayout();
             this.ArchiveImagesContainer.SuspendLayout();
@@ -100,6 +102,7 @@
             this.Container.SuspendLayout();
             this.SearchButtonContainer.SuspendLayout();
             this.ButtonContainer.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.ArchiveList)).BeginInit();
             this.SuspendLayout();
             // 
             // ArchiveLayout
@@ -123,59 +126,6 @@
             this.ArchiveLayout.Size = new System.Drawing.Size(1244, 685);
             this.ArchiveLayout.TabIndex = 3;
             // 
-            // TitleColumn
-            // 
-            this.TitleColumn.AspectName = "Title";
-            this.TitleColumn.Text = "Title";
-            // 
-            // DeveloperColumn
-            // 
-            this.DeveloperColumn.AspectName = "Developer";
-            this.DeveloperColumn.Text = "Developer";
-            // 
-            // PublisherColumn
-            // 
-            this.PublisherColumn.AspectName = "Publisher";
-            this.PublisherColumn.Text = "Publisher";
-            // 
-            // IDColumn
-            // 
-            this.IDColumn.AspectName = "ID";
-            this.IDColumn.Text = "UUID";
-            this.IDColumn.IsVisible = false;
-            this.IDColumn.Width = 0;
-            // 
-            // ArchiveList
-            // 
-            this.ArchiveList.AllColumns.Add(this.TitleColumn);
-            this.ArchiveList.AllColumns.Add(this.DeveloperColumn);
-            this.ArchiveList.AllColumns.Add(this.PublisherColumn);
-            this.ArchiveList.AllColumns.Add(this.IDColumn);
-            this.ArchiveList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.TitleColumn,
-            this.DeveloperColumn,
-            this.PublisherColumn,
-            this.IDColumn});
-            this.ArchiveList.SecondarySortColumn = this.IDColumn;
-            this.ArchiveList.AllowColumnReorder = true;
-            this.ArchiveList.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ArchiveList.FullRowSelect = true;
-            this.ArchiveList.GridLines = true;
-            this.ArchiveList.LabelWrap = false;
-            this.ArchiveList.Location = new System.Drawing.Point(300, 0);
-            this.ArchiveList.Margin = new System.Windows.Forms.Padding(0);
-            this.ArchiveList.MultiSelect = false;
-            this.ArchiveList.Name = "ArchiveList";
-            this.ArchiveList.Size = new System.Drawing.Size(644, 653);
-            this.ArchiveList.TabIndex = 0;
-            this.ArchiveList.UseCompatibleStateImageBehavior = false;
-            this.ArchiveList.View = System.Windows.Forms.View.Details;
-            this.ArchiveList.VirtualMode = true;
-            this.ArchiveList.ColumnWidthChanged += new System.Windows.Forms.ColumnWidthChangedEventHandler(this.ArchiveList_columnChanged);
-            this.ArchiveList.ItemActivate += new System.EventHandler(this.ArchiveList_itemAccess);
-            this.ArchiveList.SelectedIndexChanged += new System.EventHandler(this.ArchiveList_itemSelect);
-            this.ArchiveList.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ArchiveList_mouseMove);
-            // 
             // ArchiveInfoContainer
             // 
             this.ArchiveInfoContainer.Controls.Add(this.ArchiveInfoTitle);
@@ -194,7 +144,7 @@
             // 
             this.ArchiveInfoTitle.AutoSize = true;
             this.ArchiveInfoTitle.Dock = System.Windows.Forms.DockStyle.Top;
-            this.ArchiveInfoTitle.Font = new System.Drawing.Font("Segoe UI", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.ArchiveInfoTitle.Font = new System.Drawing.Font("Segoe UI", 14F);
             this.ArchiveInfoTitle.Location = new System.Drawing.Point(1, 0);
             this.ArchiveInfoTitle.Margin = new System.Windows.Forms.Padding(1, 0, 0, 0);
             this.ArchiveInfoTitle.Name = "ArchiveInfoTitle";
@@ -206,10 +156,10 @@
             // 
             this.ArchiveInfoDeveloper.AutoSize = true;
             this.ArchiveInfoDeveloper.Dock = System.Windows.Forms.DockStyle.Top;
-            this.ArchiveInfoDeveloper.Location = new System.Drawing.Point(3, 26);
-            this.ArchiveInfoDeveloper.Margin = new System.Windows.Forms.Padding(3, 1, 3, 7);
+            this.ArchiveInfoDeveloper.Location = new System.Drawing.Point(4, 26);
+            this.ArchiveInfoDeveloper.Margin = new System.Windows.Forms.Padding(4, 1, 3, 7);
             this.ArchiveInfoDeveloper.Name = "ArchiveInfoDeveloper";
-            this.ArchiveInfoDeveloper.Size = new System.Drawing.Size(291, 15);
+            this.ArchiveInfoDeveloper.Size = new System.Drawing.Size(290, 13);
             this.ArchiveInfoDeveloper.TabIndex = 6;
             this.ArchiveInfoDeveloper.UseMnemonic = false;
             // 
@@ -218,7 +168,7 @@
             this.ArchiveInfoData.BackColor = System.Drawing.SystemColors.Window;
             this.ArchiveInfoData.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.ArchiveInfoData.DetectUrls = false;
-            this.ArchiveInfoData.Location = new System.Drawing.Point(3, 51);
+            this.ArchiveInfoData.Location = new System.Drawing.Point(3, 49);
             this.ArchiveInfoData.Name = "ArchiveInfoData";
             this.ArchiveInfoData.ReadOnly = true;
             this.ArchiveInfoData.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
@@ -231,7 +181,7 @@
             this.ArchiveImagesContainer.BackColor = System.Drawing.Color.Transparent;
             this.ArchiveImagesContainer.Controls.Add(this.ArchiveImagesLogoContainer);
             this.ArchiveImagesContainer.Controls.Add(this.ArchiveImagesScreenshotContainer);
-            this.ArchiveImagesContainer.Location = new System.Drawing.Point(3, 310);
+            this.ArchiveImagesContainer.Location = new System.Drawing.Point(3, 308);
             this.ArchiveImagesContainer.Margin = new System.Windows.Forms.Padding(3, 0, 0, 0);
             this.ArchiveImagesContainer.Name = "ArchiveImagesContainer";
             this.ArchiveImagesContainer.Size = new System.Drawing.Size(293, 144);
@@ -253,9 +203,9 @@
             // 
             this.ArchiveImagesLogo.Cursor = System.Windows.Forms.Cursors.Hand;
             this.ArchiveImagesLogo.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ArchiveImagesLogo.Location = new System.Drawing.Point(4, 20);
+            this.ArchiveImagesLogo.Location = new System.Drawing.Point(4, 17);
             this.ArchiveImagesLogo.Name = "ArchiveImagesLogo";
-            this.ArchiveImagesLogo.Size = new System.Drawing.Size(132, 108);
+            this.ArchiveImagesLogo.Size = new System.Drawing.Size(132, 111);
             this.ArchiveImagesLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.ArchiveImagesLogo.TabIndex = 0;
             this.ArchiveImagesLogo.TabStop = false;
@@ -277,9 +227,9 @@
             // 
             this.ArchiveImagesScreenshot.Cursor = System.Windows.Forms.Cursors.Hand;
             this.ArchiveImagesScreenshot.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ArchiveImagesScreenshot.Location = new System.Drawing.Point(4, 20);
+            this.ArchiveImagesScreenshot.Location = new System.Drawing.Point(4, 17);
             this.ArchiveImagesScreenshot.Name = "ArchiveImagesScreenshot";
-            this.ArchiveImagesScreenshot.Size = new System.Drawing.Size(132, 108);
+            this.ArchiveImagesScreenshot.Size = new System.Drawing.Size(132, 111);
             this.ArchiveImagesScreenshot.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.ArchiveImagesScreenshot.TabIndex = 1;
             this.ArchiveImagesScreenshot.TabStop = false;
@@ -489,7 +439,7 @@
             this.AlternateButton.Name = "AlternateButton";
             this.AlternateButton.Size = new System.Drawing.Size(15, 25);
             this.AlternateButton.TabIndex = 10;
-            this.AlternateButton.Text = char.ConvertFromUtf32(0x2BC5);
+            this.AlternateButton.Text = "⯅";
             this.AlternateButton.UseVisualStyleBackColor = true;
             this.AlternateButton.Click += new System.EventHandler(this.AlternateButton_click);
             // 
@@ -529,7 +479,6 @@
             // 
             // FavoriteButtonImages
             // 
-            this.FavoriteButtonImages.ColorDepth = System.Windows.Forms.ColorDepth.Depth24Bit;
             this.FavoriteButtonImages.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("FavoriteButtonImages.ImageStream")));
             this.FavoriteButtonImages.TransparentColor = System.Drawing.Color.Transparent;
             this.FavoriteButtonImages.Images.SetKeyName(0, "unfavorite");
@@ -553,7 +502,7 @@
             // HomeTab
             // 
             this.HomeTab.Controls.Add(this.HomeContainer);
-            this.HomeTab.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.HomeTab.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.HomeTab.Location = new System.Drawing.Point(4, 28);
             this.HomeTab.Margin = new System.Windows.Forms.Padding(0);
             this.HomeTab.Name = "HomeTab";
@@ -589,7 +538,7 @@
             // 
             this.HomeLinkWebsite.ActiveLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(221)))), ((int)(((byte)(4)))), ((int)(((byte)(40)))));
             this.HomeLinkWebsite.AutoSize = true;
-            this.HomeLinkWebsite.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.HomeLinkWebsite.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.HomeLinkWebsite.LinkArea = new System.Windows.Forms.LinkArea(0, 7);
             this.HomeLinkWebsite.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
             this.HomeLinkWebsite.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(4)))), ((int)(((byte)(94)))), ((int)(((byte)(221)))));
@@ -608,7 +557,7 @@
             // 
             this.HomeLinkWiki.ActiveLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(221)))), ((int)(((byte)(4)))), ((int)(((byte)(40)))));
             this.HomeLinkWiki.AutoSize = true;
-            this.HomeLinkWiki.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.HomeLinkWiki.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.HomeLinkWiki.LinkArea = new System.Windows.Forms.LinkArea(0, 4);
             this.HomeLinkWiki.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
             this.HomeLinkWiki.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(4)))), ((int)(((byte)(94)))), ((int)(((byte)(221)))));
@@ -627,7 +576,7 @@
             // 
             this.HomeLinkGitHub.ActiveLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(221)))), ((int)(((byte)(4)))), ((int)(((byte)(40)))));
             this.HomeLinkGitHub.AutoSize = true;
-            this.HomeLinkGitHub.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.HomeLinkGitHub.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.HomeLinkGitHub.LinkArea = new System.Windows.Forms.LinkArea(0, 6);
             this.HomeLinkGitHub.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
             this.HomeLinkGitHub.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(4)))), ((int)(((byte)(94)))), ((int)(((byte)(221)))));
@@ -646,7 +595,7 @@
             // 
             this.HomeLinkDiscord.ActiveLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(221)))), ((int)(((byte)(4)))), ((int)(((byte)(40)))));
             this.HomeLinkDiscord.AutoSize = true;
-            this.HomeLinkDiscord.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.HomeLinkDiscord.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.HomeLinkDiscord.LinkArea = new System.Windows.Forms.LinkArea(0, 7);
             this.HomeLinkDiscord.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
             this.HomeLinkDiscord.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(4)))), ((int)(((byte)(94)))), ((int)(((byte)(221)))));
@@ -732,11 +681,9 @@
             // 
             // SearchBox
             // 
-            this.SearchBox.AutoSize = false;
             this.SearchBox.Location = new System.Drawing.Point(154, 6);
             this.SearchBox.Margin = new System.Windows.Forms.Padding(0);
             this.SearchBox.Name = "SearchBox";
-            this.SearchBox.PlaceholderText = "Search the archive...";
             this.SearchBox.Size = new System.Drawing.Size(200, 20);
             this.SearchBox.TabIndex = 2;
             this.SearchBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.SearchBox_keyDown);
@@ -756,7 +703,6 @@
             this.SearchButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(224)))), ((int)(((byte)(255)))));
             this.SearchButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(235)))), ((int)(((byte)(255)))));
             this.SearchButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.SearchButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.SearchButton.Location = new System.Drawing.Point(0, -2);
             this.SearchButton.Margin = new System.Windows.Forms.Padding(0);
             this.SearchButton.Name = "SearchButton";
@@ -782,7 +728,6 @@
             this.LaunchEntry.StartInfo.LoadUserProfile = false;
             this.LaunchEntry.StartInfo.Password = null;
             this.LaunchEntry.StartInfo.StandardErrorEncoding = null;
-            this.LaunchEntry.StartInfo.StandardInputEncoding = null;
             this.LaunchEntry.StartInfo.StandardOutputEncoding = null;
             this.LaunchEntry.StartInfo.UserName = "";
             this.LaunchEntry.SynchronizingObject = this;
@@ -794,6 +739,61 @@
             this.AlternateMenu.ShowImageMargin = false;
             this.AlternateMenu.Size = new System.Drawing.Size(36, 4);
             this.AlternateMenu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.AlternateMenu_itemClicked);
+            // 
+            // ArchiveList
+            // 
+            this.ArchiveList.AllColumns.Add(this.TitleColumn);
+            this.ArchiveList.AllColumns.Add(this.DeveloperColumn);
+            this.ArchiveList.AllColumns.Add(this.PublisherColumn);
+            this.ArchiveList.AllColumns.Add(this.IDColumn);
+            this.ArchiveList.AllowColumnReorder = true;
+            this.ArchiveList.CellEditUseWholeCell = false;
+            this.ArchiveList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.TitleColumn,
+            this.DeveloperColumn,
+            this.PublisherColumn,
+            this.IDColumn});
+            this.ArchiveList.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ArchiveList.FullRowSelect = true;
+            this.ArchiveList.GridLines = true;
+            this.ArchiveList.HideSelection = false;
+            this.ArchiveList.LabelWrap = false;
+            this.ArchiveList.Location = new System.Drawing.Point(300, 0);
+            this.ArchiveList.Margin = new System.Windows.Forms.Padding(0);
+            this.ArchiveList.MultiSelect = false;
+            this.ArchiveList.Name = "ArchiveList";
+            this.ArchiveList.ShowGroups = false;
+            this.ArchiveList.Size = new System.Drawing.Size(644, 653);
+            this.ArchiveList.TabIndex = 0;
+            this.ArchiveList.UseCompatibleStateImageBehavior = false;
+            this.ArchiveList.View = System.Windows.Forms.View.Details;
+            this.ArchiveList.VirtualMode = true;
+            this.ArchiveList.ColumnWidthChanged += new System.Windows.Forms.ColumnWidthChangedEventHandler(this.ArchiveList_columnChanged);
+            this.ArchiveList.ItemActivate += new System.EventHandler(this.ArchiveList_itemAccess);
+            this.ArchiveList.SelectedIndexChanged += new System.EventHandler(this.ArchiveList_itemSelect);
+            this.ArchiveList.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ArchiveList_mouseMove);
+            // 
+            // TitleColumn
+            // 
+            this.TitleColumn.AspectName = "Title";
+            this.TitleColumn.Text = "Title";
+            // 
+            // DeveloperColumn
+            // 
+            this.DeveloperColumn.AspectName = "Developer";
+            this.DeveloperColumn.Text = "Developer";
+            // 
+            // PublisherColumn
+            // 
+            this.PublisherColumn.AspectName = "Publisher";
+            this.PublisherColumn.Text = "Publisher";
+            // 
+            // IDColumn
+            // 
+            this.IDColumn.AspectName = "ID";
+            this.IDColumn.IsVisible = false;
+            this.IDColumn.Text = "UUID";
+            this.IDColumn.Width = 0;
             // 
             // Main
             // 
@@ -828,6 +828,7 @@
             this.Container.PerformLayout();
             this.SearchButtonContainer.ResumeLayout(false);
             this.ButtonContainer.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.ArchiveList)).EndInit();
             this.ResumeLayout(false);
 
         }

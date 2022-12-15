@@ -1,5 +1,8 @@
-﻿using BrightIdeasSoftware;
+﻿using System.Windows.Forms;
+
+using BrightIdeasSoftware;
 using static SharpLauncher.Main;
+
 namespace SharpLauncher
 {
     /// <summary>
@@ -12,7 +15,7 @@ namespace SharpLauncher
             // Create a new FPVirtualListDataSource for this object's VirtualListDataSource.
             // I couldn't figure out how to do this without messing up Main.Designer.cs or making a new class,
             // so I went with making a new class. Here we are.
-            this.VirtualListDataSource = new FPVirtualListDataSource(this);
+            VirtualListDataSource = new FPVirtualListDataSource(this);
         }
     }
 
@@ -44,7 +47,7 @@ namespace SharpLauncher
         /// <remarks>I declared the return type nullable, we'll see what the compiler thinks of that.</remarks>
         /// <param name="n">The index of the object in queryCache.</param>
         /// <returns>queryCache[n], or null if the index is out of bounds.</returns>
-        public override object? GetNthObject(int n)
+        public override object GetNthObject(int n)
         {
             // Lock queryCache so that nobody else can access it.
             lock (queryCacheLock)
@@ -89,7 +92,7 @@ namespace SharpLauncher
             {
                 // Construct a new comparer from the column, the order, and the secondary sort column.
                 // Note that we use the same order for the secondary sort column.
-                ModelObjectComparer comparer = new(column, order, this.listView.SecondarySortColumn, order);
+                var comparer = new ModelObjectComparer(column, order, listView.SecondarySortColumn, order);
                 // Lock queryCache so that nobody else can access it.
                 lock (queryCacheLock)
                 {

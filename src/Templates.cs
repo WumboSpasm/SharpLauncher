@@ -1,11 +1,13 @@
-﻿namespace SharpLauncher
+﻿using System.Collections.Generic;
+
+namespace SharpLauncher
 {
     // A class for holding metadata about a game.
     public class MetaDataObj
     {
         // This maps "internal" database column-names to "external" column-names.
         // TODO: use this for translations.
-        public static readonly Dictionary<string, string> metadataFields = new()
+        public static readonly Dictionary<string, string> metadataFields = new Dictionary<string, string>
         {
             { "title", "Title" },
             { "alternateTitles", "Alternate Titles" },

@@ -1,8 +1,16 @@
-using Microsoft.Data.Sqlite;
-using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Windows.Forms;
+
+using Microsoft.Data.Sqlite;
+using Newtonsoft.Json;
 using static SharpLauncher.DBFunctions;
 using static SharpLauncher.Settings;
 
@@ -16,7 +24,7 @@ namespace SharpLauncher
 
             // Call RebuildColumns to pick up on IDColumn's invisibility.
             ArchiveList.RebuildColumns();
-            this.DoubleBuffered = true;
+            DoubleBuffered = true;
         }
 
         #region Important Variables
@@ -24,28 +32,28 @@ namespace SharpLauncher
         // The width of the list prior to resize.
         int prevWidth;
         // The exact values of calculated column widths before conversion to int.
-        List<double> columnWidths = new();
+        List<double> columnWidths = new List<double>();
         // A list containing each tag to be filtered.
-        List<string> filteredTags = new();
+        List<string> filteredTags = new List<string>();
         // Query fragments used to fetch entries.
         string queryLibrary = "";
         string querySearch = "";
-        List<string> queryOperations = new();
+        List<string> queryOperations = new List<string>();
 
         // A list containing every item to be displayed in the list.
-        public static List<QueryItem> queryCache = new();
+        public static List<QueryItem> queryCache = new List<QueryItem>();
         // An object for locking access to the queryCache between threads.
-        public static readonly object queryCacheLock = new();
+        public static readonly object queryCacheLock = new object();
         // A lock to ensure that we only run one DB refresh at a time.
-        readonly object DBRefreshLock = new();
+        readonly object DBRefreshLock = new object();
         // Locks access to downloads.fp.
-        readonly object downloadsFPLock = new();
+        readonly object downloadsFPLock = new object();
         // Locks access to favorites.fp.
-        readonly object favoritesFPLock = new();
+        readonly object favoritesFPLock = new object();
         // An array of all entries that have been played.
-        List<string> playedEntries = new();
+        List<string> playedEntries = new List<string>();
         // An array of all entries that have been favorited.
-        List<string> favoritedEntries = new();
+        List<string> favoritedEntries = new List<string>();
         // Keep track of whether column width has been changed manually.
         bool columnChanged = false;
         // Keep track of whether requested curation images have been loaded.
@@ -60,7 +68,7 @@ namespace SharpLauncher
         {
             // Create configuration file if one doesn't exist. Otherwise, load it.
 
-            if (File.Exists("config.json") && File.ReadAllText("config.json").Length > 0)
+            if (File.Exists("sharpConfig.json") && File.ReadAllText("sharpConfig.json").Length > 0)
             {
                 Config.Read();
             }
@@ -156,7 +164,7 @@ namespace SharpLauncher
         private void SettingsButton_click(object sender, EventArgs e) { OpenSettings(); }
 
         // Reload database when the Settings menu is closed.
-        private void SettingsMenu_formClosed(object? sender, FormClosedEventArgs e)
+        private void SettingsMenu_formClosed(object sender, FormClosedEventArgs e)
         {
             Config.Read();
 
@@ -184,7 +192,7 @@ namespace SharpLauncher
                 entry = queryCache[selectedIndices[0]];
             }
 
-            MetaDataObj? metadataOutput = DatabaseQueryMeta(entry, queryLibrary);
+            MetaDataObj metadataOutput = DatabaseQueryMeta(entry, queryLibrary);
 
             // Check: was the entry found?
             if (metadataOutput == null)
@@ -406,7 +414,7 @@ namespace SharpLauncher
         private void ResetColumnsButton_click(object sender, EventArgs e) { ResetColumns(); }
 
         // Focus on a random entry when the Random (dice) button is clicked.
-        Random rng = new();
+        Random rng = new Random();
         private void RandomButton_Click(object sender, EventArgs e)
         {
             if (ArchiveList.VirtualListSize == 0)
@@ -492,7 +500,7 @@ namespace SharpLauncher
             if ((pictureName == "ArchiveImagesLogo" && logoLoaded) ||
                 (pictureName == "ArchiveImagesScreenshot" && screenshotLoaded))
             {
-                Form pictureViewer = new()
+                var pictureViewer = new Form()
                 {
                     Text = "Picture Viewer",
                     Size = new Size(640, 480),
@@ -529,7 +537,7 @@ namespace SharpLauncher
 
             if (File.Exists(databasePath))
             {
-                using (FileStream fileStream = new(databasePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var fileStream = new FileStream(databasePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     fileStream.Read(header, 0, 16);
                 }
@@ -579,13 +587,13 @@ namespace SharpLauncher
                 UpdateArchiveListLength();
 
                 List<QueryItem> temp;
-                QueryItem lastItem = new();
+                var lastItem = new QueryItem();
                 int lastBlockSize = blockSize;
                 
                 // Get values to be inserted into QueryItem objects
                 if (playsChecked || favoritesChecked)
                 {
-                    temp = new();
+                    temp = new List<QueryItem>();
                     foreach (string id in playsChecked ? playedEnts : favoritedEnts)
                     {
                         temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, qSearch, qOperations)));
@@ -600,7 +608,7 @@ namespace SharpLauncher
                 }
                 else
                 {
-                    SqliteConnection connection = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
+                    var connection = new SqliteConnection($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
                     connection.Open();
                     // Keep going until we get back fewer than we requested: when that happens, we're at the end.
                     // Ooh, look at me being clever. For-loops can have arbitrary conditions. This is a while-loop, but with a loop counter.
@@ -685,7 +693,7 @@ namespace SharpLauncher
         private void ExecuteSearchQuery()
         {
             // TODO: memory leak
-            queryOperations = new();
+            queryOperations = new List<string>();
 
             // Replace characters { " \ % } with _ to prevent errors.
             string tempSearch = Regex.Replace(SearchBox.Text, "[\"\\%]", "_");
@@ -721,8 +729,8 @@ namespace SharpLauncher
                                 if (operationParams[1].Contains('|'))
                                 {
                                     // TODO: make this efficient. How many lists are we using?
-                                    string[] operationValues = operationParams[1].Split("|");
-                                    List<string> queryOr = new();
+                                    string[] operationValues = operationParams[1].Split('|');
+                                    var queryOr = new List<string>();
 
                                     foreach (string value in operationValues)
                                     {
@@ -774,7 +782,7 @@ namespace SharpLauncher
             if (ArchiveList.InvokeRequired)
             {
                 // Invoke this on the main thread.
-                ArchiveList.Invoke(delegate { ScaleColumns(); });
+                ArchiveList.BeginInvoke((MethodInvoker)delegate { ScaleColumns(); });
                 // Return so that we don't continue to the other stuff.
                 return;
             }
@@ -796,7 +804,7 @@ namespace SharpLauncher
             if (ArchiveList.InvokeRequired)
             {
                 // Invoke this on the main thread.
-                ArchiveList.Invoke(delegate { ResetColumns(); });
+                ArchiveList.BeginInvoke((MethodInvoker)delegate { ResetColumns(); });
                 // Return so that we don't continue to the other stuff.
                 return;
             }
@@ -828,7 +836,7 @@ namespace SharpLauncher
             if (ArchiveInfoData.InvokeRequired)
             {
                 // Invoke this on the main thread.
-                ArchiveInfoData.Invoke(delegate { ClearInfoPanel(); });
+                ArchiveInfoData.BeginInvoke((MethodInvoker)delegate { ClearInfoPanel(); });
                 // Return so that we don't continue to the other stuff.
                 return;
             }
@@ -855,7 +863,7 @@ namespace SharpLauncher
             if (ArchiveList.InvokeRequired)
             {
                 // Invoke this on the main thread.
-                ArchiveList.Invoke(delegate { UpdateArchiveListLength(); });
+                ArchiveList.BeginInvoke((MethodInvoker)delegate { UpdateArchiveListLength(); });
                 // Return so that we don't continue to the other stuff.
                 return;
             }
@@ -873,7 +881,7 @@ namespace SharpLauncher
             if (EntryCountLabel.InvokeRequired)
             {
                 // Invoke this on the main thread.
-                EntryCountLabel.Invoke(delegate { SetEntryCountText(newText); });
+                EntryCountLabel.BeginInvoke((MethodInvoker)delegate { SetEntryCountText(newText); });
                 // Return so that we don't continue to the other stuff.
                 return;
             }
@@ -912,7 +920,7 @@ namespace SharpLauncher
                 $"\\b {MetaDataObj.metadataFields["version"]}: \\b0 {ToUnicode(meta.Version)}\\line";
             entryData += meta.Library == "" ? "" :
                 $"\\b {MetaDataObj.metadataFields["library"]}: \\b0 " +
-                ToUnicode(meta.Library[0].ToString().ToUpper() + meta.Library[1..]) +
+                ToUnicode(meta.Library[0].ToString().ToUpper() + meta.Library.Substring(1)) +
                 "\\line";
             entryData += meta.Tags == "" ? "" :
                 $"\\b {MetaDataObj.metadataFields["tagsStr"]}: \\b0 {ToUnicode(meta.Tags)}\\line";
@@ -934,7 +942,7 @@ namespace SharpLauncher
             return entryData;
         }
 
-        // Read filters.json and load any tags under active filters into the filteredTags list.
+        // Read sharpFilters.json and load any tags under active filters into the filteredTags list.
         private void LoadFilteredTags()
         {
             bool errorState = false;
@@ -943,11 +951,11 @@ namespace SharpLauncher
             {
                 filteredTags.Clear();
 
-                if (File.Exists("filters.json"))
+                if (File.Exists("sharpFilters.json"))
                 {
-                    using (StreamReader jsonStream = new("filters.json"))
+                    using (var jsonStream = new StreamReader("sharpFilters.json"))
                     {
-                        dynamic? filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
+                        dynamic filterArray = JsonConvert.DeserializeObject(jsonStream.ReadToEnd());
 
                         foreach (var item in filterArray)
                         {
@@ -970,7 +978,7 @@ namespace SharpLauncher
             if (errorState)
             {
                 MessageBox.Show(
-                        "filters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
+                        "sharpFilters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
                         "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
                     );
             }
@@ -980,7 +988,7 @@ namespace SharpLauncher
         // (Adapted from https://stackoverflow.com/a/30363185)
         static string ToUnicode(string data)
         {
-            StringBuilder escapedData = new();
+            var escapedData = new StringBuilder();
 
             foreach (char c in data)
             {
@@ -1023,12 +1031,13 @@ namespace SharpLauncher
         {
             lock (locker)
             {
-                using (FileStream file = new(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
+                using (var file = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
                 {
 
                     file.SetLength(0);
 
-                    file.Write(Encoding.ASCII.GetBytes(String.Join(Environment.NewLine, list)));
+                    byte[] data = Encoding.ASCII.GetBytes(string.Join(Environment.NewLine, list));
+                    file.Write(data, 0, data.Length);
                 }
             }
         }

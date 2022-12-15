@@ -1,5 +1,10 @@
-﻿using System.Text;
+﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
 using Microsoft.WindowsAPICodePack.Dialogs;
 using Newtonsoft.Json;
 
@@ -7,10 +12,10 @@ namespace SharpLauncher
 {
     public partial class Settings : Form
     {
-        // A string containing a copy of filters.json.
+        // A string containing a copy of sharpFilters.json.
         private string filterJSON = "";
 
-        public static readonly object filterLock = new();
+        public static readonly object filterLock = new object();
 
         public Settings()
         {
@@ -22,19 +27,19 @@ namespace SharpLauncher
             ServerInput.Text = Config.FlashpointServer;
 
             // Load tag filters into Filters menu.
-            if (File.Exists("filters.json"))
+            if (File.Exists("sharpFilters.json"))
             {
                 lock (filterLock)
                 {
-                    using (StreamReader jsonStream = new("filters.json"))
+                    using (var jsonStream = new StreamReader("sharpFilters.json"))
                     {
                         filterJSON = jsonStream.ReadToEnd();
 
-                        dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
+                        dynamic filterArray = JsonConvert.DeserializeObject(filterJSON);
 
                         foreach (var item in filterArray)
                         {
-                            ListViewItem filterItem = new((string)item.name);
+                            var filterItem = new ListViewItem((string)item.name);
                             filterItem.SubItems.Add((string)item.description);
                             filterItem.Checked = item.filtered;
 
@@ -49,7 +54,7 @@ namespace SharpLauncher
 
         private void PathButton_click(object sender, EventArgs e)
         {
-            CommonOpenFileDialog PathDialog = new() { IsFolderPicker = true };
+            var PathDialog = new CommonOpenFileDialog() { IsFolderPicker = true };
 
             if (PathDialog.ShowDialog() == CommonFileDialogResult.Ok)
                 PathInput.Text = PathDialog.FileName;
@@ -57,7 +62,7 @@ namespace SharpLauncher
 
         private void CLIFpButton_click(object sender, EventArgs e)
         {
-            OpenFileDialog CLIFpDialog = new() { Filter = "Executable files (*.exe)|*.exe" };
+            var CLIFpDialog = new OpenFileDialog() { Filter = "Executable files (*.exe)|*.exe" };
 
             if (CLIFpDialog.ShowDialog() == DialogResult.OK)
                 CLIFpInput.Text = CLIFpDialog.FileName;
@@ -87,7 +92,7 @@ namespace SharpLauncher
                     break;
 
                 case "DataClearCache":
-                    Process clearCache = new();
+                    var clearCache = new Process();
 
                     clearCache.StartInfo.FileName = "RunDll32.exe";
                     clearCache.StartInfo.Arguments = "InetCpl.cpl, ClearMyTracksByProcess 8";
@@ -103,9 +108,9 @@ namespace SharpLauncher
         {
             int selectedTab = ((TabControl)sender).SelectedIndex;
 
-            if (selectedTab == 1 && !File.Exists("filters.json"))
+            if (selectedTab == 1 && !File.Exists("sharpFilters.json"))
             {
-                MessageBox.Show("filters.json was not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("sharpFilters.json was not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 SettingsTabControl.SelectTab(0);
             }
             else if (selectedTab == 2
@@ -148,12 +153,12 @@ namespace SharpLauncher
             {
                 lock (filterLock)
                 {
-                    using (FileStream filters = new("filters.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+                    using (var filters = new FileStream("sharpFilters.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
                     {
 
                         filters.SetLength(0);
 
-                        dynamic? filterArray = JsonConvert.DeserializeObject(filterJSON);
+                        dynamic filterArray = JsonConvert.DeserializeObject(filterJSON);
 
                         int i = 0;
                         foreach (var item in filterArray)
@@ -162,7 +167,8 @@ namespace SharpLauncher
                             i++;
                         }
 
-                        filters.Write(Encoding.ASCII.GetBytes(filterArray.ToString()));
+                        byte[] data = Encoding.ASCII.GetBytes(filterArray.ToString());
+                        filters.Write(data, 0, data.Length);
                     }
                 }
             }

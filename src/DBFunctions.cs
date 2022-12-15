@@ -1,4 +1,8 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using Microsoft.Data.Sqlite;
 
 namespace SharpLauncher
 {
@@ -16,7 +20,7 @@ namespace SharpLauncher
         /// <param name="query">The SQL query string to use. Must select "title,developer,publisher,id,tagsStr" in that order.</param>
         /// <param name="conn">An open connection to the DB. If null, a new one will be created.</param>
         /// <returns>A List of QueryItems representing the results.</returns>
-        public static List<QueryItem> DatabaseQueryEntry(string query, SqliteConnection? conn = null)
+        public static List<QueryItem> DatabaseQueryEntry(string query, SqliteConnection conn = null)
         {
             // By default, assume that we have a persistent connection.
             bool persistentConn = true;
@@ -27,15 +31,15 @@ namespace SharpLauncher
                 persistentConn = false;
                 // Create and open a new connection to the db.
                 // TODO: check thread-safety on this.
-                conn = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
+                conn = new SqliteConnection($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
                 conn.Open();
             }
 
             // Create a command from the query and the connection.
-            SqliteCommand command = new(query, conn);
+            var command = new SqliteCommand(query, conn);
 
             // Create a List to hold the results.
-            List<QueryItem> data = new();
+            var data = new List<QueryItem>();
 
             // The using block should handle disposes nicely.
             using (SqliteDataReader dataReader = command.ExecuteReader())
@@ -70,7 +74,7 @@ namespace SharpLauncher
         /// <param name="library">The library of the entry, if known. <i>Might</i> speed up results a bit, but no promises.</param>
         /// <param name="conn">An open connection to the DB. If null, a new one will be created.</param>
         /// <returns>A MetaDataObj representing the entry's metadata, or null if the entry wasn't found.</returns>
-        public static MetaDataObj? DatabaseQueryMeta(QueryItem entry, string library = "", SqliteConnection? conn = null)
+        public static MetaDataObj DatabaseQueryMeta(QueryItem entry, string library = "", SqliteConnection conn = null)
         {
             // By default, assume that we have a persistent connection.
             bool persistentConn = true;
@@ -81,20 +85,20 @@ namespace SharpLauncher
                 persistentConn = false;
                 // Create and open a new connection to the db.
                 // TODO: check thread-safety on this.
-                conn = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
+                conn = new SqliteConnection($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
                 conn.Open();
             }
 
             // Yes, I'm hard-coding this. Sue me.
             // This gets many of the metadata fields corresponding to the entry with id=entry.ID.
             // Note: I leave out the fields that are already supplied by the QueryItem.
-            SqliteCommand command = new($"SELECT alternateTitles,series,source,releaseDate,platform,version,library,language,playMode,status,activeDataOnDisk,notes,originalDescription " +
+            var command = new SqliteCommand($"SELECT alternateTitles,series,source,releaseDate,platform,version,library,language,playMode,status,activeDataOnDisk,notes,originalDescription " +
                 $"FROM game " +
                 $"WHERE id='{entry.ID.Replace("'", "''")}' " +
                 (library == "" ? "" : $"AND library='{library.Replace("'", "''")}'"), conn);
 
             // By default, we didn't find anything. Let the result be null.
-            MetaDataObj? data = null;
+            MetaDataObj data = null;
 
             using (SqliteDataReader dataReader = command.ExecuteReader())
             {
@@ -142,7 +146,7 @@ namespace SharpLauncher
         /// <param name="parentGameId">The parentGameId.</param>
         /// <param name="conn">An open connection to the DB. If null, a new one will be created.</param>
         /// <returns>A List of AddApps representing the results.</returns>
-        public static List<AddApp> DatabaseQueryAddApp(string parentGameId, SqliteConnection? conn = null)
+        public static List<AddApp> DatabaseQueryAddApp(string parentGameId, SqliteConnection conn = null)
         {
             // By default, assume that we have a persistent connection.
             bool persistentConn = true;
@@ -153,16 +157,16 @@ namespace SharpLauncher
                 persistentConn = false;
                 // Create and open a new connection to the db.
                 // TODO: check thread-safety on this.
-                conn = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
+                conn = new SqliteConnection($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
                 conn.Open();
             }
 
             // These are the fields that AddApp has. We won't get more fields than we can populate.
             // ParentGameId is supplied by the arguments, no need to fetch that from the db.
-            SqliteCommand command = new($"SELECT id,name,applicationPath FROM additional_app WHERE parentGameId is '{parentGameId.Replace("'","''")}'", conn);
+            var command = new SqliteCommand($"SELECT id,name,applicationPath FROM additional_app WHERE parentGameId is '{parentGameId.Replace("'","''")}'", conn);
 
             // Make a List to hold the results.
-            List<AddApp> data = new();
+            var data = new List<AddApp>();
 
             using (SqliteDataReader dataReader = command.ExecuteReader())
             {
@@ -195,7 +199,7 @@ namespace SharpLauncher
         /// <param name="parentGameId">The parentGameId in question.</param>
         /// <param name="conn">An open connection to the DB. If null, a new one will be created.</param>
         /// <returns>The number of add-apps found in the DB that have the given parentGameId.</returns>
-        public static int DatabaseGetAddAppCount(string parentGameId, SqliteConnection? conn = null)
+        public static int DatabaseGetAddAppCount(string parentGameId, SqliteConnection conn = null)
         {
             // By default, assume that we have a persistent connection.
             bool persistentConn = true;
@@ -206,13 +210,13 @@ namespace SharpLauncher
                 persistentConn = false;
                 // Create and open a new connection to the db.
                 // TODO: check thread-safety on this.
-                conn = new($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
+                conn = new SqliteConnection($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
                 conn.Open();
             }
 
             // Using SQL's built-in COUNT function, because I think that its performance detriments are outweighed by
             // the potential detriments of making a new list, etc.
-            SqliteCommand command = new($"SELECT COUNT(parentGameId) FROM additional_app WHERE parentGameId is '{parentGameId.Replace("'", "''")}'", conn);
+            var command = new SqliteCommand($"SELECT COUNT(parentGameId) FROM additional_app WHERE parentGameId is '{parentGameId.Replace("'", "''")}'", conn);
 
             int count = 0;
 
@@ -252,7 +256,7 @@ namespace SharpLauncher
         {
             // We create a new List to hold the fragments of the query as we build it.
             // Select the correct columns from the table.
-            List<string> queryFragments = new() { $"SELECT title,developer,publisher,id,tagsStr FROM game" };
+            var queryFragments = new List<string> { $"SELECT title,developer,publisher,id,tagsStr FROM game" };
 
             // If any of the conditions are active,
             if (library != "" || search != "" || extraOperations.Count != 0)
@@ -261,7 +265,7 @@ namespace SharpLauncher
                 queryFragments.Add("WHERE");
 
                 // Create a List to hold the conditions that will follow.
-                List<string> queryConditions = new();
+                var queryConditions = new List<string>();
 
                 // If the library is set,
                 if (library != "")
@@ -282,14 +286,14 @@ namespace SharpLauncher
                 queryConditions.AddRange(extraOperations);
 
                 // Join all the conditions together with ADD statments.
-                queryFragments.Add(String.Join(" AND ", queryConditions));
+                queryFragments.Add(string.Join(" AND ", queryConditions));
             }
 
             // We order by the title. 
             queryFragments.Add("ORDER BY title");
 
             // Join all the fragments with spaces.
-            return String.Join(' ', queryFragments);
+            return string.Join(" ", queryFragments);
         }
 
         /// <summary>
@@ -316,7 +320,7 @@ namespace SharpLauncher
 
             // We create a new List to hold the fragments of the query as we build it.
             // Select the correct columns from the table.
-            List<string> queryFragments = new() { $"SELECT title,developer,publisher,id,tagsStr FROM game" };
+            var queryFragments = new List<string>() { $"SELECT title,developer,publisher,id,tagsStr FROM game" };
 
             // If any of the conditions are active,
             if (lastElem != "" || lastId != "" || library != "" || search != "" || extraOperations.Count != 0)
@@ -325,7 +329,7 @@ namespace SharpLauncher
                 queryFragments.Add("WHERE");
 
                 // Create a List to hold the conditions that will follow.
-                List<string> queryConditions = new();
+                var queryConditions = new List<string>();
 
                 // If the lastElem or lastId is unset (that is, we have been passed a last element)
                 if (lastElem != "" || lastId != "")
@@ -363,7 +367,7 @@ namespace SharpLauncher
             queryFragments.Add($"LIMIT {blockSize}");
 
             // Join all the fragments with spaces.
-            return String.Join(' ', queryFragments);
+            return string.Join(" ", queryFragments);
         }
 
         #endregion
@@ -382,9 +386,9 @@ namespace SharpLauncher
             // Set blockSize to the size of data.
             blockSize = data.Count;
             // Set lastElem to the last element of data, or a new element if data is empty.
-            lastElem = blockSize > 0 ? data[^1] : new();
+            lastElem = blockSize > 0 ? data[data.Count - 2] : new QueryItem();
             // Return the filtered data.
-            return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Split("; ")).Any());
+            return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Replace("; ", ";").Split(';')).Any());
         }
 
         /// <summary>
@@ -396,7 +400,7 @@ namespace SharpLauncher
         public static List<QueryItem> FilterData(List<QueryItem> data, List<string> filteredTags)
         {
             // Return the filtered data.
-            return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Split("; ")).Any());
+            return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Replace("; ", ";").Split(';')).Any());
         }
 
         // Alternate query template for retrieving entries via *.fp files.
