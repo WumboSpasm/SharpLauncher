@@ -343,7 +343,7 @@ namespace SharpLauncher
                 return;
             }
 
-            AddApp entry = (AddApp)e.ClickedItem.Tag;
+            var entry = (AddApp)e.ClickedItem.Tag;
 
             LaunchEntry.StartInfo.Arguments = $"play -i {entry.ID}";
 
@@ -441,7 +441,7 @@ namespace SharpLauncher
                 return;
             }
 
-            RadioButton checkedRadio = (RadioButton)sender;
+            var checkedRadio = (RadioButton)sender;
 
             if (checkedRadio.Checked)
             {
@@ -766,7 +766,7 @@ namespace SharpLauncher
         // Create Settings menu instance and attach event for when it is closed.
         private void OpenSettings()
         {
-            Settings SettingsMenu = new Settings();
+            var SettingsMenu = new Settings();
             SettingsMenu.FormClosed += new FormClosedEventHandler(SettingsMenu_formClosed);
 
             SettingsMenu.ShowDialog();
