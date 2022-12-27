@@ -312,6 +312,7 @@ namespace SharpLauncher
             }
 
             LaunchEntry.StartInfo.Arguments = $"play -i {entryID}";
+            LaunchEntry.StartInfo.FileName = Config.CLIFpPath;
             LaunchEntry.Start();
 
             EnsurePlaysLoaded();
@@ -357,6 +358,7 @@ namespace SharpLauncher
             var entry = (AddApp)e.ClickedItem.Tag;
 
             LaunchEntry.StartInfo.Arguments = $"play -i {entry.ID}";
+            LaunchEntry.StartInfo.FileName  = Config.CLIFpPath;
 
             if (entry.ApplicationPath != ":extras:" && entry.ApplicationPath != ":message:")
             {
