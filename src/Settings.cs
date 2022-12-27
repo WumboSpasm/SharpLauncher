@@ -127,21 +127,21 @@ namespace SharpLauncher
                 SetDownloadedFileSizes();
         }
 
-        // Write values to file and close the menu when the OK button is clicked.
+        // Verify and save the new configuration if the OK button is clicked, then close the menu.
         private void OKButton_click(object sender, EventArgs e)
         {
-            // Check if database and CLIFp exist under Flashpoint path
-            if (!File.Exists(PathInput.Text + @"\Data\flashpoint.sqlite")
-             || !File.Exists(CLIFpInput.Text)
-             || !CLIFpInput.Text.Contains(PathInput.Text))
+            bool[] valid = Config.Validate(PathInput.Text, CLIFpInput.Text);
+
+            if (!valid.All(v => v))
             {
                 DialogResult warningResult = MessageBox.Show(
-                    "One or more values are invalid. Continue?",
-                    "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation
+                    "The following values are invalid:" +
+                    (valid[0] ? "" : "\n- Path to Flashpoint folder") +
+                    (valid[1] ? "" : "\n- Path to CLIFp"),
+                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error
                 );
 
-                if (warningResult == DialogResult.No)
-                    return;
+                return;
             }
 
             Config.FlashpointPath = PathInput.Text;
@@ -173,13 +173,14 @@ namespace SharpLauncher
                 }
             }
 
-            Config.NeedsRefresh = true;
+            Config.Configured  = true;
+            Config.Initialized = false;
 
             Close();
         }
 
         // Close menu without saving if the Cancel button is clicked.
-        private void CancelButton_click(object sender, EventArgs e) { Close(); }
+        private void CancelButton_click(object sender, EventArgs e) => Close();
 
         // Fill in total file sizes in the Data tab.
         private void SetDownloadedFileSizes()

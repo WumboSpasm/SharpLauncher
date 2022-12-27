@@ -12,7 +12,8 @@ namespace SharpLauncher
         public static string CLIFpPath { get; set; } = @".\CLIFp\CLIFp.exe";
         public static string FlashpointServer { get; set; } = "http://infinity.unstable.life/Flashpoint";
 
-        public static bool NeedsRefresh { get; set; } = true;
+        public static bool Configured { get; set; } = false;
+        public static bool Initialized { get; set; } = false;
 
         public static readonly object configJsonLock = new object();
 
@@ -39,7 +40,6 @@ namespace SharpLauncher
                     {
                         FlashpointServer = (string)readConfig["FlashpointServer"];
                     }
-
                 }
             }
         }
@@ -64,6 +64,32 @@ namespace SharpLauncher
                     config.Write(data, 0, data.Length);
                 }
             }
+        }
+
+        public static bool[] Validate(string flashpointPath, string clifpPath)
+        {
+            bool pathValid  = false;
+            bool clifpValid = false;
+
+            string databasePath = flashpointPath + @"\Data\flashpoint.sqlite";
+            byte[] header = new byte[16];
+
+            if (File.Exists(databasePath))
+            {
+                using (var fileStream = new FileStream(databasePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    fileStream.Read(header, 0, 16);
+                }
+
+                pathValid = Encoding.ASCII.GetString(header).Contains("SQLite format");
+            }
+
+            if (File.Exists(clifpPath) && clifpPath.ToLower().EndsWith(".exe"))
+            {
+                clifpValid = true;
+            }
+
+            return new bool[] { pathValid, clifpValid };
         }
     }
 }

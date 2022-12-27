@@ -77,6 +77,27 @@ namespace SharpLauncher
                 Config.Write();
             }
 
+            // Validate the configuration file and open the settings menu if necessary.
+
+            if (Config.Validate(Config.FlashpointPath, Config.CLIFpPath).All(v => v))
+            {
+                Config.Configured = true;
+            }
+            else
+            {
+                MessageBox.Show(
+                    "You must specify the paths to Flashpoint and CLIFp in order to proceed.",
+                    "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information
+                );
+
+                OpenSettings();
+
+                if (!Config.Configured)
+                {
+                    Environment.Exit(0);
+                }
+            }
+
             // Initialize list columns and their widths.
 
             for (int i = 0; i < ArchiveList.Columns.Count; i++)
@@ -128,7 +149,7 @@ namespace SharpLauncher
         {
             if (((TabControl)sender).SelectedIndex == 1)
             {
-                if (Config.NeedsRefresh)
+                if (!Config.Initialized)
                 {
                     InitializeDatabase();
                 }
@@ -168,7 +189,7 @@ namespace SharpLauncher
         {
             Config.Read();
 
-            if (TabControl.SelectedIndex == 1 && Config.NeedsRefresh)
+            if (TabControl.SelectedIndex == 1 && !Config.Initialized)
             {
                 InitializeDatabase();
             }
@@ -284,11 +305,6 @@ namespace SharpLauncher
         // Launch the selected entry.
         private void ArchiveList_itemAccess(object sender, EventArgs e)
         {
-            if (!InitializeCLIFp())
-            {
-                return;
-            }
-
             string entryID;
             lock (queryCacheLock)
             {
@@ -338,11 +354,6 @@ namespace SharpLauncher
         // Launch an additional application.
         private void AlternateMenu_itemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
-            if (!InitializeCLIFp())
-            {
-                return;
-            }
-
             var entry = (AddApp)e.ClickedItem.Tag;
 
             LaunchEntry.StartInfo.Arguments = $"play -i {entry.ID}";
@@ -523,44 +534,15 @@ namespace SharpLauncher
 
         #region Form Component-changing Functions
 
-        // Check if database is valid and load if so
+        // Load the database and filters, and prepare the list display.
         // Adapted from https://stackoverflow.com/a/70291358
         private void InitializeDatabase()
         {
-            if (Config.NeedsRefresh)
-            {
-                Config.NeedsRefresh = false;
-            }
+            LoadFilteredTags();
+            RefreshDatabase_Block();
 
-            string databasePath = Config.FlashpointPath + @"\Data\flashpoint.sqlite";
-            byte[] header = new byte[16];
-
-            if (File.Exists(databasePath))
-            {
-                using (var fileStream = new FileStream(databasePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    fileStream.Read(header, 0, 16);
-                }
-
-                if (Encoding.ASCII.GetString(header).Contains("SQLite format"))
-                {
-                    LoadFilteredTags();
-                    RefreshDatabase_Block();
-
-                    prevWidth = ArchiveList.ClientSize.Width;
-
-                    return;
-                }
-            }
-
-            ArchiveList.VirtualListSize = 0;
-            ClearInfoPanel();
-
-            MessageBox.Show("Database is either corrupted or missing!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            TabControl.SelectTab(0);
-            OpenSettings();
-
-            Config.NeedsRefresh = true;
+            prevWidth = ArchiveList.ClientSize.Width;
+            Config.Initialized = true;
         }
 
         // Generate a new cache and refresh list.
@@ -671,21 +653,6 @@ namespace SharpLauncher
                 {
                     ResetColumns();
                 }
-            }
-        }
-
-        private bool InitializeCLIFp()
-        {
-            if (File.Exists(Config.CLIFpPath))
-            {
-                LaunchEntry.StartInfo.FileName = Config.CLIFpPath;
-                return true;
-            }
-            else
-            {
-                MessageBox.Show("CLIFp not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                OpenSettings();
-                return false;
             }
         }
 
@@ -978,9 +945,9 @@ namespace SharpLauncher
             if (errorState)
             {
                 MessageBox.Show(
-                        "sharpFilters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
-                        "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
-                    );
+                    "sharpFilters.json was not found, and as a result the archive will be unfiltered. Use at your own risk.",
+                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning
+                );
             }
         }
 
