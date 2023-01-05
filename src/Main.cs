@@ -217,8 +217,12 @@ namespace SharpLauncher
             {
                 entry = queryCache[selectedIndices[0]];
             }
-
-            MetaDataObj metadataOutput = DatabaseQueryMeta(entry, queryLibrary);
+            string localQueryLibrary;
+            lock (queryLock)
+            {
+                localQueryLibrary = queryLibrary;
+            }
+            MetaDataObj metadataOutput = DatabaseQueryMeta(entry, localQueryLibrary);
 
             // Check: was the entry found?
             if (metadataOutput == null)
@@ -466,15 +470,24 @@ namespace SharpLauncher
                 switch (checkedRadio.Name)
                 {
                     case "ArchiveRadioEverything":
-                        queryLibrary = "";
+                        lock (queryLock)
+                        {
+                            queryLibrary = "";
+                        }
                         break;
 
                     case "ArchiveRadioGames":
-                        queryLibrary = "arcade";
+                        lock (queryLock)
+                        {
+                            queryLibrary = "arcade";
+                        }
                         break;
 
                     case "ArchiveRadioAnimations":
-                        queryLibrary = "theatre";
+                        lock (queryLock)
+                        {
+                            queryLibrary = "theatre";
+                        }
                         break;
 
                     case "ArchiveRadioPlays":
@@ -510,7 +523,7 @@ namespace SharpLauncher
             }
         }
 
-        // Display a picture viwwer with the clicked image.
+        // Display a picture viewer with the clicked image.
         private void ArchiveImages_click(object sender, EventArgs e)
         {
             string pictureName = ((PictureBox)sender).Name;
@@ -556,6 +569,7 @@ namespace SharpLauncher
         // Generate a new cache and refresh list.
         private void RefreshDatabase_Block()
         {
+
             new Thread(() => RefreshDatabase_OnThread_BlockBased(columnChanged, ArchiveRadioPlays.Checked, ArchiveRadioFavorites.Checked,
                 playedEntries, favoritedEntries, querySearch, queryOperations, queryParameters, queryLibrary, BlockSize,
                 ArchiveList.PrimarySortColumn == null ? "Title" : ArchiveList.PrimarySortColumn.AspectName,
@@ -579,16 +593,26 @@ namespace SharpLauncher
                 List<QueryItem> temp;
                 var lastItem = new QueryItem();
                 int lastBlockSize = blockSize;
-
+                var connection = new SqliteConnection($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
+                connection.Open();
                 // Get values to be inserted into QueryItem objects
                 if (playsChecked || favoritesChecked)
                 {
                     temp = new List<QueryItem>();
                     foreach (string id in playsChecked ? playedEnts : favoritedEnts)
                     {
-                        temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, qSearch, qOperations, qParams)));
+                        SqliteCommand query;
+                        lock (queryLock)
+                        {
+                            query = GetAltQuery(id, qSearch, qOperations, qParams);
+                        }
+                        temp.AddRange(DatabaseQueryEntry(query, connection));
                     }
-                    temp = FilterData(temp, tagFilters);
+                    lock (filterLock)
+                    {
+                        temp = FilterData(temp, tagFilters);
+                    }
+
                     lock (queryCacheLock)
                     {
                         queryCache.AddRange(temp);
@@ -598,8 +622,6 @@ namespace SharpLauncher
                 }
                 else
                 {
-                    var connection = new SqliteConnection($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
-                    connection.Open();
                     // Keep going until we get back fewer than we requested: when that happens, we're at the end.
                     // Ooh, look at me being clever. For-loops can have arbitrary conditions. This is a while-loop, but with a loop counter.
                     for (int iterationNum = 0; lastBlockSize == blockSize; iterationNum++)
@@ -617,12 +639,17 @@ namespace SharpLauncher
                                 ResetColumns();
                             }
                         }
-
+                        SqliteCommand command;
                         // Query the DB for one block.
+                        lock (queryLock)
+                        {
+                            command = GetQueryBlock(qOperations, qParams, lastElem: lastItem.GetPropertyFromName(sortBy), lastId: lastItem.ID,
+                            sortByColumn: sortBy.ToLower(), sortDirection: direction == 1, blockSize: blockSize, search: qSearch, library: qLibrary);
+                        }
+                        temp = DatabaseQueryEntry(command, connection);
                         lock (filterLock)
                         {
-                            temp = FilterDataBlock(DatabaseQueryEntry(GetQueryBlock(qOperations, qParams, lastElem: lastItem.GetPropertyFromName(sortBy), lastId: lastItem.ID,
-                            sortByColumn: sortBy.ToLower(), sortDirection: direction == 1, blockSize: blockSize, search: qSearch, library: qLibrary), connection),
+                            temp = FilterDataBlock(temp,
                             // Set lastItem and lastBlockSize properly.
                             tagFilters, out lastItem, out lastBlockSize);
                         }
@@ -636,8 +663,8 @@ namespace SharpLauncher
                         UpdateArchiveListLength();
 
                     }
-                    connection.Close();
                 }
+                connection.Close();
 
                 // Sort new queryCache
                 int length;
@@ -667,9 +694,8 @@ namespace SharpLauncher
         // TODO: mess with this, ensure it escapes stuff properly.
         private void ExecuteSearchQuery()
         {
-            // TODO: memory leak
-            queryOperations = new List<string>();
-            queryParameters = new List<SqliteParameter>();
+            var localQueryOperations = new List<string>();
+            var localQueryParameters = new List<SqliteParameter>();
             int paramsCounter = 0;
 
             // Replace characters { " \ % } with _ to prevent errors.
@@ -713,16 +739,16 @@ namespace SharpLauncher
                                     foreach (string value in operationValues)
                                     {
                                         queryOr.Add($"{operationParams[0]} LIKE @param{paramsCounter}");
-                                        queryParameters.Add(new SqliteParameter($"@param{paramsCounter}", "%" + value + "%"));
+                                        localQueryParameters.Add(new SqliteParameter($"@param{paramsCounter}", "%" + value + "%"));
                                         paramsCounter++;
                                     }
 
-                                    queryOperations.Add($"({string.Join(" OR ", queryOr)})");
+                                    localQueryOperations.Add($"({string.Join(" OR ", queryOr)})");
                                 }
                                 else
                                 {
-                                    queryOperations.Add($"{operationParams[0]} LIKE @param{paramsCounter}");
-                                    queryParameters.Add(new SqliteParameter($"@param{paramsCounter}", "%" + operationParams[1] + "%"));
+                                    localQueryOperations.Add($"{operationParams[0]} LIKE @param{paramsCounter}");
+                                    localQueryParameters.Add(new SqliteParameter($"@param{paramsCounter}", "%" + operationParams[1] + "%"));
                                     paramsCounter++;
                                 }
                             }
@@ -733,12 +759,22 @@ namespace SharpLauncher
                     }
                 }
             }
+            lock (queryLock)
+            {
+                queryOperations.Clear();
+                queryParameters.Clear();
+                queryOperations.AddRange(localQueryOperations);
+                queryParameters.AddRange(localQueryParameters);
+            }
 
             // Remove padding left from operations being cut out of query.
             tempSearch = tempSearch.Trim();
 
             // Apply remaining string to generic search query.
-            querySearch = tempSearch;
+            lock (queryLock)
+            {
+                querySearch = tempSearch;
+            }
 
             // Refresh list and open it.
             RefreshDatabase_Block();
