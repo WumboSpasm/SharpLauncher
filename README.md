@@ -1,5 +1,5 @@
 # SharpLauncher for BlueMaxima's Flashpoint
-SharpLauncher is an alternative launcher for <a href="https://bluemaxima.org/flashpoint/">BlueMaxima's Flashpoint</a>, a webgame preservation project. It is written in C# (utilizing Windows Forms for its GUI), and serves as a frontend for the <a href="https://github.com/oblivioncth/CLIFp">CLIFp</a> command-line tool.
+SharpLauncher is an alternative launcher for [BlueMaxima's Flashpoint](https://bluemaxima.org/flashpoint/), a webgame preservation project. It is written in C# (utilizing Windows Forms for its GUI), and serves as a frontend for the [CLIFp](https://github.com/oblivioncth/CLIFp) command-line tool.
 
 ![Screenshot](https://user-images.githubusercontent.com/58399748/207768750-81197560-3cf8-4ec4-b283-0146fd1202aa.png)
 
@@ -14,11 +14,12 @@ SharpLauncher is an alternative launcher for <a href="https://bluemaxima.org/fla
 Playlists and a log viewer may be added in the future if I feel like it. Curation management features are not planned.
 
 ## Prerequisites
-* <a href="https://github.com/oblivioncth/CLIFp">CLIFp</a> (ideal location is a `CLIFp` folder within the Flashpoint directory)
-* <a href="https://cdn.discordapp.com/attachments/496132309498724391/945863222991392798/filters.json">sharpFilters.json</a> (if you want extreme entries to be filtered; must be placed in the same directory as SharpLauncher)
+* [CLIFp](https://github.com/oblivioncth/CLIFp) (ideal location is a `CLIFp` folder within the Flashpoint directory)
+* [sharpFilters.json](https://cdn.discordapp.com/attachments/496132309498724391/945863222991392798/filters.json) (if you want extreme entries to be filtered; must be placed in the same directory as SharpLauncher)
+* `e_sqlite3.dll` (must be placed in the same directory as SharpLauncher; can be retrieved from `SQLitePCLRaw.lib.e_sqlite3` package)
 
 ## Special thanks
-* <a href="https://github.com/LindirQuenya">LindirQuenya</a> for substantial code contributions, particularly block-based entry loading
-* <a href="https://github.com/oblivioncth">oblivioncth</a> for creating CLIFp
-* <a href="https://github.com/n0samu">nosamu</a> for being my primary beta tester and cheerleader
-* <a href="https://bluemaxima.org/flashpoint/">BlueMaxima's Flashpoint</a> and <a href="https://ruffle.rs/">Ruffle</a> communities for coding assistance and support
+* [LindirQuenya](https://github.com/LindirQuenya) for substantial code contributions, particularly block-based entry loading
+* [oblivioncth](https://github.com/oblivioncth) for creating CLIFp
+* [nosamu](https://github.com/n0samu) for being my primary beta tester and cheerleader
+* [BlueMaxima's Flashpoint](https://bluemaxima.org/flashpoint/) and [Ruffle](https://ruffle.rs/) communities for coding assistance and support
