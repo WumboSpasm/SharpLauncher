@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using System.Collections.Generic;
+using System.Windows.Forms;
 
 using BrightIdeasSoftware;
 using static SharpLauncher.Main;
@@ -90,9 +91,10 @@ namespace SharpLauncher
             // If the order is "unordered", don't do anything.
             if (order != SortOrder.None)
             {
+
                 // Construct a new comparer from the column, the order, and the secondary sort column.
                 // Note that we use the same order for the secondary sort column.
-                var comparer = new ModelObjectComparer(column, order, listView.SecondarySortColumn, order);
+                var comparer = new QueryItemComparer(column, order, listView.SecondarySortColumn);
                 // Lock queryCache so that nobody else can access it.
                 lock (queryCacheLock)
                 {
@@ -101,6 +103,45 @@ namespace SharpLauncher
                     queryCache.Sort(comparer);
                 }
             }
+        }
+    }
+
+    public class QueryItemComparer : Comparer<QueryItem>
+    {
+        private readonly OLVColumn primary;
+        private readonly OLVColumn secondary;
+        private readonly SortOrder order;
+        public QueryItemComparer(OLVColumn primary, SortOrder order, OLVColumn secondary)
+        {
+            this.primary = primary;
+            this.secondary = secondary;
+            this.order = order;
+        }
+
+        public override int Compare(QueryItem x, QueryItem y)
+        {
+            int primaryResult;
+            if (order == SortOrder.Ascending)
+            {
+                primaryResult = string.CompareOrdinal((string)primary.GetAspectByName(x), (string)primary.GetAspectByName(y));
+            } else
+            {
+                primaryResult = string.CompareOrdinal((string)primary.GetAspectByName(y), (string)primary.GetAspectByName(x));
+            }
+            if (primaryResult != 0)
+            {
+                return primaryResult;
+            }
+            int secondaryResult;
+            if (order == SortOrder.Ascending)
+            {
+                secondaryResult = string.CompareOrdinal((string)secondary.GetAspectByName(x), (string)secondary.GetAspectByName(y));
+            }
+            else
+            {
+                secondaryResult = string.CompareOrdinal((string)secondary.GetAspectByName(y), (string)secondary.GetAspectByName(x));
+            }
+            return secondaryResult;
         }
     }
 }
