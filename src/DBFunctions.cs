@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Data.SQLite;
 using System.Linq;
 using System.Text;
 using Microsoft.Data.Sqlite;
@@ -349,7 +348,7 @@ namespace SharpLauncher
             // Set blockSize to the size of data.
             blockSize = data.Count;
             // Set lastElem to the last element of data, or a new element if data is empty.
-            lastElem = blockSize > 0 ? data[Math.Max(0, data.Count - 2)] : new QueryItem();
+            lastElem = blockSize > 0 ? data[Math.Max(0, data.Count - 1)] : new QueryItem();
             // Return the filtered data.
             return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Replace("; ", ";").Split(';')).Any());
         }
