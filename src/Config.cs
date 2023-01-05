@@ -14,6 +14,7 @@ namespace SharpLauncher
 
         public static bool Configured { get; set; } = false;
         public static bool Initialized { get; set; } = false;
+        public static bool InitStarted { get; set; } = false;
 
         public static readonly object configJsonLock = new object();
 
@@ -68,7 +69,7 @@ namespace SharpLauncher
 
         public static bool[] Validate(string flashpointPath, string clifpPath)
         {
-            bool pathValid  = false;
+            bool pathValid = false;
             bool clifpValid = false;
 
             string databasePath = flashpointPath + @"\Data\flashpoint.sqlite";

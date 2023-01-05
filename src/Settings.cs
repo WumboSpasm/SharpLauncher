@@ -57,7 +57,9 @@ namespace SharpLauncher
             var PathDialog = new CommonOpenFileDialog() { IsFolderPicker = true };
 
             if (PathDialog.ShowDialog() == CommonFileDialogResult.Ok)
+            {
                 PathInput.Text = PathDialog.FileName;
+            }
         }
 
         private void CLIFpButton_click(object sender, EventArgs e)
@@ -65,7 +67,9 @@ namespace SharpLauncher
             var CLIFpDialog = new OpenFileDialog() { Filter = "Executable files (*.exe)|*.exe" };
 
             if (CLIFpDialog.ShowDialog() == DialogResult.OK)
+            {
                 CLIFpInput.Text = CLIFpDialog.FileName;
+            }
         }
 
         // Clear data corresponding to clicked button in Data tab.
@@ -124,7 +128,9 @@ namespace SharpLauncher
                 SettingsTabControl.SelectTab(0);
             }
             else if (selectedTab == 2)
+            {
                 SetDownloadedFileSizes();
+            }
         }
 
         // Verify and save the new configuration if the OK button is clicked, then close the menu.
@@ -173,8 +179,9 @@ namespace SharpLauncher
                 }
             }
 
-            Config.Configured  = true;
+            Config.Configured = true;
             Config.Initialized = false;
+            Config.InitStarted = false;
 
             Close();
         }

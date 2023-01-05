@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
+using System.Data.SQLite;
 using System.Linq;
-
+using System.Text;
 using Microsoft.Data.Sqlite;
 
 namespace SharpLauncher
@@ -17,10 +19,10 @@ namespace SharpLauncher
         /// <summary>
         /// Return game or animation entries from the Flashpoint database.
         /// </summary>
-        /// <param name="query">The SQL query string to use. Must select "title,developer,publisher,id,tagsStr" in that order.</param>
+        /// <param name="command">The SQL query string to use. Must select "title,developer,publisher,id,tagsStr" in that order.</param>
         /// <param name="conn">An open connection to the DB. If null, a new one will be created.</param>
         /// <returns>A List of QueryItems representing the results.</returns>
-        public static List<QueryItem> DatabaseQueryEntry(string query, SqliteConnection conn = null)
+        public static List<QueryItem> DatabaseQueryEntry(SqliteCommand command, SqliteConnection conn = null)
         {
             // By default, assume that we have a persistent connection.
             bool persistentConn = true;
@@ -35,8 +37,7 @@ namespace SharpLauncher
                 conn.Open();
             }
 
-            // Create a command from the query and the connection.
-            var command = new SqliteCommand(query, conn);
+            command.Connection = conn;
 
             // Create a List to hold the results.
             var data = new List<QueryItem>();
@@ -89,13 +90,16 @@ namespace SharpLauncher
                 conn.Open();
             }
 
-            // Yes, I'm hard-coding this. Sue me.
             // This gets many of the metadata fields corresponding to the entry with id=entry.ID.
             // Note: I leave out the fields that are already supplied by the QueryItem.
-            var command = new SqliteCommand($"SELECT alternateTitles,series,source,releaseDate,platform,version,library,language,playMode,status,activeDataOnDisk,notes,originalDescription " +
-                $"FROM game " +
-                $"WHERE id='{entry.ID.Replace("'", "''")}' " +
-                (library == "" ? "" : $"AND library='{library.Replace("'", "''")}'"), conn);
+            var command = new SqliteCommand("SELECT alternateTitles,series,source,releaseDate,platform,version,library,language,playMode,status,activeDataOnDisk,notes,originalDescription " +
+                "FROM game WHERE id = $id " +
+                (library == "" ? "" : "AND library = $library"), conn);
+            command.Parameters.AddWithValue("$id", entry.ID);
+            if (library != "")
+            {
+                command.Parameters.AddWithValue("$library", library);
+            }
 
             // By default, we didn't find anything. Let the result be null.
             MetaDataObj data = null;
@@ -139,7 +143,7 @@ namespace SharpLauncher
 
             return data;
         }
-                 
+
         /// <summary>
         /// Return add-app entries associated with a given parentGameId from the Flashpoint database.
         /// </summary>
@@ -163,7 +167,8 @@ namespace SharpLauncher
 
             // These are the fields that AddApp has. We won't get more fields than we can populate.
             // ParentGameId is supplied by the arguments, no need to fetch that from the db.
-            var command = new SqliteCommand($"SELECT id,name,applicationPath FROM additional_app WHERE parentGameId is '{parentGameId.Replace("'","''")}'", conn);
+            var command = new SqliteCommand("SELECT id,name,applicationPath FROM additional_app WHERE parentGameId is $parentId", conn);
+            command.Parameters.AddWithValue("$parentId", parentGameId);
 
             // Make a List to hold the results.
             var data = new List<AddApp>();
@@ -216,8 +221,8 @@ namespace SharpLauncher
 
             // Using SQL's built-in COUNT function, because I think that its performance detriments are outweighed by
             // the potential detriments of making a new list, etc.
-            var command = new SqliteCommand($"SELECT COUNT(parentGameId) FROM additional_app WHERE parentGameId is '{parentGameId.Replace("'", "''")}'", conn);
-
+            var command = new SqliteCommand("SELECT COUNT(parentGameId) FROM additional_app WHERE parentGameId is $parentId", conn);
+            command.Parameters.AddWithValue("$parentId", parentGameId);
             int count = 0;
 
             using (SqliteDataReader dataReader = command.ExecuteReader())
@@ -243,58 +248,6 @@ namespace SharpLauncher
 
         #region Query-Builder Functions
 
-        /// <summary>
-        /// Query template to make things easier. Builds a query from parameters.
-        /// </summary>
-        /// <param name="extraOperations">An array of strings, each of which is a condition to restrict the results. May be empty.</param>
-        /// <param name="search">A string that the titles of results must contain.</param>
-        /// <param name="library">The library in which the results must be.</param>
-        /// <param name="offset"></param>
-        /// <returns></returns>
-        // TODO: optimize this. Two lists created and messed with, all for one query string?
-        public static string GetQuery(List<string> extraOperations, string search = "", string library = "arcade")
-        {
-            // We create a new List to hold the fragments of the query as we build it.
-            // Select the correct columns from the table.
-            var queryFragments = new List<string> { $"SELECT title,developer,publisher,id,tagsStr FROM game" };
-
-            // If any of the conditions are active,
-            if (library != "" || search != "" || extraOperations.Count != 0)
-            {
-                // Add a WHERE statement.
-                queryFragments.Add("WHERE");
-
-                // Create a List to hold the conditions that will follow.
-                var queryConditions = new List<string>();
-
-                // If the library is set,
-                if (library != "")
-                {
-                    // Add a condition: the library must be library.
-                    // Don't rely on an unsynchronized global, instead use an argument.
-                    queryConditions.Add($"library = '{library.Replace("'", "''")}'");
-                }
-
-                // If the search string is set,
-                if (search != "")
-                {
-                    // Add a condition: the title must contain search.
-                    queryConditions.Add($"title LIKE '%{search.Replace("'", "''")}%'");
-                }
-
-                // Add all conditions from extraOperations.
-                queryConditions.AddRange(extraOperations);
-
-                // Join all the conditions together with ADD statments.
-                queryFragments.Add(string.Join(" AND ", queryConditions));
-            }
-
-            // We order by the title. 
-            queryFragments.Add("ORDER BY title");
-
-            // Join all the fragments with spaces.
-            return string.Join(" ", queryFragments);
-        }
 
         /// <summary>
         /// Gets the proper query string for a block of data, using keyset pagination to avaoid the bad performance of OFFSET.
@@ -309,7 +262,7 @@ namespace SharpLauncher
         /// <param name="search">The string to search titles for.</param>
         /// <param name="library">The library to search in.</param>
         /// <returns>A query string representing the block query.</returns>
-        public static string GetQueryBlock(List<string> extraOperations, string lastElem = "", string lastId = "", string sortByColumn = "title", bool sortDirection = true, int blockSize = BlockSize, string search = "", string library = "arcade")
+        public static SqliteCommand GetQueryBlock(List<string> extraOperations, List<SqliteParameter> extraParams, string lastElem = "", string lastId = "", string sortByColumn = "title", bool sortDirection = true, int blockSize = BlockSize, string search = "", string library = "arcade")
         {
             // Depending on the sortDirection, we should have different comparison operators and terms.
             // This one is used for comparison to the last item for keyset pagination.
@@ -320,7 +273,10 @@ namespace SharpLauncher
 
             // We create a new List to hold the fragments of the query as we build it.
             // Select the correct columns from the table.
-            var queryFragments = new List<string>() { $"SELECT title,developer,publisher,id,tagsStr FROM game" };
+            var queryFragments = new List<string>() { "SELECT title,developer,publisher,id,tagsStr FROM game" };
+
+            var queryParams = new List<SqliteParameter>();
+            queryParams.AddRange(extraParams);
 
             // If any of the conditions are active,
             if (lastElem != "" || lastId != "" || library != "" || search != "" || extraOperations.Count != 0)
@@ -335,7 +291,9 @@ namespace SharpLauncher
                 if (lastElem != "" || lastId != "")
                 {
                     // Use keyset pagination to skip the old elements.
-                    queryConditions.Add($"({sortByColumn}, id) {sortOperator} ('{lastElem.Replace("'","''")}', '{lastId.Replace("'", "''")}')");
+                    queryConditions.Add($"({sortByColumn}, id) {sortOperator} ($lastElem, $lastId)");
+                    queryParams.Add(new SqliteParameter("$lastElem", lastElem));
+                    queryParams.Add(new SqliteParameter("$lastId", lastId));
                 }
 
                 // If the library is set,
@@ -343,31 +301,36 @@ namespace SharpLauncher
                 {
                     // Add a condition: the library must be library.
                     // Don't rely on an unsynchronized global, instead use an argument.
-                    queryConditions.Add($"library = '{library.Replace("'", "''")}'");
+                    queryConditions.Add("library = $library");
+                    queryParams.Add(new SqliteParameter("$library", library));
                 }
 
                 // If the search string is set,
                 if (search != "")
                 {
                     // Add a condition: the title must contain search.
-                    queryConditions.Add($"title LIKE '%{search.Replace("'", "''")}%'");
+                    queryConditions.Add("title LIKE $titleLike");
+                    queryParams.Add(new SqliteParameter("$titleLike", "%" + search + "%"));
                 }
 
                 // Add all conditions from extraOperations.
                 queryConditions.AddRange(extraOperations);
 
                 // Join all the conditions together with ADD statments.
-                queryFragments.Add(String.Join(" AND ", queryConditions));
+                queryFragments.Add(string.Join(" AND ", queryConditions));
             }
 
             // Order by the sortByColumn primarily, in the direction sortTerm, and id secondarily, also in the direction sortTerm.
             queryFragments.Add($"ORDER BY {sortByColumn} {sortTerm}, id {sortTerm}");
 
             // Limit our number of results to blockSize.
-            queryFragments.Add($"LIMIT {blockSize}");
+            queryFragments.Add($"LIMIT $blockSize");
+            queryParams.Add(new SqliteParameter("$blockSize", blockSize));
 
             // Join all the fragments with spaces.
-            return string.Join(" ", queryFragments);
+            var command = new SqliteCommand(string.Join(" ", queryFragments));
+            command.Parameters.AddRange(queryParams);
+            return command;
         }
 
         #endregion
@@ -404,12 +367,24 @@ namespace SharpLauncher
         }
 
         // Alternate query template for retrieving entries via *.fp files.
-        public static string GetAltQuery(string gameID, string search, List<string> extraOperations)
+        public static SqliteCommand GetAltQuery(string gameID, string search, List<string> extraOperations, List<SqliteParameter> extraParams)
         {
-            return $"SELECT title,developer,publisher,id,tagsStr FROM game WHERE id = '{gameID}'" +
-            (search != "" ? $" AND title LIKE '%{search}%'" : "") +
-            (extraOperations.Count != 0 ? " AND " + String.Join(" AND ", extraOperations) : "");
+            var queryParams = new List<SqliteParameter>(extraParams);
+            var queryString = new StringBuilder("SELECT title,developer,publisher,id,tagsStr FROM game WHERE id = $gameId");
+            queryParams.Add(new SqliteParameter("$gameId", gameID));
+            if (search != "")
+            {
+                queryString.Append(" AND title LIKE $titleLike");
+                queryParams.Add(new SqliteParameter("$titleLike", "%" + search + "%"));
+            }
+            if (extraOperations.Count != 0)
+            {
+                queryString.Append(" AND " + string.Join(" AND ", extraOperations));
+            }
+            var command = new SqliteCommand(queryString.ToString());
+            command.Parameters.AddRange(queryParams);
+            return command;
         }
-#endregion
+        #endregion
     }
 }

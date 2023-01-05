@@ -35,10 +35,14 @@ namespace SharpLauncher
         List<double> columnWidths = new List<double>();
         // A list containing each tag to be filtered.
         List<string> filteredTags = new List<string>();
+
+        // Object used to lock access to the query fragments.
+        readonly object queryLock = new object();
         // Query fragments used to fetch entries.
         string queryLibrary = "";
         string querySearch = "";
         List<string> queryOperations = new List<string>();
+        List<SqliteParameter> queryParameters = new List<SqliteParameter>();
 
         // A list containing every item to be displayed in the list.
         public static List<QueryItem> queryCache = new List<QueryItem>();
@@ -55,10 +59,11 @@ namespace SharpLauncher
         // An array of all entries that have been favorited.
         List<string> favoritedEntries = new List<string>();
         // Keep track of whether column width has been changed manually.
-        bool columnChanged = false;
+        volatile bool columnChanged = false;
         // Keep track of whether requested curation images have been loaded.
-        bool logoLoaded = false;
-        bool screenshotLoaded = false;
+        // TODO: check that these volatile keywords are needed.
+        volatile bool logoLoaded = false;
+        volatile bool screenshotLoaded = false;
 
         #endregion
 
@@ -149,7 +154,7 @@ namespace SharpLauncher
         {
             if (((TabControl)sender).SelectedIndex == 1)
             {
-                if (!Config.Initialized)
+                if (!Config.InitStarted)
                 {
                     InitializeDatabase();
                 }
@@ -358,7 +363,7 @@ namespace SharpLauncher
             var entry = (AddApp)e.ClickedItem.Tag;
 
             LaunchEntry.StartInfo.Arguments = $"play -i {entry.ID}";
-            LaunchEntry.StartInfo.FileName  = Config.CLIFpPath;
+            LaunchEntry.StartInfo.FileName = Config.CLIFpPath;
 
             if (entry.ApplicationPath != ":extras:" && entry.ApplicationPath != ":message:")
             {
@@ -540,6 +545,7 @@ namespace SharpLauncher
         // Adapted from https://stackoverflow.com/a/70291358
         private void InitializeDatabase()
         {
+            Config.InitStarted = true;
             LoadFilteredTags();
             RefreshDatabase_Block();
 
@@ -551,14 +557,14 @@ namespace SharpLauncher
         private void RefreshDatabase_Block()
         {
             new Thread(() => RefreshDatabase_OnThread_BlockBased(columnChanged, ArchiveRadioPlays.Checked, ArchiveRadioFavorites.Checked,
-                playedEntries, favoritedEntries, querySearch, queryOperations, queryLibrary, BlockSize,
+                playedEntries, favoritedEntries, querySearch, queryOperations, queryParameters, queryLibrary, BlockSize,
                 ArchiveList.PrimarySortColumn == null ? "Title" : ArchiveList.PrimarySortColumn.AspectName,
                 ArchiveList.PrimarySortOrder == SortOrder.Descending ? 0 : 1, filteredTags)).Start();
         }
 
         // TODO: MAKE THIS THREAD-SAFE, i.e. near-static.
         public void RefreshDatabase_OnThread_BlockBased(bool colChanged, bool playsChecked, bool favoritesChecked, List<string> playedEnts, List<string> favoritedEnts,
-            string qSearch, List<string> qOperations, string qLibrary, int blockSize, string sortBy, int direction, List<string> tagFilters)
+            string qSearch, List<string> qOperations, List<SqliteParameter> qParams, string qLibrary, int blockSize, string sortBy, int direction, List<string> tagFilters)
         {
             lock (DBRefreshLock)
             {
@@ -573,14 +579,14 @@ namespace SharpLauncher
                 List<QueryItem> temp;
                 var lastItem = new QueryItem();
                 int lastBlockSize = blockSize;
-                
+
                 // Get values to be inserted into QueryItem objects
                 if (playsChecked || favoritesChecked)
                 {
                     temp = new List<QueryItem>();
                     foreach (string id in playsChecked ? playedEnts : favoritedEnts)
                     {
-                        temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, qSearch, qOperations)));
+                        temp.AddRange(DatabaseQueryEntry(GetAltQuery(id, qSearch, qOperations, qParams)));
                     }
                     temp = FilterData(temp, tagFilters);
                     lock (queryCacheLock)
@@ -596,7 +602,7 @@ namespace SharpLauncher
                     connection.Open();
                     // Keep going until we get back fewer than we requested: when that happens, we're at the end.
                     // Ooh, look at me being clever. For-loops can have arbitrary conditions. This is a while-loop, but with a loop counter.
-                    for (int iterationNum=0; lastBlockSize == blockSize; iterationNum++)
+                    for (int iterationNum = 0; lastBlockSize == blockSize; iterationNum++)
                     {
                         // Update the columns after the first block is done.
                         if (iterationNum == 1)
@@ -615,7 +621,7 @@ namespace SharpLauncher
                         // Query the DB for one block.
                         lock (filterLock)
                         {
-                            temp = FilterDataBlock(DatabaseQueryEntry(GetQueryBlock(qOperations, lastElem: lastItem.GetPropertyFromName(sortBy), lastId: lastItem.ID,
+                            temp = FilterDataBlock(DatabaseQueryEntry(GetQueryBlock(qOperations, qParams, lastElem: lastItem.GetPropertyFromName(sortBy), lastId: lastItem.ID,
                             sortByColumn: sortBy.ToLower(), sortDirection: direction == 1, blockSize: blockSize, search: qSearch, library: qLibrary), connection),
                             // Set lastItem and lastBlockSize properly.
                             tagFilters, out lastItem, out lastBlockSize);
@@ -663,6 +669,8 @@ namespace SharpLauncher
         {
             // TODO: memory leak
             queryOperations = new List<string>();
+            queryParameters = new List<SqliteParameter>();
+            int paramsCounter = 0;
 
             // Replace characters { " \ % } with _ to prevent errors.
             string tempSearch = Regex.Replace(SearchBox.Text, "[\"\\%]", "_");
@@ -692,6 +700,7 @@ namespace SharpLauncher
                         if (operationParams.Length == 2)
                         {
                             // TODO: aliases of meta names.
+                            // Validate the column name.
                             if (MetaDataObj.metadataFields.ContainsKey(operationParams[0]))
                             {
                                 // Check for | (or) operators and update query accordingly.
@@ -703,14 +712,18 @@ namespace SharpLauncher
 
                                     foreach (string value in operationValues)
                                     {
-                                        queryOr.Add($"{operationParams[0]} LIKE '%{value}%'");
+                                        queryOr.Add($"{operationParams[0]} LIKE @param{paramsCounter}");
+                                        queryParameters.Add(new SqliteParameter($"@param{paramsCounter}", "%" + value + "%"));
+                                        paramsCounter++;
                                     }
 
                                     queryOperations.Add($"({string.Join(" OR ", queryOr)})");
                                 }
                                 else
                                 {
-                                    queryOperations.Add($"{operationParams[0]} LIKE '%{operationParams[1]}%'");
+                                    queryOperations.Add($"{operationParams[0]} LIKE @param{paramsCounter}");
+                                    queryParameters.Add(new SqliteParameter($"@param{paramsCounter}", "%" + operationParams[1] + "%"));
+                                    paramsCounter++;
                                 }
                             }
                         }
