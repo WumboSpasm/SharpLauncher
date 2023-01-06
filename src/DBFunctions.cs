@@ -307,7 +307,7 @@ namespace SharpLauncher
                 if (search != "")
                 {
                     // Add a condition: the title must contain search.
-                    queryConditions.Add("title LIKE $titleLike");
+                    queryConditions.Add("title LIKE $titleLike ESCAPE '^'");
                     queryParams.Add(new SqliteParameter("$titleLike", "%" + search + "%"));
                 }
 
@@ -367,20 +367,23 @@ namespace SharpLauncher
         // Alternate query template for retrieving entries via *.fp files.
         public static SqliteCommand GetAltQuery(string gameID, string search, List<string> extraOperations, List<SqliteParameter> extraParams)
         {
-            var queryParams = new List<SqliteParameter>(extraParams);
+            var queryParams = new List<SqliteParameter>(extraParams) { new SqliteParameter("$gameId", gameID) };
             var queryString = new StringBuilder("SELECT title,developer,publisher,id,tagsStr FROM game WHERE id = $gameId");
-            queryParams.Add(new SqliteParameter("$gameId", gameID));
+
             if (search != "")
             {
-                queryString.Append(" AND title LIKE $titleLike");
+                queryString.Append(" AND title LIKE $titleLike ESCAPE '^'");
                 queryParams.Add(new SqliteParameter("$titleLike", "%" + search + "%"));
             }
+
             if (extraOperations.Count != 0)
             {
                 queryString.Append(" AND " + string.Join(" AND ", extraOperations));
             }
+
             var command = new SqliteCommand(queryString.ToString());
             command.Parameters.AddRange(queryParams);
+
             return command;
         }
         #endregion

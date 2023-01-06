@@ -703,7 +703,9 @@ namespace SharpLauncher
             var localQueryOperations = new List<string>();
             var localQueryParameters = new List<SqliteParameter>();
             int paramsCounter = 0;
-            string tempSearch = SearchBox.Text;
+
+            // Escape characters that are treated by SQLite as wildcards.
+            string tempSearch = Regex.Replace(SearchBox.Text, "([%_^])", "^$1");
 
             // Initialize search operators.
             int leftBracketCount = tempSearch.Count(i => i == '[');
@@ -742,7 +744,7 @@ namespace SharpLauncher
 
                                     foreach (string value in operationValues)
                                     {
-                                        queryOr.Add($"{operationParams[0]} LIKE @param{paramsCounter}");
+                                        queryOr.Add($"{operationParams[0]} LIKE @param{paramsCounter} ESCAPE '^'");
                                         localQueryParameters.Add(new SqliteParameter($"@param{paramsCounter}", "%" + value + "%"));
                                         paramsCounter++;
                                     }
@@ -751,7 +753,7 @@ namespace SharpLauncher
                                 }
                                 else
                                 {
-                                    localQueryOperations.Add($"{operationParams[0]} LIKE @param{paramsCounter}");
+                                    localQueryOperations.Add($"{operationParams[0]} LIKE @param{paramsCounter} ESCAPE '^'");
                                     localQueryParameters.Add(new SqliteParameter($"@param{paramsCounter}", "%" + operationParams[1] + "%"));
                                     paramsCounter++;
                                 }
