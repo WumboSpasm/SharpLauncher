@@ -703,9 +703,7 @@ namespace SharpLauncher
             var localQueryOperations = new List<string>();
             var localQueryParameters = new List<SqliteParameter>();
             int paramsCounter = 0;
-
-            // Replace characters { " \ % } with _ to prevent errors.
-            string tempSearch = Regex.Replace(SearchBox.Text, "[\"\\%]", "_");
+            string tempSearch = SearchBox.Text;
 
             // Initialize search operators.
             int leftBracketCount = tempSearch.Count(i => i == '[');
