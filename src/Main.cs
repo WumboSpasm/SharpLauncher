@@ -591,12 +591,15 @@ namespace SharpLauncher
                 List<QueryItem> temp;
                 var lastItem = new QueryItem();
                 int lastBlockSize = blockSize;
+
                 var connection = new SqliteConnection($"Data Source={Config.FlashpointPath}\\Data\\flashpoint.sqlite");
                 connection.Open();
-                // Get values to be inserted into QueryItem objects
+
+                // Get values to be inserted into QueryItem objects.
                 if (playsChecked || favoritesChecked)
                 {
                     temp = new List<QueryItem>();
+
                     foreach (string id in playsChecked ? playedEnts : favoritedEnts)
                     {
                         SqliteCommand query;
@@ -606,6 +609,7 @@ namespace SharpLauncher
                         }
                         temp.AddRange(DatabaseQueryEntry(query, connection));
                     }
+
                     lock (filterLock)
                     {
                         temp = FilterData(temp, tagFilters);
@@ -615,6 +619,7 @@ namespace SharpLauncher
                     {
                         queryCache.AddRange(temp);
                     }
+
                     UpdateArchiveListLength();
                     ArchiveList.Sort();
                 }
@@ -637,14 +642,17 @@ namespace SharpLauncher
                                 ResetColumns();
                             }
                         }
-                        SqliteCommand command;
+
                         // Query the DB for one block.
+                        SqliteCommand command;
                         lock (queryLock)
                         {
                             command = GetQueryBlock(qOperations, qParams, lastElem: lastItem.GetPropertyFromName(sortBy), lastId: lastItem.ID,
                             sortByColumn: sortBy.ToLower(), sortDirection: direction == 1, blockSize: blockSize, search: qSearch, library: qLibrary);
                         }
+
                         temp = DatabaseQueryEntry(command, connection);
+
                         lock (filterLock)
                         {
                             temp = FilterDataBlock(temp,
@@ -664,20 +672,20 @@ namespace SharpLauncher
                 }
                 connection.Close();
 
-                // Sort new queryCache
+                // Sort the new queryCache.
                 int length;
                 lock (queryCacheLock)
                 {
                     length = queryCache.Count;
                 }
 
-                // Display entry count in bottom right corner
+                // Display entry count in the bottom right corner.
                 SetEntryCountText($"Displaying {length} entr{(length == 1 ? "y" : "ies")}.");
 
-                // Force list to reload items
+                // Force the list to reload items.
                 UpdateArchiveListLength();
 
-                // Prevent column widths from breaking out of list
+                // Prevent column widths from breaking out of the list.
                 if (colChanged)
                 {
                     ScaleColumns();
