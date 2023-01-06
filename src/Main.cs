@@ -22,8 +22,6 @@ namespace SharpLauncher
         {
             InitializeComponent();
 
-            // Call RebuildColumns to pick up on IDColumn's invisibility.
-            ArchiveList.RebuildColumns();
             DoubleBuffered = true;
         }
 

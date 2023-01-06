@@ -37,7 +37,6 @@ namespace SharpLauncher
             this.TitleColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.DeveloperColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.PublisherColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
-            this.IDColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.ArchiveInfoContainer = new System.Windows.Forms.FlowLayoutPanel();
             this.ArchiveInfoTitle = new System.Windows.Forms.Label();
             this.ArchiveInfoDeveloper = new System.Windows.Forms.Label();
@@ -131,14 +130,12 @@ namespace SharpLauncher
             this.ArchiveList.AllColumns.Add(this.TitleColumn);
             this.ArchiveList.AllColumns.Add(this.DeveloperColumn);
             this.ArchiveList.AllColumns.Add(this.PublisherColumn);
-            this.ArchiveList.AllColumns.Add(this.IDColumn);
             this.ArchiveList.AllowColumnReorder = true;
             this.ArchiveList.CellEditUseWholeCell = false;
             this.ArchiveList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.TitleColumn,
             this.DeveloperColumn,
-            this.PublisherColumn,
-            this.IDColumn});
+            this.PublisherColumn});
             this.ArchiveList.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveList.FullRowSelect = true;
             this.ArchiveList.GridLines = true;
@@ -158,7 +155,7 @@ namespace SharpLauncher
             this.ArchiveList.ItemActivate += new System.EventHandler(this.ArchiveList_itemAccess);
             this.ArchiveList.SelectedIndexChanged += new System.EventHandler(this.ArchiveList_itemSelect);
             this.ArchiveList.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ArchiveList_mouseMove);
-            this.ArchiveList.SecondarySortColumn = IDColumn;
+            this.ArchiveList.SecondarySortColumn = TitleColumn;
             // 
             // TitleColumn
             // 
@@ -174,13 +171,6 @@ namespace SharpLauncher
             // 
             this.PublisherColumn.AspectName = "Publisher";
             this.PublisherColumn.Text = "Publisher";
-            // 
-            // IDColumn
-            // 
-            this.IDColumn.AspectName = "ID";
-            this.IDColumn.IsVisible = false;
-            this.IDColumn.Text = "UUID";
-            this.IDColumn.Width = 0;
             // 
             // ArchiveInfoContainer
             // 
@@ -884,9 +874,6 @@ namespace SharpLauncher
         private BrightIdeasSoftware.OLVColumn TitleColumn;
         private BrightIdeasSoftware.OLVColumn DeveloperColumn;
         private BrightIdeasSoftware.OLVColumn PublisherColumn;
-        // Needed as the secondary sort column. Will be invisible by default.
-        private BrightIdeasSoftware.OLVColumn IDColumn;
         // TODO: maybe add a tagsStr column? Not sure what we would use it for.
-
     }
 }
