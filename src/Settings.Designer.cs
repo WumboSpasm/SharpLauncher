@@ -77,7 +77,7 @@ namespace SharpLauncher
             this.SettingsTabControl.SelectedIndex = 0;
             this.SettingsTabControl.Size = new System.Drawing.Size(496, 190);
             this.SettingsTabControl.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
-            this.SettingsTabControl.TabIndex = 4;
+            this.SettingsTabControl.TabIndex = 0;
             this.SettingsTabControl.SelectedIndexChanged += new System.EventHandler(this.SettingsTabControl_tabChanged);
             // 
             // GeneralTab
@@ -113,7 +113,7 @@ namespace SharpLauncher
             this.GeneralLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 35F));
             this.GeneralLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 35F));
             this.GeneralLayout.Size = new System.Drawing.Size(484, 104);
-            this.GeneralLayout.TabIndex = 5;
+            this.GeneralLayout.TabIndex = 0;
             // 
             // PathButton
             // 
@@ -121,7 +121,7 @@ namespace SharpLauncher
             this.PathButton.Margin = new System.Windows.Forms.Padding(9, 7, 0, 0);
             this.PathButton.Name = "PathButton";
             this.PathButton.Size = new System.Drawing.Size(75, 22);
-            this.PathButton.TabIndex = 1;
+            this.PathButton.TabIndex = 2;
             this.PathButton.Text = "Browse";
             this.PathButton.UseVisualStyleBackColor = true;
             this.PathButton.Click += new System.EventHandler(this.PathButton_click);
@@ -133,7 +133,7 @@ namespace SharpLauncher
             this.PathInput.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
             this.PathInput.Name = "PathInput";
             this.PathInput.Size = new System.Drawing.Size(257, 20);
-            this.PathInput.TabIndex = 0;
+            this.PathInput.TabIndex = 1;
             // 
             // PathLabel
             // 
@@ -143,7 +143,7 @@ namespace SharpLauncher
             this.PathLabel.Margin = new System.Windows.Forms.Padding(5, 10, 0, 0);
             this.PathLabel.Name = "PathLabel";
             this.PathLabel.Size = new System.Drawing.Size(132, 25);
-            this.PathLabel.TabIndex = 1;
+            this.PathLabel.TabIndex = 0;
             this.PathLabel.Text = "Path to Flashpoint folder:";
             // 
             // CLIFpButton
@@ -152,7 +152,7 @@ namespace SharpLauncher
             this.CLIFpButton.Margin = new System.Windows.Forms.Padding(9, 7, 0, 0);
             this.CLIFpButton.Name = "CLIFpButton";
             this.CLIFpButton.Size = new System.Drawing.Size(75, 22);
-            this.CLIFpButton.TabIndex = 1;
+            this.CLIFpButton.TabIndex = 5;
             this.CLIFpButton.Text = "Browse";
             this.CLIFpButton.UseVisualStyleBackColor = true;
             this.CLIFpButton.Click += new System.EventHandler(this.CLIFpButton_click);
@@ -164,7 +164,7 @@ namespace SharpLauncher
             this.CLIFpInput.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
             this.CLIFpInput.Name = "CLIFpInput";
             this.CLIFpInput.Size = new System.Drawing.Size(257, 20);
-            this.CLIFpInput.TabIndex = 0;
+            this.CLIFpInput.TabIndex = 4;
             // 
             // CLIFpLabel
             // 
@@ -174,7 +174,7 @@ namespace SharpLauncher
             this.CLIFpLabel.Margin = new System.Windows.Forms.Padding(5, 10, 0, 0);
             this.CLIFpLabel.Name = "CLIFpLabel";
             this.CLIFpLabel.Size = new System.Drawing.Size(132, 25);
-            this.CLIFpLabel.TabIndex = 1;
+            this.CLIFpLabel.TabIndex = 3;
             this.CLIFpLabel.Text = "Path to CLIFp:";
             // 
             // ServerInput
@@ -184,7 +184,7 @@ namespace SharpLauncher
             this.ServerInput.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
             this.ServerInput.Name = "ServerInput";
             this.ServerInput.Size = new System.Drawing.Size(257, 20);
-            this.ServerInput.TabIndex = 0;
+            this.ServerInput.TabIndex = 7;
             // 
             // ServerLabel
             // 
@@ -194,7 +194,7 @@ namespace SharpLauncher
             this.ServerLabel.Margin = new System.Windows.Forms.Padding(5, 10, 0, 0);
             this.ServerLabel.Name = "ServerLabel";
             this.ServerLabel.Size = new System.Drawing.Size(132, 25);
-            this.ServerLabel.TabIndex = 1;
+            this.ServerLabel.TabIndex = 6;
             this.ServerLabel.Text = "Infinity server URL:";
             // 
             // FiltersTab
@@ -214,7 +214,7 @@ namespace SharpLauncher
             this.FilterLabel.Location = new System.Drawing.Point(5, 3);
             this.FilterLabel.Name = "FilterLabel";
             this.FilterLabel.Size = new System.Drawing.Size(476, 19);
-            this.FilterLabel.TabIndex = 1;
+            this.FilterLabel.TabIndex = 0;
             this.FilterLabel.Text = "Entries with can be hidden from view using the filters below. Check a filter to a" +
     "ctivate it.";
             this.FilterLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -233,7 +233,7 @@ namespace SharpLauncher
             this.FilterList.MultiSelect = false;
             this.FilterList.Name = "FilterList";
             this.FilterList.Size = new System.Drawing.Size(476, 131);
-            this.FilterList.TabIndex = 0;
+            this.FilterList.TabIndex = 1;
             this.FilterList.UseCompatibleStateImageBehavior = false;
             this.FilterList.View = System.Windows.Forms.View.Details;
             // 
@@ -277,7 +277,7 @@ namespace SharpLauncher
             this.DataClearContainer.RowCount = 1;
             this.DataClearContainer.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.DataClearContainer.Size = new System.Drawing.Size(482, 28);
-            this.DataClearContainer.TabIndex = 5;
+            this.DataClearContainer.TabIndex = 3;
             // 
             // DataClearLegacy
             // 
@@ -287,7 +287,7 @@ namespace SharpLauncher
             this.DataClearLegacy.Name = "DataClearLegacy";
             this.DataClearLegacy.Size = new System.Drawing.Size(162, 22);
             this.DataClearLegacy.TabIndex = 0;
-            this.DataClearLegacy.Text = "Clear Legacy downloads";
+            this.DataClearLegacy.Text = "Clear &Legacy downloads";
             this.DataClearLegacy.UseVisualStyleBackColor = true;
             this.DataClearLegacy.Click += new System.EventHandler(this.DataClear_click);
             // 
@@ -298,7 +298,7 @@ namespace SharpLauncher
             this.DataClearGameZIP.Name = "DataClearGameZIP";
             this.DataClearGameZIP.Size = new System.Drawing.Size(162, 22);
             this.DataClearGameZIP.TabIndex = 1;
-            this.DataClearGameZIP.Text = "Clear GameZIP downloads";
+            this.DataClearGameZIP.Text = "Clear Game&ZIP downloads";
             this.DataClearGameZIP.UseVisualStyleBackColor = true;
             this.DataClearGameZIP.Click += new System.EventHandler(this.DataClear_click);
             // 
@@ -310,7 +310,7 @@ namespace SharpLauncher
             this.DataClearCache.Name = "DataClearCache";
             this.DataClearCache.Size = new System.Drawing.Size(116, 22);
             this.DataClearCache.TabIndex = 2;
-            this.DataClearCache.Text = "Clear cache";
+            this.DataClearCache.Text = "Clear cac&he";
             this.DataClearCache.UseVisualStyleBackColor = true;
             this.DataClearCache.Click += new System.EventHandler(this.DataClear_click);
             // 
@@ -321,7 +321,7 @@ namespace SharpLauncher
             this.DataGameZIPSize.Name = "DataGameZIPSize";
             this.DataGameZIPSize.Padding = new System.Windows.Forms.Padding(3, 0, 3, 0);
             this.DataGameZIPSize.Size = new System.Drawing.Size(482, 21);
-            this.DataGameZIPSize.TabIndex = 4;
+            this.DataGameZIPSize.TabIndex = 2;
             this.DataGameZIPSize.Text = "The total file size of downloaded entries using the GameZIP format is ?? MB.";
             this.DataGameZIPSize.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -332,7 +332,7 @@ namespace SharpLauncher
             this.DataLegacySize.Name = "DataLegacySize";
             this.DataLegacySize.Padding = new System.Windows.Forms.Padding(3, 0, 3, 0);
             this.DataLegacySize.Size = new System.Drawing.Size(482, 31);
-            this.DataLegacySize.TabIndex = 3;
+            this.DataLegacySize.TabIndex = 1;
             this.DataLegacySize.Text = "The total file size of downloaded entries using the Legacy format is ?? MB.";
             this.DataLegacySize.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -344,7 +344,7 @@ namespace SharpLauncher
             this.DataLabel.Name = "DataLabel";
             this.DataLabel.Padding = new System.Windows.Forms.Padding(3, 0, 3, 0);
             this.DataLabel.Size = new System.Drawing.Size(482, 33);
-            this.DataLabel.TabIndex = 2;
+            this.DataLabel.TabIndex = 0;
             this.DataLabel.Text = "The size of Flashpoint grows with the amount of entries you play. Additionally, c" +
     "ached files created by these entries can take up disk space.";
             this.DataLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -357,15 +357,16 @@ namespace SharpLauncher
             this.SettingsControls.Location = new System.Drawing.Point(7, 195);
             this.SettingsControls.Name = "SettingsControls";
             this.SettingsControls.Size = new System.Drawing.Size(494, 27);
-            this.SettingsControls.TabIndex = 4;
+            this.SettingsControls.TabIndex = 1;
             // 
             // CancelButton
             // 
+            this.CancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.CancelButton.Location = new System.Drawing.Point(416, 3);
             this.CancelButton.Name = "CancelButton";
             this.CancelButton.Size = new System.Drawing.Size(75, 22);
             this.CancelButton.TabIndex = 1;
-            this.CancelButton.Text = "Cancel";
+            this.CancelButton.Text = "&Cancel";
             this.CancelButton.UseVisualStyleBackColor = true;
             this.CancelButton.Click += new System.EventHandler(this.CancelButton_click);
             // 
@@ -375,12 +376,13 @@ namespace SharpLauncher
             this.OKButton.Name = "OKButton";
             this.OKButton.Size = new System.Drawing.Size(75, 22);
             this.OKButton.TabIndex = 0;
-            this.OKButton.Text = "OK";
+            this.OKButton.Text = "&OK";
             this.OKButton.UseVisualStyleBackColor = true;
             this.OKButton.Click += new System.EventHandler(this.OKButton_click);
             // 
             // Settings
             // 
+            this.AcceptButton = this.OKButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(504, 225);

@@ -445,7 +445,9 @@ namespace SharpLauncher
             int randomEntryIndex = rng.Next(ArchiveList.VirtualListSize);
 
             ArchiveList.Select();
+            ArchiveList.Focus();
             ArchiveList.Items[randomEntryIndex].Selected = true;
+            ArchiveList.Items[randomEntryIndex].Focused = true;
             ArchiveList.Items[randomEntryIndex].EnsureVisible();
         }
 

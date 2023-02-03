@@ -136,6 +136,7 @@ namespace SharpLauncher
             this.TitleColumn,
             this.DeveloperColumn,
             this.PublisherColumn});
+            this.ArchiveList.Cursor = System.Windows.Forms.Cursors.Default;
             this.ArchiveList.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ArchiveList.FullRowSelect = true;
             this.ArchiveList.GridLines = true;
@@ -147,7 +148,7 @@ namespace SharpLauncher
             this.ArchiveList.Name = "ArchiveList";
             this.ArchiveList.ShowGroups = false;
             this.ArchiveList.Size = new System.Drawing.Size(644, 653);
-            this.ArchiveList.TabIndex = 0;
+            this.ArchiveList.TabIndex = 1;
             this.ArchiveList.UseCompatibleStateImageBehavior = false;
             this.ArchiveList.View = System.Windows.Forms.View.Details;
             this.ArchiveList.VirtualMode = true;
@@ -155,7 +156,6 @@ namespace SharpLauncher
             this.ArchiveList.ItemActivate += new System.EventHandler(this.ArchiveList_itemAccess);
             this.ArchiveList.SelectedIndexChanged += new System.EventHandler(this.ArchiveList_itemSelect);
             this.ArchiveList.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ArchiveList_mouseMove);
-            this.ArchiveList.SecondarySortColumn = TitleColumn;
             // 
             // TitleColumn
             // 
@@ -184,7 +184,7 @@ namespace SharpLauncher
             this.ArchiveInfoContainer.Margin = new System.Windows.Forms.Padding(3, 3, 3, 0);
             this.ArchiveInfoContainer.Name = "ArchiveInfoContainer";
             this.ArchiveInfoContainer.Size = new System.Drawing.Size(294, 650);
-            this.ArchiveInfoContainer.TabIndex = 6;
+            this.ArchiveInfoContainer.TabIndex = 3;
             // 
             // ArchiveInfoTitle
             // 
@@ -195,7 +195,7 @@ namespace SharpLauncher
             this.ArchiveInfoTitle.Margin = new System.Windows.Forms.Padding(1, 0, 0, 0);
             this.ArchiveInfoTitle.Name = "ArchiveInfoTitle";
             this.ArchiveInfoTitle.Size = new System.Drawing.Size(296, 25);
-            this.ArchiveInfoTitle.TabIndex = 5;
+            this.ArchiveInfoTitle.TabIndex = 0;
             this.ArchiveInfoTitle.UseMnemonic = false;
             // 
             // ArchiveInfoDeveloper
@@ -206,7 +206,7 @@ namespace SharpLauncher
             this.ArchiveInfoDeveloper.Margin = new System.Windows.Forms.Padding(4, 1, 3, 7);
             this.ArchiveInfoDeveloper.Name = "ArchiveInfoDeveloper";
             this.ArchiveInfoDeveloper.Size = new System.Drawing.Size(290, 13);
-            this.ArchiveInfoDeveloper.TabIndex = 6;
+            this.ArchiveInfoDeveloper.TabIndex = 1;
             this.ArchiveInfoDeveloper.UseMnemonic = false;
             // 
             // ArchiveInfoData
@@ -219,7 +219,8 @@ namespace SharpLauncher
             this.ArchiveInfoData.ReadOnly = true;
             this.ArchiveInfoData.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
             this.ArchiveInfoData.Size = new System.Drawing.Size(291, 256);
-            this.ArchiveInfoData.TabIndex = 7;
+            this.ArchiveInfoData.TabIndex = 2;
+            this.ArchiveInfoData.TabStop = false;
             this.ArchiveInfoData.Text = "";
             // 
             // ArchiveImagesContainer
@@ -231,7 +232,7 @@ namespace SharpLauncher
             this.ArchiveImagesContainer.Margin = new System.Windows.Forms.Padding(3, 0, 0, 0);
             this.ArchiveImagesContainer.Name = "ArchiveImagesContainer";
             this.ArchiveImagesContainer.Size = new System.Drawing.Size(293, 144);
-            this.ArchiveImagesContainer.TabIndex = 8;
+            this.ArchiveImagesContainer.TabIndex = 3;
             this.ArchiveImagesContainer.Visible = false;
             // 
             // ArchiveImagesLogoContainer
@@ -265,7 +266,7 @@ namespace SharpLauncher
             this.ArchiveImagesScreenshotContainer.Name = "ArchiveImagesScreenshotContainer";
             this.ArchiveImagesScreenshotContainer.Padding = new System.Windows.Forms.Padding(4, 4, 4, 12);
             this.ArchiveImagesScreenshotContainer.Size = new System.Drawing.Size(140, 140);
-            this.ArchiveImagesScreenshotContainer.TabIndex = 0;
+            this.ArchiveImagesScreenshotContainer.TabIndex = 1;
             this.ArchiveImagesScreenshotContainer.TabStop = false;
             this.ArchiveImagesScreenshotContainer.Text = "Screenshot";
             // 
@@ -277,7 +278,7 @@ namespace SharpLauncher
             this.ArchiveImagesScreenshot.Name = "ArchiveImagesScreenshot";
             this.ArchiveImagesScreenshot.Size = new System.Drawing.Size(132, 111);
             this.ArchiveImagesScreenshot.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.ArchiveImagesScreenshot.TabIndex = 1;
+            this.ArchiveImagesScreenshot.TabIndex = 0;
             this.ArchiveImagesScreenshot.TabStop = false;
             this.ArchiveImagesScreenshot.LoadCompleted += new System.ComponentModel.AsyncCompletedEventHandler(this.ArchiveImages_loadCompleted);
             this.ArchiveImagesScreenshot.Click += new System.EventHandler(this.ArchiveImages_click);
@@ -289,7 +290,7 @@ namespace SharpLauncher
             this.ArchiveRadioContainer.Margin = new System.Windows.Forms.Padding(1, 3, 7, 0);
             this.ArchiveRadioContainer.Name = "ArchiveRadioContainer";
             this.ArchiveRadioContainer.Size = new System.Drawing.Size(292, 650);
-            this.ArchiveRadioContainer.TabIndex = 9;
+            this.ArchiveRadioContainer.TabIndex = 0;
             // 
             // ArchiveRadioHeader
             // 
@@ -303,7 +304,7 @@ namespace SharpLauncher
             this.ArchiveRadioHeader.Margin = new System.Windows.Forms.Padding(0);
             this.ArchiveRadioHeader.Name = "ArchiveRadioHeader";
             this.ArchiveRadioHeader.Size = new System.Drawing.Size(292, 135);
-            this.ArchiveRadioHeader.TabIndex = 10;
+            this.ArchiveRadioHeader.TabIndex = 0;
             // 
             // ArchiveRadioPlays
             // 
@@ -318,7 +319,7 @@ namespace SharpLauncher
             this.ArchiveRadioPlays.Margin = new System.Windows.Forms.Padding(0);
             this.ArchiveRadioPlays.Name = "ArchiveRadioPlays";
             this.ArchiveRadioPlays.Size = new System.Drawing.Size(292, 25);
-            this.ArchiveRadioPlays.TabIndex = 10;
+            this.ArchiveRadioPlays.TabIndex = 3;
             this.ArchiveRadioPlays.TabStop = true;
             this.ArchiveRadioPlays.Text = "Your Plays";
             this.ArchiveRadioPlays.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -338,7 +339,7 @@ namespace SharpLauncher
             this.ArchiveRadioFavorites.Margin = new System.Windows.Forms.Padding(0);
             this.ArchiveRadioFavorites.Name = "ArchiveRadioFavorites";
             this.ArchiveRadioFavorites.Size = new System.Drawing.Size(292, 25);
-            this.ArchiveRadioFavorites.TabIndex = 11;
+            this.ArchiveRadioFavorites.TabIndex = 4;
             this.ArchiveRadioFavorites.TabStop = true;
             this.ArchiveRadioFavorites.Text = "Your Favorites";
             this.ArchiveRadioFavorites.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -358,7 +359,7 @@ namespace SharpLauncher
             this.ArchiveRadioAnimations.Margin = new System.Windows.Forms.Padding(0);
             this.ArchiveRadioAnimations.Name = "ArchiveRadioAnimations";
             this.ArchiveRadioAnimations.Size = new System.Drawing.Size(292, 25);
-            this.ArchiveRadioAnimations.TabIndex = 8;
+            this.ArchiveRadioAnimations.TabIndex = 2;
             this.ArchiveRadioAnimations.TabStop = true;
             this.ArchiveRadioAnimations.Text = "All Animations";
             this.ArchiveRadioAnimations.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -378,7 +379,7 @@ namespace SharpLauncher
             this.ArchiveRadioGames.Margin = new System.Windows.Forms.Padding(0);
             this.ArchiveRadioGames.Name = "ArchiveRadioGames";
             this.ArchiveRadioGames.Size = new System.Drawing.Size(292, 25);
-            this.ArchiveRadioGames.TabIndex = 9;
+            this.ArchiveRadioGames.TabIndex = 1;
             this.ArchiveRadioGames.TabStop = true;
             this.ArchiveRadioGames.Text = "All Games";
             this.ArchiveRadioGames.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -399,7 +400,7 @@ namespace SharpLauncher
             this.ArchiveRadioEverything.Margin = new System.Windows.Forms.Padding(0);
             this.ArchiveRadioEverything.Name = "ArchiveRadioEverything";
             this.ArchiveRadioEverything.Size = new System.Drawing.Size(292, 25);
-            this.ArchiveRadioEverything.TabIndex = 12;
+            this.ArchiveRadioEverything.TabIndex = 0;
             this.ArchiveRadioEverything.TabStop = true;
             this.ArchiveRadioEverything.Text = "Everything";
             this.ArchiveRadioEverything.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -416,7 +417,7 @@ namespace SharpLauncher
             this.ArchiveListFooter.Margin = new System.Windows.Forms.Padding(0, 5, 0, 0);
             this.ArchiveListFooter.Name = "ArchiveListFooter";
             this.ArchiveListFooter.Size = new System.Drawing.Size(644, 27);
-            this.ArchiveListFooter.TabIndex = 10;
+            this.ArchiveListFooter.TabIndex = 2;
             // 
             // RandomButton
             // 
@@ -431,7 +432,7 @@ namespace SharpLauncher
             this.RandomButton.Name = "RandomButton";
             this.RandomButton.Padding = new System.Windows.Forms.Padding(0, 0, 1, 1);
             this.RandomButton.Size = new System.Drawing.Size(25, 25);
-            this.RandomButton.TabIndex = 3;
+            this.RandomButton.TabIndex = 1;
             this.RandomButton.UseVisualStyleBackColor = true;
             this.RandomButton.Click += new System.EventHandler(this.RandomButton_Click);
             // 
@@ -457,7 +458,7 @@ namespace SharpLauncher
             this.ResetColumnsButton.Margin = new System.Windows.Forms.Padding(0);
             this.ResetColumnsButton.Name = "ResetColumnsButton";
             this.ResetColumnsButton.Size = new System.Drawing.Size(100, 25);
-            this.ResetColumnsButton.TabIndex = 1;
+            this.ResetColumnsButton.TabIndex = 0;
             this.ResetColumnsButton.Text = "Reset Columns";
             this.ResetColumnsButton.UseVisualStyleBackColor = true;
             this.ResetColumnsButton.Click += new System.EventHandler(this.ResetColumnsButton_click);
@@ -472,7 +473,7 @@ namespace SharpLauncher
             this.PlayContainer.Margin = new System.Windows.Forms.Padding(0);
             this.PlayContainer.Name = "PlayContainer";
             this.PlayContainer.Size = new System.Drawing.Size(300, 32);
-            this.PlayContainer.TabIndex = 11;
+            this.PlayContainer.TabIndex = 4;
             // 
             // AlternateButton
             // 
@@ -484,7 +485,7 @@ namespace SharpLauncher
             this.AlternateButton.Margin = new System.Windows.Forms.Padding(0);
             this.AlternateButton.Name = "AlternateButton";
             this.AlternateButton.Size = new System.Drawing.Size(15, 25);
-            this.AlternateButton.TabIndex = 10;
+            this.AlternateButton.TabIndex = 1;
             this.AlternateButton.Text = "⯅";
             this.AlternateButton.UseVisualStyleBackColor = true;
             this.AlternateButton.Click += new System.EventHandler(this.AlternateButton_click);
@@ -499,7 +500,7 @@ namespace SharpLauncher
             this.PlayButton.Margin = new System.Windows.Forms.Padding(0);
             this.PlayButton.Name = "PlayButton";
             this.PlayButton.Size = new System.Drawing.Size(238, 25);
-            this.PlayButton.TabIndex = 3;
+            this.PlayButton.TabIndex = 0;
             this.PlayButton.Text = "Play";
             this.PlayButton.UseVisualStyleBackColor = true;
             this.PlayButton.Click += new System.EventHandler(this.ArchiveList_itemAccess);
@@ -519,7 +520,7 @@ namespace SharpLauncher
             this.FavoriteButton.Margin = new System.Windows.Forms.Padding(0);
             this.FavoriteButton.Name = "FavoriteButton";
             this.FavoriteButton.Size = new System.Drawing.Size(25, 25);
-            this.FavoriteButton.TabIndex = 9;
+            this.FavoriteButton.TabIndex = 2;
             this.FavoriteButton.UseVisualStyleBackColor = true;
             this.FavoriteButton.CheckedChanged += new System.EventHandler(this.FavoriteButton_checkedChanged);
             // 
@@ -542,7 +543,7 @@ namespace SharpLauncher
             this.TabControl.SelectedIndex = 0;
             this.TabControl.Size = new System.Drawing.Size(1258, 723);
             this.TabControl.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
-            this.TabControl.TabIndex = 4;
+            this.TabControl.TabIndex = 0;
             this.TabControl.SelectedIndexChanged += new System.EventHandler(this.TabControl_tabChanged);
             // 
             // HomeTab
@@ -565,7 +566,7 @@ namespace SharpLauncher
             this.HomeContainer.Margin = new System.Windows.Forms.Padding(0);
             this.HomeContainer.Name = "HomeContainer";
             this.HomeContainer.Size = new System.Drawing.Size(512, 224);
-            this.HomeContainer.TabIndex = 1;
+            this.HomeContainer.TabIndex = 0;
             // 
             // HomeLinkContainer
             // 
@@ -577,7 +578,7 @@ namespace SharpLauncher
             this.HomeLinkContainer.Margin = new System.Windows.Forms.Padding(0);
             this.HomeLinkContainer.Name = "HomeLinkContainer";
             this.HomeLinkContainer.Size = new System.Drawing.Size(210, 20);
-            this.HomeLinkContainer.TabIndex = 5;
+            this.HomeLinkContainer.TabIndex = 0;
             this.HomeLinkContainer.WrapContents = false;
             // 
             // HomeLinkWebsite
@@ -592,7 +593,7 @@ namespace SharpLauncher
             this.HomeLinkWebsite.Margin = new System.Windows.Forms.Padding(0);
             this.HomeLinkWebsite.Name = "HomeLinkWebsite";
             this.HomeLinkWebsite.Size = new System.Drawing.Size(63, 20);
-            this.HomeLinkWebsite.TabIndex = 1;
+            this.HomeLinkWebsite.TabIndex = 0;
             this.HomeLinkWebsite.TabStop = true;
             this.HomeLinkWebsite.Text = "Website -";
             this.HomeLinkWebsite.UseCompatibleTextRendering = true;
@@ -611,7 +612,7 @@ namespace SharpLauncher
             this.HomeLinkWiki.Margin = new System.Windows.Forms.Padding(0);
             this.HomeLinkWiki.Name = "HomeLinkWiki";
             this.HomeLinkWiki.Size = new System.Drawing.Size(41, 20);
-            this.HomeLinkWiki.TabIndex = 2;
+            this.HomeLinkWiki.TabIndex = 1;
             this.HomeLinkWiki.TabStop = true;
             this.HomeLinkWiki.Text = "Wiki -";
             this.HomeLinkWiki.UseCompatibleTextRendering = true;
@@ -630,7 +631,7 @@ namespace SharpLauncher
             this.HomeLinkGitHub.Margin = new System.Windows.Forms.Padding(0);
             this.HomeLinkGitHub.Name = "HomeLinkGitHub";
             this.HomeLinkGitHub.Size = new System.Drawing.Size(57, 20);
-            this.HomeLinkGitHub.TabIndex = 3;
+            this.HomeLinkGitHub.TabIndex = 2;
             this.HomeLinkGitHub.TabStop = true;
             this.HomeLinkGitHub.Text = "GitHub -";
             this.HomeLinkGitHub.UseCompatibleTextRendering = true;
@@ -649,7 +650,7 @@ namespace SharpLauncher
             this.HomeLinkDiscord.Margin = new System.Windows.Forms.Padding(0);
             this.HomeLinkDiscord.Name = "HomeLinkDiscord";
             this.HomeLinkDiscord.Size = new System.Drawing.Size(55, 20);
-            this.HomeLinkDiscord.TabIndex = 4;
+            this.HomeLinkDiscord.TabIndex = 3;
             this.HomeLinkDiscord.TabStop = true;
             this.HomeLinkDiscord.Text = "Discord ";
             this.HomeLinkDiscord.UseCompatibleTextRendering = true;
@@ -731,7 +732,7 @@ namespace SharpLauncher
             this.SearchBox.Margin = new System.Windows.Forms.Padding(0);
             this.SearchBox.Name = "SearchBox";
             this.SearchBox.Size = new System.Drawing.Size(200, 20);
-            this.SearchBox.TabIndex = 2;
+            this.SearchBox.TabIndex = 1;
             this.SearchBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.SearchBox_keyDown);
             // 
             // SearchButtonContainer
@@ -740,7 +741,7 @@ namespace SharpLauncher
             this.SearchButtonContainer.Location = new System.Drawing.Point(357, 6);
             this.SearchButtonContainer.Name = "SearchButtonContainer";
             this.SearchButtonContainer.Size = new System.Drawing.Size(50, 20);
-            this.SearchButtonContainer.TabIndex = 3;
+            this.SearchButtonContainer.TabIndex = 2;
             // 
             // SearchButton
             // 
@@ -753,7 +754,7 @@ namespace SharpLauncher
             this.SearchButton.Margin = new System.Windows.Forms.Padding(0);
             this.SearchButton.Name = "SearchButton";
             this.SearchButton.Size = new System.Drawing.Size(50, 24);
-            this.SearchButton.TabIndex = 2;
+            this.SearchButton.TabIndex = 0;
             this.SearchButton.Text = "Search";
             this.SearchButton.UseVisualStyleBackColor = false;
             this.SearchButton.Click += new System.EventHandler(this.SearchButton_click);
@@ -766,7 +767,7 @@ namespace SharpLauncher
             this.ButtonContainer.Location = new System.Drawing.Point(1139, 6);
             this.ButtonContainer.Name = "ButtonContainer";
             this.ButtonContainer.Size = new System.Drawing.Size(120, 20);
-            this.ButtonContainer.TabIndex = 2;
+            this.ButtonContainer.TabIndex = 3;
             // 
             // LaunchEntry
             // 
