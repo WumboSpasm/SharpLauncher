@@ -7,11 +7,12 @@ namespace SharpLauncher
 {
     public static class Config
     {
-        // Strings to hold configuration data.
+        // Properties to store configuration data in.
         public static string FlashpointPath { get; set; } = ".";
         public static string CLIFpPath { get; set; } = @".\CLIFp\CLIFp.exe";
         public static string FlashpointServer { get; set; } = "http://infinity.unstable.life/Flashpoint";
         public static bool DisplayImages { get; set; } = true;
+        public static bool ExtremeIndicator { get; set; } = true;
 
         public static bool Configured { get; set; } = false;
         public static bool Initialized { get; set; } = false;
@@ -34,6 +35,7 @@ namespace SharpLauncher
                         CLIFpPath = (string)readConfig["CLIFpPath"];
                         FlashpointServer = (string)readConfig["FlashpointServer"];
                         DisplayImages = (bool)readConfig["DisplayImages"];
+                        ExtremeIndicator = (bool)readConfig["ExtremeIndicator"];
                     }
                     catch { }
                 }
@@ -54,7 +56,8 @@ namespace SharpLauncher
                         ["FlashpointPath"] = FlashpointPath,
                         ["CLIFpPath"] = CLIFpPath,
                         ["FlashpointServer"] = FlashpointServer,
-                        ["DisplayImages"] = DisplayImages
+                        ["DisplayImages"] = DisplayImages,
+                        ["ExtremeIndicator"] = ExtremeIndicator
                     };
 
                     byte[] data = Encoding.ASCII.GetBytes(writeConfig.ToString());

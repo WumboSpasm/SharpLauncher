@@ -15,7 +15,7 @@ Playlists and a log viewer may be added in the future if I feel like it. Curatio
 
 ## Prerequisites
 * [CLIFp](https://github.com/oblivioncth/CLIFp) (ideal location is a `CLIFp` folder within the Flashpoint directory)
-* [sharpFilters.json](https://cdn.discordapp.com/attachments/516027726851735632/1060433416199360584/sharpFilters.json) (if you want extreme entries to be filtered; must be placed in the same directory as SharpLauncher)
+* sharpFilters.json (must be placed in the same directory as SharpLauncher; can be retrieved from the latest release)
 * `e_sqlite3.dll` (must be placed in the same directory as SharpLauncher; can be retrieved from `SQLitePCLRaw.lib.e_sqlite3` package)
 
 ## Special thanks

@@ -41,6 +41,7 @@ namespace SharpLauncher
             this.CLIFpLabel = new System.Windows.Forms.Label();
             this.ServerInput = new System.Windows.Forms.TextBox();
             this.ServerLabel = new System.Windows.Forms.Label();
+            this.ImageCheckbox = new System.Windows.Forms.CheckBox();
             this.FiltersTab = new System.Windows.Forms.TabPage();
             this.FilterLabel = new System.Windows.Forms.Label();
             this.FilterList = new System.Windows.Forms.ListView();
@@ -57,7 +58,7 @@ namespace SharpLauncher
             this.SettingsControls = new System.Windows.Forms.FlowLayoutPanel();
             this.CancelButton = new System.Windows.Forms.Button();
             this.OKButton = new System.Windows.Forms.Button();
-            this.ImageCheckbox = new System.Windows.Forms.CheckBox();
+            this.IndicatorCheckbox = new System.Windows.Forms.CheckBox();
             this.SettingsTabControl.SuspendLayout();
             this.GeneralTab.SuspendLayout();
             this.GeneralLayout.SuspendLayout();
@@ -83,6 +84,7 @@ namespace SharpLauncher
             // 
             // GeneralTab
             // 
+            this.GeneralTab.Controls.Add(this.IndicatorCheckbox);
             this.GeneralTab.Controls.Add(this.GeneralLayout);
             this.GeneralTab.Controls.Add(this.ImageCheckbox);
             this.GeneralTab.Location = new System.Drawing.Point(4, 24);
@@ -198,6 +200,16 @@ namespace SharpLauncher
             this.ServerLabel.Size = new System.Drawing.Size(132, 25);
             this.ServerLabel.TabIndex = 6;
             this.ServerLabel.Text = "Infinity server URL:";
+            // 
+            // ImageCheckbox
+            // 
+            this.ImageCheckbox.AutoSize = true;
+            this.ImageCheckbox.Location = new System.Drawing.Point(101, 124);
+            this.ImageCheckbox.Name = "ImageCheckbox";
+            this.ImageCheckbox.Size = new System.Drawing.Size(140, 17);
+            this.ImageCheckbox.TabIndex = 8;
+            this.ImageCheckbox.Text = "Display logo/screenshot";
+            this.ImageCheckbox.UseVisualStyleBackColor = true;
             // 
             // FiltersTab
             // 
@@ -382,15 +394,15 @@ namespace SharpLauncher
             this.OKButton.UseVisualStyleBackColor = true;
             this.OKButton.Click += new System.EventHandler(this.OKButton_click);
             // 
-            // ImageCheckbox
+            // IndicatorCheckbox
             // 
-            this.ImageCheckbox.AutoSize = true;
-            this.ImageCheckbox.Location = new System.Drawing.Point(174, 124);
-            this.ImageCheckbox.Name = "ImageCheckbox";
-            this.ImageCheckbox.Size = new System.Drawing.Size(140, 17);
-            this.ImageCheckbox.TabIndex = 8;
-            this.ImageCheckbox.Text = "Display logo/screenshot";
-            this.ImageCheckbox.UseVisualStyleBackColor = true;
+            this.IndicatorCheckbox.AutoSize = true;
+            this.IndicatorCheckbox.Location = new System.Drawing.Point(248, 124);
+            this.IndicatorCheckbox.Name = "IndicatorCheckbox";
+            this.IndicatorCheckbox.Size = new System.Drawing.Size(143, 17);
+            this.IndicatorCheckbox.TabIndex = 9;
+            this.IndicatorCheckbox.Text = "Display extreme indicator";
+            this.IndicatorCheckbox.UseVisualStyleBackColor = true;
             // 
             // Settings
             // 
@@ -447,5 +459,6 @@ namespace SharpLauncher
         private Button DataClearGameZIP;
         private Button DataClearCache;
         private CheckBox ImageCheckbox;
+        private CheckBox IndicatorCheckbox;
     }
 }

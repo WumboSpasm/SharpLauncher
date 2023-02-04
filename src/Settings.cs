@@ -26,6 +26,7 @@ namespace SharpLauncher
             CLIFpInput.Text = Config.CLIFpPath;
             ServerInput.Text = Config.FlashpointServer;
             ImageCheckbox.Checked = Config.DisplayImages;
+            IndicatorCheckbox.Checked = Config.ExtremeIndicator;
 
             // Load tag filters into Filters menu.
             if (File.Exists("sharpFilters.json"))
@@ -155,6 +156,7 @@ namespace SharpLauncher
             Config.CLIFpPath = CLIFpInput.Text;
             Config.FlashpointServer = ServerInput.Text;
             Config.DisplayImages = ImageCheckbox.Checked;
+            Config.ExtremeIndicator = IndicatorCheckbox.Checked;
             Config.Write();
 
             if (filterJSON.Length > 0)
@@ -163,7 +165,6 @@ namespace SharpLauncher
                 {
                     using (var filters = new FileStream("sharpFilters.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
                     {
-
                         filters.SetLength(0);
 
                         dynamic filterArray = JsonConvert.DeserializeObject(filterJSON);

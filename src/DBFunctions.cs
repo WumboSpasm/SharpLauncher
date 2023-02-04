@@ -53,7 +53,7 @@ namespace SharpLauncher
                         Developer = dataReader.IsDBNull(1) ? "" : dataReader.GetString(1),
                         Publisher = dataReader.IsDBNull(2) ? "" : dataReader.GetString(2),
                         ID = dataReader.IsDBNull(3) ? "" : dataReader.GetString(3),
-                        tagsStr = dataReader.IsDBNull(4) ? "" : dataReader.GetString(4)
+                        TagsStr = dataReader.IsDBNull(4) ? "" : dataReader.GetString(4)
                     });
                 }
             }
@@ -122,7 +122,7 @@ namespace SharpLauncher
                         Platform = dataReader.IsDBNull(4) ? "" : dataReader.GetString(4),
                         Version = dataReader.IsDBNull(5) ? "" : dataReader.GetString(5),
                         Library = dataReader.IsDBNull(6) ? "" : dataReader.GetString(6),
-                        Tags = entry.tagsStr,
+                        Tags = entry.TagsStr,
                         Language = dataReader.IsDBNull(7) ? "" : dataReader.GetString(7),
                         PlayMode = dataReader.IsDBNull(8) ? "" : dataReader.GetString(8),
                         Status = dataReader.IsDBNull(9) ? "" : dataReader.GetString(9),
@@ -349,7 +349,7 @@ namespace SharpLauncher
             // Set lastElem to the last element of data, or a new element if data is empty.
             lastElem = blockSize > 0 ? data[blockSize - 1] : new QueryItem();
             // Return the filtered data.
-            return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Replace("; ", ";").Split(';')).Any());
+            return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.TagsStr.Replace("; ", ";").Split(';')).Any());
         }
 
         /// <summary>
@@ -361,7 +361,7 @@ namespace SharpLauncher
         public static List<QueryItem> FilterData(List<QueryItem> data, List<string> filteredTags)
         {
             // Return the filtered data.
-            return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.tagsStr.Replace("; ", ";").Split(';')).Any());
+            return data.FindAll((QueryItem elem) => !filteredTags.Intersect(elem.TagsStr.Replace("; ", ";").Split(';')).Any());
         }
 
         // Alternate query template for retrieving entries via *.fp files.

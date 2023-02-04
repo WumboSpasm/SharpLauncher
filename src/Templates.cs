@@ -54,7 +54,7 @@ namespace SharpLauncher
         public string Developer { get; set; } = "";
         public string Publisher { get; set; } = "";
         public string ID { get; set; } = "";
-        public string tagsStr { get; set; } = "";
+        public string TagsStr { get; set; } = "";
         public string GetPropertyFromName(string field)
         {
             switch (field.ToLower())

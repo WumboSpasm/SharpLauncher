@@ -31,7 +31,9 @@ namespace SharpLauncher
         int prevWidth;
         // The exact values of calculated column widths before conversion to int.
         List<double> columnWidths = new List<double>();
-        // A list containing each tag to be filtered.
+        // A list of tags that that will cause the extreme indicator to be displayed.
+        List<string> extremeTags = new List<string>();
+        // A list of tags that will be filtered.
         List<string> filteredTags = new List<string>();
 
         // Object used to lock access to the query fragments.
@@ -111,6 +113,24 @@ namespace SharpLauncher
             }
 
             ResetColumns();
+
+            // Display indicator next to title of extreme entries.
+            TitleColumn.ImageGetter = delegate (object item)
+            {
+                if (Config.ExtremeIndicator && item != null)
+                {
+                    if (((QueryItem)item).TagsStr.Replace("; ", ";").Split(';').Intersect(extremeTags).Any())
+                    {
+                        return Properties.Resources.extreme;
+                    }
+                    else
+                    {
+                        return Properties.Resources.padding;
+                    }
+                }
+
+                return null;
+            };
 
             // Fix search box being focused when the launcher is opened.
             // TODO: Figure out why this happens.
@@ -988,11 +1008,18 @@ namespace SharpLauncher
 
                         foreach (var item in filterArray)
                         {
-                            if (item.filtered == true)
+                            if (item.extreme == true || item.filtered == true)
                             {
                                 foreach (var tag in item.tags)
                                 {
-                                    filteredTags.Add(tag.ToString());
+                                    if (item.extreme == true)
+                                    {
+                                        extremeTags.Add(tag.ToString());
+                                    }
+                                    if (item.filtered == true)
+                                    {
+                                        filteredTags.Add(tag.ToString());
+                                    }
                                 }
                             }
                         }
