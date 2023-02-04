@@ -103,6 +103,8 @@ namespace SharpLauncher
 
             // Initialize list columns and their widths.
 
+            ArchiveList.SecondarySortColumn = TitleColumn;
+
             for (int i = 0; i < ArchiveList.Columns.Count; i++)
             {
                 columnWidths.Add(ArchiveList.Columns[i].Width);
@@ -236,8 +238,6 @@ namespace SharpLauncher
 
             ArchiveInfoDeveloper.Text = metadataOutput.Developer != "" ? $"by {metadataOutput.Developer}" : "by unknown developer";
 
-            ArchiveInfoData.Height = GetInfoHeight();
-
             /* METADATA */
 
             ArchiveInfoData.Rtf = BuildEntryData(metadataOutput);
@@ -246,10 +246,7 @@ namespace SharpLauncher
 
             if (Config.DisplayImages)
             {
-                if (!ArchiveImagesContainer.Visible)
-                {
-                    ArchiveImagesContainer.Visible = true;
-                }
+                ArchiveImagesContainer.Visible = true;
 
                 // TODO: make images persistent.
                 foreach (string folder in new string[] { "Logos", "Screenshots" })
@@ -283,6 +280,9 @@ namespace SharpLauncher
                     }
                 }
             }
+
+            // Set info height now that images are ready.
+            ArchiveInfoData.Height = GetInfoHeight();
 
             /* FOOTER */
 
@@ -1090,7 +1090,7 @@ namespace SharpLauncher
 
             foreach (Control control in ArchiveInfoContainer.Controls)
             {
-                if (control.Name != "ArchiveInfoData")
+                if (control.Name != "ArchiveInfoData" && control.Visible)
                 {
                     desiredHeight -= control.Height;
                 }

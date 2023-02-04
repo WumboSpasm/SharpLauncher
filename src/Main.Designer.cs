@@ -156,7 +156,6 @@ namespace SharpLauncher
             this.ArchiveList.ItemActivate += new System.EventHandler(this.ArchiveList_itemAccess);
             this.ArchiveList.SelectedIndexChanged += new System.EventHandler(this.ArchiveList_itemSelect);
             this.ArchiveList.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ArchiveList_mouseMove);
-            this.ArchiveList.SecondarySortColumn = this.TitleColumn;
             // 
             // TitleColumn
             // 
@@ -186,6 +185,7 @@ namespace SharpLauncher
             this.ArchiveInfoContainer.Name = "ArchiveInfoContainer";
             this.ArchiveInfoContainer.Size = new System.Drawing.Size(294, 650);
             this.ArchiveInfoContainer.TabIndex = 3;
+            this.ArchiveInfoContainer.WrapContents = false;
             // 
             // ArchiveInfoTitle
             // 
