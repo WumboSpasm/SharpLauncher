@@ -156,6 +156,7 @@ namespace SharpLauncher
             this.ArchiveList.ItemActivate += new System.EventHandler(this.ArchiveList_itemAccess);
             this.ArchiveList.SelectedIndexChanged += new System.EventHandler(this.ArchiveList_itemSelect);
             this.ArchiveList.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ArchiveList_mouseMove);
+            this.ArchiveList.SecondarySortColumn = this.TitleColumn;
             // 
             // TitleColumn
             // 
