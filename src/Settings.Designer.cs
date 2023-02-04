@@ -57,6 +57,7 @@ namespace SharpLauncher
             this.SettingsControls = new System.Windows.Forms.FlowLayoutPanel();
             this.CancelButton = new System.Windows.Forms.Button();
             this.OKButton = new System.Windows.Forms.Button();
+            this.ImageCheckbox = new System.Windows.Forms.CheckBox();
             this.SettingsTabControl.SuspendLayout();
             this.GeneralTab.SuspendLayout();
             this.GeneralLayout.SuspendLayout();
@@ -83,6 +84,7 @@ namespace SharpLauncher
             // GeneralTab
             // 
             this.GeneralTab.Controls.Add(this.GeneralLayout);
+            this.GeneralTab.Controls.Add(this.ImageCheckbox);
             this.GeneralTab.Location = new System.Drawing.Point(4, 24);
             this.GeneralTab.Name = "GeneralTab";
             this.GeneralTab.Padding = new System.Windows.Forms.Padding(2);
@@ -380,6 +382,16 @@ namespace SharpLauncher
             this.OKButton.UseVisualStyleBackColor = true;
             this.OKButton.Click += new System.EventHandler(this.OKButton_click);
             // 
+            // ImageCheckbox
+            // 
+            this.ImageCheckbox.AutoSize = true;
+            this.ImageCheckbox.Location = new System.Drawing.Point(174, 124);
+            this.ImageCheckbox.Name = "ImageCheckbox";
+            this.ImageCheckbox.Size = new System.Drawing.Size(140, 17);
+            this.ImageCheckbox.TabIndex = 8;
+            this.ImageCheckbox.Text = "Display logo/screenshot";
+            this.ImageCheckbox.UseVisualStyleBackColor = true;
+            // 
             // Settings
             // 
             this.AcceptButton = this.OKButton;
@@ -395,6 +407,7 @@ namespace SharpLauncher
             this.Text = "Settings";
             this.SettingsTabControl.ResumeLayout(false);
             this.GeneralTab.ResumeLayout(false);
+            this.GeneralTab.PerformLayout();
             this.GeneralLayout.ResumeLayout(false);
             this.GeneralLayout.PerformLayout();
             this.FiltersTab.ResumeLayout(false);
@@ -433,5 +446,6 @@ namespace SharpLauncher
         private Button DataClearLegacy;
         private Button DataClearGameZIP;
         private Button DataClearCache;
+        private CheckBox ImageCheckbox;
     }
 }

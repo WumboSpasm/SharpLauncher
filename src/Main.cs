@@ -244,39 +244,42 @@ namespace SharpLauncher
 
             /* IMAGES */
 
-            if (!ArchiveImagesContainer.Visible)
+            if (Config.DisplayImages)
             {
-                ArchiveImagesContainer.Visible = true;
-            }
-
-            // TODO: make images persistent.
-            foreach (string folder in new string[] { "Logos", "Screenshots" })
-            {
-                string[] imageTree = { entry.ID.Substring(0, 2), entry.ID.Substring(2, 2) };
-                string imagePath = $"\\Data\\Images\\{folder}\\{imageTree[0]}\\{imageTree[1]}\\{entry.ID}.png";
-
-                if (File.Exists(Config.FlashpointPath + imagePath))
+                if (!ArchiveImagesContainer.Visible)
                 {
-                    if (folder == "Logos")
-                    {
-                        ArchiveImagesLogo.Image = Image.FromFile(Config.FlashpointPath + imagePath);
-                        logoLoaded = true;
-                    }
-                    else if (folder == "Screenshots")
-                    {
-                        ArchiveImagesScreenshot.Image = Image.FromFile(Config.FlashpointPath + imagePath);
-                        screenshotLoaded = true;
-                    }
+                    ArchiveImagesContainer.Visible = true;
                 }
-                else
+
+                // TODO: make images persistent.
+                foreach (string folder in new string[] { "Logos", "Screenshots" })
                 {
-                    if (folder == "Logos")
+                    string[] imageTree = { entry.ID.Substring(0, 2), entry.ID.Substring(2, 2) };
+                    string imagePath = $"\\Data\\Images\\{folder}\\{imageTree[0]}\\{imageTree[1]}\\{entry.ID}.png";
+
+                    if (File.Exists(Config.FlashpointPath + imagePath))
                     {
-                        ArchiveImagesLogo.ImageLocation = Config.FlashpointServer + imagePath;
+                        if (folder == "Logos")
+                        {
+                            ArchiveImagesLogo.Image = Image.FromFile(Config.FlashpointPath + imagePath);
+                            logoLoaded = true;
+                        }
+                        else if (folder == "Screenshots")
+                        {
+                            ArchiveImagesScreenshot.Image = Image.FromFile(Config.FlashpointPath + imagePath);
+                            screenshotLoaded = true;
+                        }
                     }
-                    else if (folder == "Screenshots")
+                    else
                     {
-                        ArchiveImagesScreenshot.ImageLocation = Config.FlashpointServer + imagePath;
+                        if (folder == "Logos")
+                        {
+                            ArchiveImagesLogo.ImageLocation = Config.FlashpointServer + imagePath;
+                        }
+                        else if (folder == "Screenshots")
+                        {
+                            ArchiveImagesScreenshot.ImageLocation = Config.FlashpointServer + imagePath;
+                        }
                     }
                 }
             }

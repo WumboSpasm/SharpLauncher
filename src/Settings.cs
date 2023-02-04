@@ -25,6 +25,7 @@ namespace SharpLauncher
             PathInput.Text = Config.FlashpointPath;
             CLIFpInput.Text = Config.CLIFpPath;
             ServerInput.Text = Config.FlashpointServer;
+            ImageCheckbox.Checked = Config.DisplayImages;
 
             // Load tag filters into Filters menu.
             if (File.Exists("sharpFilters.json"))
@@ -153,6 +154,7 @@ namespace SharpLauncher
             Config.FlashpointPath = PathInput.Text;
             Config.CLIFpPath = CLIFpInput.Text;
             Config.FlashpointServer = ServerInput.Text;
+            Config.DisplayImages = ImageCheckbox.Checked;
             Config.Write();
 
             if (filterJSON.Length > 0)

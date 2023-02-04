@@ -11,6 +11,7 @@ namespace SharpLauncher
         public static string FlashpointPath { get; set; } = ".";
         public static string CLIFpPath { get; set; } = @".\CLIFp\CLIFp.exe";
         public static string FlashpointServer { get; set; } = "http://infinity.unstable.life/Flashpoint";
+        public static bool DisplayImages { get; set; } = true;
 
         public static bool Configured { get; set; } = false;
         public static bool Initialized { get; set; } = false;
@@ -27,20 +28,14 @@ namespace SharpLauncher
                 {
                     JObject readConfig = JObject.Parse(jsonStream.ReadToEnd());
 
-                    if (readConfig["FlashpointPath"].Type != JTokenType.Null)
+                    try
                     {
                         FlashpointPath = (string)readConfig["FlashpointPath"];
-                    }
-
-                    if ((readConfig["CLIFpPath"]).Type != JTokenType.Null)
-                    {
                         CLIFpPath = (string)readConfig["CLIFpPath"];
-                    }
-
-                    if ((readConfig["FlashpointServer"]).Type != JTokenType.Null)
-                    {
                         FlashpointServer = (string)readConfig["FlashpointServer"];
+                        DisplayImages = (bool)readConfig["DisplayImages"];
                     }
+                    catch { }
                 }
             }
         }
@@ -58,7 +53,8 @@ namespace SharpLauncher
                     {
                         ["FlashpointPath"] = FlashpointPath,
                         ["CLIFpPath"] = CLIFpPath,
-                        ["FlashpointServer"] = FlashpointServer
+                        ["FlashpointServer"] = FlashpointServer,
+                        ["DisplayImages"] = DisplayImages
                     };
 
                     byte[] data = Encoding.ASCII.GetBytes(writeConfig.ToString());
