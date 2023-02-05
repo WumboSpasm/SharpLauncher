@@ -33,10 +33,6 @@ namespace SharpLauncher
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.ArchiveLayout = new System.Windows.Forms.TableLayoutPanel();
-            this.ArchiveList = new SharpLauncher.FPVirtualObjectListView();
-            this.TitleColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
-            this.DeveloperColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
-            this.PublisherColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.ArchiveInfoContainer = new System.Windows.Forms.FlowLayoutPanel();
             this.ArchiveInfoTitle = new System.Windows.Forms.Label();
             this.ArchiveInfoDeveloper = new System.Windows.Forms.Label();
@@ -75,14 +71,19 @@ namespace SharpLauncher
             this.GitHubButton = new System.Windows.Forms.Button();
             this.SettingsButton = new System.Windows.Forms.Button();
             this.Container = new System.Windows.Forms.Panel();
+            this.ClearButton = new System.Windows.Forms.Button();
+            this.ClearButtonImages = new System.Windows.Forms.ImageList(this.components);
             this.SearchBox = new System.Windows.Forms.TextBox();
             this.SearchButtonContainer = new System.Windows.Forms.Panel();
             this.SearchButton = new System.Windows.Forms.Button();
             this.ButtonContainer = new System.Windows.Forms.Panel();
             this.LaunchEntry = new System.Diagnostics.Process();
             this.AlternateMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.ArchiveList = new SharpLauncher.FPVirtualObjectListView();
+            this.TitleColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
+            this.DeveloperColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
+            this.PublisherColumn = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.ArchiveLayout.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.ArchiveList)).BeginInit();
             this.ArchiveInfoContainer.SuspendLayout();
             this.ArchiveImagesContainer.SuspendLayout();
             this.ArchiveImagesLogoContainer.SuspendLayout();
@@ -102,6 +103,7 @@ namespace SharpLauncher
             this.Container.SuspendLayout();
             this.SearchButtonContainer.SuspendLayout();
             this.ButtonContainer.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.ArchiveList)).BeginInit();
             this.SuspendLayout();
             // 
             // ArchiveLayout
@@ -124,53 +126,6 @@ namespace SharpLauncher
             this.ArchiveLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.ArchiveLayout.Size = new System.Drawing.Size(1244, 685);
             this.ArchiveLayout.TabIndex = 3;
-            // 
-            // ArchiveList
-            // 
-            this.ArchiveList.AllColumns.Add(this.TitleColumn);
-            this.ArchiveList.AllColumns.Add(this.DeveloperColumn);
-            this.ArchiveList.AllColumns.Add(this.PublisherColumn);
-            this.ArchiveList.AllowColumnReorder = true;
-            this.ArchiveList.CellEditUseWholeCell = false;
-            this.ArchiveList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.TitleColumn,
-            this.DeveloperColumn,
-            this.PublisherColumn});
-            this.ArchiveList.Cursor = System.Windows.Forms.Cursors.Default;
-            this.ArchiveList.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ArchiveList.FullRowSelect = true;
-            this.ArchiveList.GridLines = true;
-            this.ArchiveList.HideSelection = false;
-            this.ArchiveList.LabelWrap = false;
-            this.ArchiveList.Location = new System.Drawing.Point(300, 0);
-            this.ArchiveList.Margin = new System.Windows.Forms.Padding(0);
-            this.ArchiveList.MultiSelect = false;
-            this.ArchiveList.Name = "ArchiveList";
-            this.ArchiveList.ShowGroups = false;
-            this.ArchiveList.Size = new System.Drawing.Size(644, 653);
-            this.ArchiveList.TabIndex = 1;
-            this.ArchiveList.UseCompatibleStateImageBehavior = false;
-            this.ArchiveList.View = System.Windows.Forms.View.Details;
-            this.ArchiveList.VirtualMode = true;
-            this.ArchiveList.ColumnWidthChanged += new System.Windows.Forms.ColumnWidthChangedEventHandler(this.ArchiveList_columnChanged);
-            this.ArchiveList.ItemActivate += new System.EventHandler(this.ArchiveList_itemAccess);
-            this.ArchiveList.SelectedIndexChanged += new System.EventHandler(this.ArchiveList_itemSelect);
-            this.ArchiveList.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ArchiveList_mouseMove);
-            // 
-            // TitleColumn
-            // 
-            this.TitleColumn.AspectName = "Title";
-            this.TitleColumn.Text = "Title";
-            // 
-            // DeveloperColumn
-            // 
-            this.DeveloperColumn.AspectName = "Developer";
-            this.DeveloperColumn.Text = "Developer";
-            // 
-            // PublisherColumn
-            // 
-            this.PublisherColumn.AspectName = "Publisher";
-            this.PublisherColumn.Text = "Publisher";
             // 
             // ArchiveInfoContainer
             // 
@@ -715,6 +670,7 @@ namespace SharpLauncher
             // Container
             // 
             this.Container.BackColor = System.Drawing.Color.Transparent;
+            this.Container.Controls.Add(this.ClearButton);
             this.Container.Controls.Add(this.SearchBox);
             this.Container.Controls.Add(this.SearchButtonContainer);
             this.Container.Controls.Add(this.ButtonContainer);
@@ -727,6 +683,33 @@ namespace SharpLauncher
             this.Container.Size = new System.Drawing.Size(1264, 729);
             this.Container.TabIndex = 0;
             // 
+            // ClearButton
+            // 
+            this.ClearButton.BackColor = System.Drawing.Color.White;
+            this.ClearButton.FlatAppearance.BorderSize = 0;
+            this.ClearButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.White;
+            this.ClearButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.White;
+            this.ClearButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.ClearButton.ImageIndex = 0;
+            this.ClearButton.ImageList = this.ClearButtonImages;
+            this.ClearButton.Location = new System.Drawing.Point(335, 7);
+            this.ClearButton.Name = "ClearButton";
+            this.ClearButton.Padding = new System.Windows.Forms.Padding(0, 0, 2, 2);
+            this.ClearButton.Size = new System.Drawing.Size(18, 18);
+            this.ClearButton.TabIndex = 2;
+            this.ClearButton.UseVisualStyleBackColor = false;
+            this.ClearButton.Visible = false;
+            this.ClearButton.Click += new System.EventHandler(this.ClearButton_click);
+            this.ClearButton.MouseEnter += new System.EventHandler(this.ClearButton_mouseEnter);
+            this.ClearButton.MouseLeave += new System.EventHandler(this.ClearButton_mouseLeave);
+            // 
+            // ClearButtonImages
+            // 
+            this.ClearButtonImages.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("ClearButtonImages.ImageStream")));
+            this.ClearButtonImages.TransparentColor = System.Drawing.Color.Transparent;
+            this.ClearButtonImages.Images.SetKeyName(0, "clear");
+            this.ClearButtonImages.Images.SetKeyName(1, "clear-hover");
+            // 
             // SearchBox
             // 
             this.SearchBox.Location = new System.Drawing.Point(154, 6);
@@ -734,6 +717,7 @@ namespace SharpLauncher
             this.SearchBox.Name = "SearchBox";
             this.SearchBox.Size = new System.Drawing.Size(200, 20);
             this.SearchBox.TabIndex = 1;
+            this.SearchBox.TextChanged += new System.EventHandler(this.SearchBox_textChanged);
             this.SearchBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.SearchBox_keyDown);
             // 
             // SearchButtonContainer
@@ -742,7 +726,7 @@ namespace SharpLauncher
             this.SearchButtonContainer.Location = new System.Drawing.Point(357, 6);
             this.SearchButtonContainer.Name = "SearchButtonContainer";
             this.SearchButtonContainer.Size = new System.Drawing.Size(50, 20);
-            this.SearchButtonContainer.TabIndex = 2;
+            this.SearchButtonContainer.TabIndex = 3;
             // 
             // SearchButton
             // 
@@ -768,7 +752,7 @@ namespace SharpLauncher
             this.ButtonContainer.Location = new System.Drawing.Point(1139, 6);
             this.ButtonContainer.Name = "ButtonContainer";
             this.ButtonContainer.Size = new System.Drawing.Size(120, 20);
-            this.ButtonContainer.TabIndex = 3;
+            this.ButtonContainer.TabIndex = 4;
             // 
             // LaunchEntry
             // 
@@ -788,6 +772,53 @@ namespace SharpLauncher
             this.AlternateMenu.Size = new System.Drawing.Size(36, 4);
             this.AlternateMenu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.AlternateMenu_itemClicked);
             // 
+            // ArchiveList
+            // 
+            this.ArchiveList.AllColumns.Add(this.TitleColumn);
+            this.ArchiveList.AllColumns.Add(this.DeveloperColumn);
+            this.ArchiveList.AllColumns.Add(this.PublisherColumn);
+            this.ArchiveList.AllowColumnReorder = true;
+            this.ArchiveList.CellEditUseWholeCell = false;
+            this.ArchiveList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.TitleColumn,
+            this.DeveloperColumn,
+            this.PublisherColumn});
+            this.ArchiveList.Cursor = System.Windows.Forms.Cursors.Default;
+            this.ArchiveList.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ArchiveList.FullRowSelect = true;
+            this.ArchiveList.GridLines = true;
+            this.ArchiveList.HideSelection = false;
+            this.ArchiveList.LabelWrap = false;
+            this.ArchiveList.Location = new System.Drawing.Point(300, 0);
+            this.ArchiveList.Margin = new System.Windows.Forms.Padding(0);
+            this.ArchiveList.MultiSelect = false;
+            this.ArchiveList.Name = "ArchiveList";
+            this.ArchiveList.ShowGroups = false;
+            this.ArchiveList.Size = new System.Drawing.Size(644, 653);
+            this.ArchiveList.TabIndex = 1;
+            this.ArchiveList.UseCompatibleStateImageBehavior = false;
+            this.ArchiveList.View = System.Windows.Forms.View.Details;
+            this.ArchiveList.VirtualMode = true;
+            this.ArchiveList.ColumnWidthChanged += new System.Windows.Forms.ColumnWidthChangedEventHandler(this.ArchiveList_columnChanged);
+            this.ArchiveList.ItemActivate += new System.EventHandler(this.ArchiveList_itemAccess);
+            this.ArchiveList.SelectedIndexChanged += new System.EventHandler(this.ArchiveList_itemSelect);
+            this.ArchiveList.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ArchiveList_mouseMove);
+            // 
+            // TitleColumn
+            // 
+            this.TitleColumn.AspectName = "Title";
+            this.TitleColumn.Text = "Title";
+            // 
+            // DeveloperColumn
+            // 
+            this.DeveloperColumn.AspectName = "Developer";
+            this.DeveloperColumn.Text = "Developer";
+            // 
+            // PublisherColumn
+            // 
+            this.PublisherColumn.AspectName = "Publisher";
+            this.PublisherColumn.Text = "Publisher";
+            // 
             // Main
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -799,7 +830,6 @@ namespace SharpLauncher
             this.Load += new System.EventHandler(this.Main_load);
             this.Resize += new System.EventHandler(this.Main_resize);
             this.ArchiveLayout.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.ArchiveList)).EndInit();
             this.ArchiveInfoContainer.ResumeLayout(false);
             this.ArchiveInfoContainer.PerformLayout();
             this.ArchiveImagesContainer.ResumeLayout(false);
@@ -822,6 +852,7 @@ namespace SharpLauncher
             this.Container.PerformLayout();
             this.SearchButtonContainer.ResumeLayout(false);
             this.ButtonContainer.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.ArchiveList)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -876,6 +907,8 @@ namespace SharpLauncher
         private BrightIdeasSoftware.OLVColumn TitleColumn;
         private BrightIdeasSoftware.OLVColumn DeveloperColumn;
         private BrightIdeasSoftware.OLVColumn PublisherColumn;
+        private Button ClearButton;
+        private ImageList ClearButtonImages;
         // TODO: maybe add a tagsStr column? Not sure what we would use it for.
     }
 }

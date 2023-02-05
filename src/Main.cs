@@ -206,6 +206,32 @@ namespace SharpLauncher
         // Execute search when the Search button is clicked.
         private void SearchButton_click(object sender, EventArgs e) { ExecuteSearchQuery(); }
 
+        // Show clear button when text is entered into search box, or hide it if there's no text.
+        private void SearchBox_textChanged(object sender, EventArgs e)
+        {
+            ClearButton.Visible = SearchBox.Text != "";
+        }
+
+        // Clear the search box and active search query when the clear button is clicked.
+        private void ClearButton_click(object sender, EventArgs e)
+        {
+            SearchBox.Text = string.Empty;
+            SearchBox.Focus();
+
+            if (querySearch != "" || queryOperations.Count != 0 || queryParameters.Count != 0)
+            {
+                querySearch = "";
+                queryOperations.Clear();
+                queryParameters.Clear();
+
+                RefreshDatabase_Block();
+            }
+        }
+
+        // Change the clear button's color while hovering over it.
+        private void ClearButton_mouseEnter(object sender, EventArgs e) { ClearButton.ImageIndex = 1; }
+        private void ClearButton_mouseLeave(object sender, EventArgs e) { ClearButton.ImageIndex = 0; }
+
         // Display settings menu when the Settings button is clicked.
         private void SettingsButton_click(object sender, EventArgs e) { OpenSettings(); }
 
